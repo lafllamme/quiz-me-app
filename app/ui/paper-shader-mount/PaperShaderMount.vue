@@ -56,6 +56,23 @@
     }
   }
 
+  /**
+   * Resolve once an image element is decoded. ShaderMount throws for images
+   * that are not complete yet; Safari decodes even data URLs asynchronously,
+   * so an Image created just before mounting is often still pending there.
+   */
+  function whenLoaded(img: HTMLImageElement): Promise<void> {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise<void>((resolve, reject) => {
+      img.addEventListener('load', () => resolve(), { once: true });
+      img.addEventListener(
+        'error',
+        () => reject(new Error(`Failed to load image: ${img.src.slice(0, 64)}`)),
+        { once: true },
+      );
+    });
+  }
+
   /** Turn URL-string uniforms into loaded HTMLImageElements. */
   async function processUniforms(
     input: PaperShaderUniforms,
@@ -89,8 +106,12 @@
           }),
         );
       } else if (value instanceof HTMLImageElement) {
-        setMinImageSize(value);
-        processed[key] = value;
+        imageLoads.push(
+          whenLoaded(value).then(() => {
+            setMinImageSize(value);
+            processed[key] = value;
+          }),
+        );
       } else {
         processed[key] = value;
       }
@@ -100,21 +121,27 @@
     return processed;
   }
 
+  // The shader is decoration: a failed image load or WebGL error is logged
+  // and leaves the background empty instead of surfacing as a page error.
   onMounted(async () => {
     if (!hostRef.value) return;
-    const uniforms = await processUniforms(props.uniforms);
-    if (disposed || !hostRef.value) return;
-    mount = new ShaderMount(
-      hostRef.value,
-      props.fragmentShader,
-      uniforms,
-      undefined,
-      props.speed,
-      props.frame,
-      props.minPixelRatio,
-      props.maxPixelCount,
-      props.mipmaps,
-    );
+    try {
+      const uniforms = await processUniforms(props.uniforms);
+      if (disposed || !hostRef.value) return;
+      mount = new ShaderMount(
+        hostRef.value,
+        props.fragmentShader,
+        uniforms,
+        undefined,
+        props.speed,
+        props.frame,
+        props.minPixelRatio,
+        props.maxPixelCount,
+        props.mipmaps,
+      );
+    } catch (error) {
+      console.error('Paper shader could not be mounted', error);
+    }
   });
 
   let uniformsGeneration = 0;
@@ -122,10 +149,14 @@
     () => props.uniforms,
     async (next) => {
       const generation = ++uniformsGeneration;
-      const uniforms = await processUniforms(next);
-      // Only apply the freshest uniforms (image loads can resolve out of order).
-      if (generation === uniformsGeneration && mount) {
-        mount.setUniforms(uniforms);
+      try {
+        const uniforms = await processUniforms(next);
+        // Only apply the freshest uniforms (image loads can resolve out of order).
+        if (generation === uniformsGeneration && mount) {
+          mount.setUniforms(uniforms);
+        }
+      } catch (error) {
+        console.error('Paper shader uniforms could not be applied', error);
       }
     },
     { deep: true },

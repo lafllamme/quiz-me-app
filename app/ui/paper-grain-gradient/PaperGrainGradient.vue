@@ -34,6 +34,11 @@
     class: '',
   });
 
+  // One shared noise texture: getShaderNoiseTexture() returns a fresh, still
+  // decoding Image on every call, so calling it inside the computed would
+  // create a new pending image on each prop change.
+  const noiseTexture = getShaderNoiseTexture();
+
   const uniforms = computed(() => ({
     u_colorBack: getShaderColorFromString(props.colorBack),
     u_colors: props.colors.map(getShaderColorFromString),
@@ -42,7 +47,7 @@
     u_intensity: props.intensity,
     u_noise: props.noise,
     u_shape: GrainGradientShapes[props.shape],
-    u_noiseTexture: getShaderNoiseTexture(),
+    u_noiseTexture: noiseTexture,
     u_fit: ShaderFitOptions[props.fit],
     u_scale: props.scale,
     u_rotation: props.rotation,
