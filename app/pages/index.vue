@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { QuizConfig } from '~/composables/useQuizGame'
 import { QUIZ_CATEGORIES } from '~/data/quiz-catalog'
+import { loadCoinRuntime } from '~/lib/coin-face'
 
 const quiz = useQuizGame()
 const modal = ref<'rules' | 'settings' | 'new' | null>(null)
@@ -92,7 +93,15 @@ function onKeydown(event: KeyboardEvent) {
     event.preventDefault()
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  // Warm up the 3D coin while the setup screen is idle.
+  const warmUp = () => loadCoinRuntime().catch(() => {})
+  if ('requestIdleCallback' in window)
+    window.requestIdleCallback(warmUp, { timeout: 4000 })
+  else
+    setTimeout(warmUp, 1500)
+})
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 function goForward() {
@@ -116,7 +125,7 @@ function goForward() {
         <GameSetup v-if="quiz.screen.value === 'menu'" :config="quiz.config" :has-saved-game="quiz.hasSavedGame.value" :catalog-exhausted="quiz.catalogExhausted.value" :remaining-question-count="quiz.remainingQuestionCount.value" :total-question-count="quiz.totalQuestionCount.value" @start="submitSetup" @resume="quiz.resumeGame" @new-game="newGame" @rules="modal = 'rules'" @settings="modal = 'settings'" @reset-history="quiz.resetQuestionHistory" />
 
         <GameScreenShell v-else :screen="quiz.screen.value">
-          <CoinTossStage v-if="quiz.screen.value === 'toss'" :active-name="quiz.config.names[quiz.game.active]" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :ready="quiz.tossReady.value" :result="quiz.tossResult.value" @continue="quiz.continueFromToss" />
+          <CoinTossStage v-if="quiz.screen.value === 'toss'" :active-name="quiz.config.names[quiz.game.active]" :names="quiz.config.names" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :ready="quiz.tossReady.value" :result="quiz.tossResult.value" @continue="quiz.continueFromToss" />
 
           <template v-else-if="quiz.screen.value === 'category' || quiz.screen.value === 'question' || quiz.screen.value === 'tie'">
             <Scoreboard v-if="quiz.screen.value === 'tie'" :names="quiz.config.names" :scores="quiz.game.scores" :active="quiz.game.active" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :turn="quiz.game.turn" :per-round="quiz.config.perRound" :tie="true" />

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   activeName: string
+  names: [string, string]
   round: number
   rounds: number
   ready: boolean
@@ -10,6 +11,10 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ continue: [] }>()
+
+// The game decides the result up front; only reveal it once the coin shows it.
+const landed = ref(false)
+const revealed = computed(() => props.ready && landed.value)
 
 const phase = ref(0)
 const phaseLabels = ['Münze in der Luft.', 'Noch ein Flip.', 'Der Start steht.']
@@ -42,14 +47,13 @@ onBeforeUnmount(() => {
 
       <div class="coin-toss-stage__center">
         <p class="coin-toss-stage__eyebrow">Wer fängt an?</p>
-        <div class="coin-toss-token" :class="{ 'coin-toss-token--settled': ready, 'coin-toss-token--zahl': result === 'zahl' }" aria-label="Münzwurf">
-          <span class="coin-toss-token__face">KOPF</span>
-          <span class="coin-toss-token__back">ZAHL</span>
-        </div>
+        <ClientOnly>
+          <TossCoin :names="names" :result="result" @landed="landed = true" />
+        </ClientOnly>
         <h1>Die Münze<br><em>entscheidet.</em></h1>
-        <p class="coin-toss-stage__hint"><strong>{{ ready ? `${result === 'kopf' ? 'Kopf' : 'Zahl'} — ${activeName} beginnt.` : phaseLabels[phase] }}</strong></p>
-        <button class="coin-toss-stage__continue" :disabled="!ready" type="button" @click="emit('continue')">
-          {{ ready ? 'Weiter zu den Kategorien' : 'Münze wird geworfen …' }}
+        <p class="coin-toss-stage__hint"><strong>{{ revealed ? `${result === 'kopf' ? 'Kopf' : 'Zahl'} — ${activeName} beginnt.` : phaseLabels[phase] }}</strong></p>
+        <button class="coin-toss-stage__continue" :disabled="!revealed" type="button" @click="emit('continue')">
+          {{ revealed ? 'Weiter zu den Kategorien' : 'Münze wird geworfen …' }}
           <Icon name="lucide:arrow-right" size="18" aria-hidden="true" />
         </button>
       </div>
