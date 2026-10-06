@@ -198,9 +198,9 @@ function chooseAnswer(index: number) {
           <h1>Make the quiz<br><em>feel like a room.</em></h1>
           <p class="lab-lede">Drei Screens. {{ totalStudies }} Designstudien. Wähle die Richtung, die sich für eure Runde richtig anfühlt.</p>
         </div>
-        <div class="lab-intro-stamp" :aria-label="`${totalStudies} design studies`">
+        <div class="lab-intro-stamp" :aria-label="`${totalStudies} Varianten im Test`">
           <span class="stamp-number">{{ totalStudies }}</span>
-          <span class="stamp-copy">studies<br>in play</span>
+          <span class="stamp-copy">Varianten<br>im Test</span>
         </div>
       </section>
 

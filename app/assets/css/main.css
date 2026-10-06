@@ -229,6 +229,39 @@ button:disabled {
   margin-left: 0.25rem;
 }
 
+.setup-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 10.5rem;
+  border: 1px solid var(--color-gold);
+  padding: 0.9rem 1rem;
+  color: var(--color-gold);
+  transform: rotate(-3deg);
+}
+
+.setup-stamp-number {
+  font-family: var(--font-display);
+  font-size: 3.8rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+  line-height: 0.75;
+}
+
+.setup-stamp-copy {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.setup-stamp-copy b {
+  color: var(--color-cream);
+  font-size: 0.7rem;
+}
+
 .answer-reveal {
   display: flex;
   align-items: flex-end;
