@@ -1248,12 +1248,15 @@ button:disabled {
 
 .game-setup-form {
   align-self: center;
-  width: calc(100% - 4rem);
-  max-width: 39rem;
-  margin: 2rem auto;
+  width: auto;
+  max-width: none;
+  margin: 2rem 2.35rem 2rem 1.75rem;
   border: 1px solid var(--setup-line);
-  padding: 1.25rem;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--setup-jungle) 94%, var(--setup-cream));
+  padding: 1.45rem;
   color: var(--setup-cream);
+  overflow: hidden;
 }
 
 .game-setup-form-head {
@@ -1261,7 +1264,7 @@ button:disabled {
   justify-content: space-between;
   gap: 0.75rem;
   border-bottom: 1px solid var(--setup-line);
-  padding-bottom: 0.8rem;
+  padding-bottom: 1rem;
   color: var(--setup-accent);
   font-size: 0.63rem;
   font-weight: 700;
@@ -1331,7 +1334,7 @@ button:disabled {
   display: grid;
   grid-template-columns: .75fr .85fr 1.4fr;
   gap: 1rem;
-  margin-top: 1.35rem;
+  margin-top: 1.25rem;
   border-top: 1px solid var(--setup-line);
   padding-top: 1rem;
 }
@@ -1456,6 +1459,7 @@ button:disabled {
   min-height: 3.5rem;
   margin-top: 1.35rem;
   border: 1px solid var(--setup-cream);
+  border-radius: 12px;
   background: var(--setup-cream);
   color: var(--setup-ink);
   padding: 0.85rem 1rem;

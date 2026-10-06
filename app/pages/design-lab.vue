@@ -16,6 +16,7 @@ type CategoryOption = {
 }
 
 type SetupField = 'rounds' | 'seconds' | 'difficulty'
+type ConfigVariant = 'segments' | 'context-row' | 'matrix'
 
 type Palette = {
   id: string
@@ -133,7 +134,14 @@ const timerPaused = ref(false)
 const setupNames = reactive({ one: 'TEAM ONE', two: 'TEAM TWO' })
 const setupOptions = reactive({ rounds: 7, seconds: 45, difficulty: 'Schwer' })
 const activeSetupField = ref<SetupField>('rounds')
+const selectedConfigVariant = ref<ConfigVariant>('segments')
 const selectedPalette = ref(1)
+
+const configVariants: { id: ConfigVariant; code: string; label: string; note: string }[] = [
+  { id: 'segments', code: '01', label: 'Direkte Segmente', note: 'Nur Werte, keine Wiederholung' },
+  { id: 'context-row', code: '02', label: 'Kontextzeile', note: 'Ein kurzer Feldname führt die Auswahl' },
+  { id: 'matrix', code: '03', label: 'Alles sichtbar', note: 'Alle Optionen direkt im Raster' },
+]
 
 const activeVariant = computed<Variant>(() => variants[activeScreen.value][selectedVariants[activeScreen.value]]!)
 const activePalette = computed(() => paletteOptions[selectedPalette.value]!)
@@ -187,6 +195,16 @@ function selectSetupOption(value: number | string) {
     setupOptions.seconds = value
   else if (activeSetupField.value === 'difficulty' && typeof value === 'string')
     setupOptions.difficulty = value
+}
+
+function selectSetupOptionFor(field: SetupField, value: number | string) {
+  if (field === 'rounds' && typeof value === 'number')
+    setupOptions.rounds = value
+  else if (field === 'seconds' && typeof value === 'number')
+    setupOptions.seconds = value
+  else if (field === 'difficulty' && typeof value === 'string')
+    setupOptions.difficulty = value
+  activeSetupField.value = field
 }
 
 function isSelectedSetupOption(value: number | string) {
@@ -287,7 +305,38 @@ function isSelectedSetupOption(value: number | string) {
 
             <div v-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="study study-split-field" :style="splitFieldPaletteStyle">
               <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><h2>Wer<br><em>spielt?</em></h2><p>Gib den Teams einen Namen. Den Rest regeln wir.</p><div class="split-field-meta"><span>{{ setupOptions.rounds }} Runden</span><span>{{ setupOptions.seconds }} Sek.</span><span>{{ setupOptions.difficulty }}</span></div></div>
-              <div class="split-field-form"><div class="split-field-head"><span>Teamnamen</span><span>Bereit?</span></div><label><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label><label><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label><div class="split-field-config"><div class="split-field-badges" role="tablist" aria-label="Spieleinstellungen"><button v-for="field in (['rounds', 'seconds', 'difficulty'] as SetupField[])" :key="field" type="button" class="split-field-badge" :class="{ 'split-field-badge--active': activeSetupField === field }" role="tab" :aria-selected="activeSetupField === field" @click="activeSetupField = field"><strong>{{ setupOptions[field] }}</strong><span>{{ setupFieldLabel[field] }}</span></button></div><div class="split-field-picker" :aria-label="`${setupFieldLabel[activeSetupField]} auswählen`"><span>{{ setupFieldLabel[activeSetupField] }} wählen</span><div><button v-for="option in setupFieldOptions[activeSetupField]" :key="option" type="button" :class="{ 'split-field-picker-option--selected': isSelectedSetupOption(option) }" :aria-pressed="isSelectedSetupOption(option)" @click="selectSetupOption(option)">{{ activeSetupField === 'seconds' ? `${option} Sek.` : option }}</button></div></div></div><button class="study-action study-action--cream" @click="chooseScreen('categories')">Spiel starten <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div>
+              <div class="split-field-form">
+                <div class="split-field-head"><span>Teamnamen</span><span>Bereit?</span></div>
+                <label><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label>
+                <label><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label>
+                <div class="split-field-config" :class="'split-field-config--' + selectedConfigVariant">
+                  <div class="split-field-badges" role="tablist" aria-label="Spieleinstellungen">
+                    <button v-for="field in (['rounds', 'seconds', 'difficulty'] as SetupField[])" :key="field" type="button" class="split-field-badge" :class="{ 'split-field-badge--active': activeSetupField === field }" role="tab" :aria-selected="activeSetupField === field" @click="activeSetupField = field">
+                      <strong>{{ setupOptions[field] }}</strong><span>{{ setupFieldLabel[field] }}</span>
+                    </button>
+                  </div>
+                  <div v-if="selectedConfigVariant === 'segments'" class="split-field-picker split-field-picker--segments" :aria-label="setupFieldLabel[activeSetupField] + ' auswählen'">
+                    <div>
+                      <button v-for="option in setupFieldOptions[activeSetupField]" :key="option" type="button" :class="{ 'split-field-picker-option--selected': isSelectedSetupOption(option) }" :aria-pressed="isSelectedSetupOption(option)" @click="selectSetupOption(option)">{{ activeSetupField === 'seconds' ? option + ' Sek.' : option }}</button>
+                    </div>
+                  </div>
+                  <div v-else-if="selectedConfigVariant === 'context-row'" class="split-field-picker split-field-picker--context" :aria-label="setupFieldLabel[activeSetupField] + ' auswählen'">
+                    <span>{{ setupFieldLabel[activeSetupField] }}</span>
+                    <div>
+                      <button v-for="option in setupFieldOptions[activeSetupField]" :key="option" type="button" :class="{ 'split-field-picker-option--selected': isSelectedSetupOption(option) }" :aria-pressed="isSelectedSetupOption(option)" @click="selectSetupOption(option)">{{ activeSetupField === 'seconds' ? option + ' Sek.' : option }}</button>
+                    </div>
+                  </div>
+                  <div v-else class="split-field-matrix" aria-label="Alle Spieleinstellungen">
+                    <div v-for="field in (['rounds', 'seconds', 'difficulty'] as SetupField[])" :key="field" class="split-field-matrix-field">
+                      <span>{{ setupFieldLabel[field] }}</span>
+                      <div>
+                        <button v-for="option in setupFieldOptions[field]" :key="option" type="button" :class="{ 'split-field-picker-option--selected': setupOptions[field] === option }" :aria-pressed="setupOptions[field] === option" @click="selectSetupOptionFor(field, option)">{{ field === 'seconds' ? option + ' Sek.' : option }}</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button class="study-action study-action--cream" @click="chooseScreen('categories')">Spiel starten <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button>
+              </div>
             </div>
 
             <!-- Category studies -->
@@ -327,6 +376,17 @@ function isSelectedSetupOption(value: number | string) {
             <span><b class="preview-dot preview-dot--gold" /> Click the specimen to feel the flow</span>
             <span class="preview-footer-key">{{ activeVariant.code }} / {{ activeVariant.label.toUpperCase() }}</span>
           </div>
+
+          <section v-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="config-variant-dock" aria-label="Varianten für die Spieleinstellungen">
+            <div class="config-variant-dock-head"><span>Config studies</span><span>Auswahlmodell testen</span></div>
+            <div class="config-variant-grid">
+              <button v-for="variant in configVariants" :key="variant.id" type="button" class="config-variant-option" :class="{ 'config-variant-option--active': selectedConfigVariant === variant.id }" :aria-pressed="selectedConfigVariant === variant.id" @click="selectedConfigVariant = variant.id">
+                <span class="config-variant-code">{{ variant.code }}</span>
+                <span class="config-variant-copy"><strong>{{ variant.label }}</strong><small>{{ variant.note }}</small></span>
+                <span class="config-variant-arrow">↗</span>
+              </button>
+            </div>
+          </section>
 
           <section v-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="palette-dock" aria-label="Farbpaletten für Split field">
             <div class="palette-dock-head"><span>Color directions</span><span>Applied to setup study</span></div>
@@ -467,7 +527,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .split-field-copy p { max-width: 18rem; margin-top: 1.7rem; color: color-mix(in srgb, var(--split-ink) 70%, transparent); font-size: .88rem; }
 .split-field-meta { display: flex; border-top: 1px solid color-mix(in srgb, var(--split-ink) 32%, transparent); padding-top: .8rem; color: color-mix(in srgb, var(--split-ink) 70%, transparent); font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .split-field-meta span + span::before { margin: 0 .75rem; color: color-mix(in srgb, var(--split-ink) 42%, transparent); content: '·'; }
-.split-field-form { align-self: center; margin: 2rem; border: 1px solid var(--split-line); padding: 1.15rem; color: var(--split-cream); }
+.split-field-form { align-self: center; margin: 2rem 2.35rem 2rem 1.75rem; border: 1px solid var(--split-line); border-radius: 18px; background: color-mix(in srgb, var(--split-jungle) 94%, var(--split-cream)); padding: 1.45rem; color: var(--split-cream); overflow: hidden; }
+.split-field-form .split-field-head { padding-bottom: 1rem; }
+.split-field-form .split-field-config { margin-top: 1.25rem; }
+.split-field-form .study-action { border-radius: 12px; }
 .split-field-form label { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: center; gap: .7rem; min-height: 74px; border-bottom: 1px solid var(--split-line); }
 .split-field-form label span { color: var(--split-accent); font-size: .62rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
 .split-field-form input { width: 100%; border-color: color-mix(in srgb, var(--split-cream) 42%, transparent); padding: .5rem 0; font-size: .95rem; font-weight: 600; }
@@ -482,11 +545,32 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .split-field-picker { display: flex; align-items: center; justify-content: space-between; gap: .8rem; border-bottom: 1px solid var(--split-line); padding: .65rem 0 .7rem; }
 .split-field-picker > span { color: var(--split-muted); font-size: .52rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .split-field-picker > div { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: .35rem; flex: 1; }
+.split-field-picker--segments { justify-content: flex-end; }
+.split-field-picker--segments > div { width: 100%; }
 .split-field-picker button { min-height: 2.2rem; border: 1px solid var(--split-line); background: transparent; color: var(--split-muted); cursor: pointer; font: inherit; font-size: .65rem; font-weight: 700; padding: .3rem .45rem; text-align: center; transition: background 160ms ease, border-color 160ms ease, color 160ms ease; }
 .split-field-picker button:hover, .split-field-picker button:focus-visible, .split-field-picker-option--selected { border-color: var(--split-accent); background: var(--split-accent); color: var(--split-ink); outline: none; }
+.split-field-config--matrix .split-field-badges { display: none; }
+.split-field-matrix { display: grid; grid-template-columns: 1fr; border-top: 1px solid var(--split-line); border-bottom: 1px solid var(--split-line); }
+.split-field-matrix-field { display: grid; grid-template-columns: 4.7rem minmax(0, 1fr); align-items: center; min-width: 0; gap: .55rem; padding: .55rem 0; }
+.split-field-matrix-field + .split-field-matrix-field { border-top: 1px solid var(--split-line); }
+.split-field-matrix-field > span { color: var(--split-accent); font-size: .52rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.split-field-matrix-field > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .3rem; }
+.split-field-matrix-field button { min-height: 2rem; }
 .split-field-form .study-action { width: 100%; margin-top: 1.4rem; }
 
 .study-split-field .study-action--cream { background: var(--split-cream); color: var(--split-ink); }
+
+.config-variant-dock { margin-top: 1.6rem; border-top: 1px solid var(--lab-line); padding-top: 1rem; }
+.config-variant-dock-head { display: flex; justify-content: space-between; gap: 1rem; color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.config-variant-dock-head span:first-child { color: var(--lab-gold); }
+.config-variant-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
+.config-variant-option { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: .65rem; min-height: 74px; border: 1px solid var(--lab-line); background: transparent; color: var(--lab-muted); cursor: pointer; padding: .75rem; text-align: left; transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease; }
+.config-variant-option:hover, .config-variant-option--active { border-color: var(--lab-gold); background: var(--lab-jungle); color: var(--lab-cream); transform: translateY(-2px); }
+.config-variant-code { display: grid; width: 1.35rem; height: 1.35rem; place-items: center; border: 1px solid currentcolor; color: var(--lab-gold); font-family: var(--font-display); font-size: .68rem; }
+.config-variant-copy strong, .config-variant-copy small { display: block; }
+.config-variant-copy strong { font-size: .73rem; font-weight: 600; }
+.config-variant-copy small { margin-top: .25rem; color: var(--lab-muted); font-size: .61rem; line-height: 1.3; }
+.config-variant-arrow { color: var(--lab-gold); font-size: .95rem; }
 
 .palette-dock { margin-top: 1.6rem; border-top: 1px solid var(--lab-line); padding-top: 1rem; }
 .palette-dock-head { display: flex; justify-content: space-between; gap: 1rem; color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
@@ -583,10 +667,10 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .variant-picker-copy strong { font-size: .68rem; }
   .preview-bar { display: block; line-height: 1.7; }
   .preview-context { margin-top: .2rem; }
-  .palette-dock-head { display: block; line-height: 1.5; }.palette-dock-head span:last-child { display: block; margin-top: .25rem; }.palette-grid { grid-template-columns: 1fr; }
+  .palette-dock-head { display: block; line-height: 1.5; }.palette-dock-head span:last-child { display: block; margin-top: .25rem; }.palette-grid { grid-template-columns: 1fr; }.config-variant-dock-head { display: block; line-height: 1.5; }.config-variant-dock-head span:last-child { display: block; margin-top: .25rem; }.config-variant-grid { grid-template-columns: 1fr; }
   .preview-frame, .study, .preview-frame--setup { min-height: 680px; }
   .study-split-field { min-height: 680px; }
-  .study-split-field { display: block; }.split-field-copy { display: block; min-height: 405px; padding: 1.5rem; }.split-field-copy h2 { font-size: 4.6rem; }.split-field-meta { margin-top: 2rem; }.split-field-form { margin: 0; border-width: 1px 0 0; padding: 1.5rem; }.split-field-badge { min-height: 4.1rem; padding-inline: .55rem; }.split-field-badge strong { font-size: 1.35rem; }.split-field-picker { align-items: stretch; flex-direction: column; }.split-field-picker > div { width: 100%; }
+  .study-split-field { display: block; }.split-field-copy { display: block; min-height: 405px; padding: 1.5rem; }.split-field-copy h2 { font-size: 4.6rem; }.split-field-meta { margin-top: 2rem; }.split-field-form { margin: 0; border-width: 1px 0 0; padding: 1.5rem; }.split-field-badge { min-height: 4.1rem; padding-inline: .55rem; }.split-field-badge strong { font-size: 1.35rem; }.split-field-picker { align-items: stretch; flex-direction: column; }.split-field-picker > div { width: 100%; }.split-field-matrix { grid-template-columns: 1fr; }.split-field-matrix-field + .split-field-matrix-field { border-top: 1px solid var(--split-line); border-left: 0; }
   .category-study { min-height: 680px; padding: 1.5rem; }.category-study-top { grid-template-columns: 1fr auto; }.category-study-top span:last-child { display: none; }.category-study-top > strong { text-align: right; }.category-study-top--soft-field { grid-template-columns: 1fr auto 1fr; gap: .5rem; }.category-study-top--soft-field > strong { align-self: end; text-align: center; }.category-status { column-gap: .35rem; }.category-status strong { font-size: 2.2rem; }.category-status small { display: none; }.category-status--question { justify-items: end; }.category-study-intro { display: block; margin-top: 3.2rem; }.category-study-intro h2 { max-width: 9ch; font-size: 4rem; }.category-study-intro p { margin-top: 1.2rem; }.category-surface-grid { grid-template-columns: 1fr; margin-top: 2.1rem; }.category-study--soft-field .category-surface-grid { gap: .85rem; margin-top: 3rem; }.category-surface { min-height: 6.6rem; }
   .question-board-top, .timer-top, .editorial-top { align-items: flex-start; flex-direction: column; gap: .4rem; }.question-board-top b { margin-top: .6rem; }.question-board-main { padding-top: 4rem; }.question-board-main h2 { font-size: 4rem; }.board-answers { grid-template-columns: 1fr; margin-top: 2rem; }.board-time { position: static; flex-direction: row; align-items: baseline; gap: .55rem; min-width: 0; margin-top: 2rem; border-left: 0; border-top: 1px solid var(--lab-gold); padding: .8rem 0 0; }.board-time strong { margin: 0; font-size: 4rem; }.board-time i { flex: 1; margin: 0 0 0 .5rem; }.board-time button { margin-left: .3rem; }.arena-score--one { left: 1.4rem; }.arena-score--two { right: 1.4rem; }.arena-centre { margin-top: 8.5rem; }.arena-centre h2 { font-size: 3.7rem; }.arena-actions { grid-template-columns: repeat(2, 1fr); margin-top: 2rem; }.editorial-grid { display: block; min-height: 0; }.editorial-question h2 { font-size: 4rem; }.editorial-options { margin-top: 2.5rem; }.editorial-bottom { margin-top: 2rem; flex-direction: column; }.timer-layout { display: block; min-height: 0; }.timer-question h2 { margin-top: 4rem; font-size: 3.8rem; }.timer-answer-grid { grid-template-columns: 1fr; margin-top: 2rem; }.timer-giant { display: flex; align-items: baseline; flex-wrap: wrap; gap: .8rem; margin-top: 3rem; border-left: 0; border-top: 1px solid var(--lab-coral); padding: 1rem 0 0; }.timer-giant strong { font-size: 6rem; }.timer-giant i { flex: 1; min-width: 100%; order: 3; }.timer-giant button { order: 4; }.study-duel { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto 1fr; gap: 1.2rem; padding: 1.5rem; }.duel-round { grid-column: 1 / -1; grid-row: 1; order: -1; }.duel-team { grid-row: 2; }.duel-team strong { font-size: 3rem; }.duel-question { grid-row: 3; }.duel-question h2 { font-size: 3.7rem; }.duel-options { grid-template-columns: repeat(2, 1fr); margin-top: 2rem; }.lab-footer { display: block; }.lab-footer p + p { margin-top: .7rem; }
 }
