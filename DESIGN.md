@@ -18,6 +18,27 @@ It should feel designed and playful, not glossy or app-store neutral.
 - Muted `#a5b5a3`
 - Line `rgba(243, 238, 219, 0.16)`
 
+## Palette exploration
+
+I / **Split field** previews five green-only directions. The current reference
+is **Canopy signal**: deep pine ink, tea-green field, warm token accent, and
+paper cream. The other options intentionally push further into acid lime,
+digital emerald, olive highlighter, and blue-green aqua so the choice is a real
+art direction rather than a near-duplicate.
+
+| Direction | Ink | Jungle | Field | Accent |
+| --- | --- | --- | --- | --- |
+| Canopy signal | `#092219` | `#123D2A` | `#C7E9A7` | `#E4B84C` |
+| Acid orchard | `#081811` | `#0B4429` | `#E7F7B6` | `#CAFF4A` |
+| Digital emerald | `#071A19` | `#008C63` | `#C9F3D0` | `#62F5B3` |
+| Lime cypress | `#14210C` | `#3D5F1F` | `#EFF7C8` | `#DFFF3E` |
+| Deep aqua | `#041D1B` | `#126B5B` | `#D7F1DF` | `#8BF2BD` |
+
+The role-based contrast thinking is informed by [Khroma](https://www.khroma.co/)
+and [Huemint](https://huemint.com/about/), but the combinations are authored
+for Jungle / Quiz. The global lab tokens stay unchanged until one direction is
+selected as the final system palette.
+
 Display uses Clash Display. UI uses General Sans. Small labels can use Switzer.
 
 ## Composition

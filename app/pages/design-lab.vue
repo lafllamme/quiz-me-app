@@ -8,6 +8,21 @@ type Variant = {
   code: string
 }
 
+type Palette = {
+  id: string
+  label: string
+  note: string
+  ink: string
+  jungle: string
+  leaf: string
+  accent: string
+  cream: string
+  muted: string
+  line: string
+  contrast: string
+  swatches: string[]
+}
+
 const screenOptions: { id: ScreenKey; label: string; detail: string }[] = [
   { id: 'setup', label: 'Start', detail: 'Spiel eröffnen' },
   { id: 'categories', label: 'Kategorien', detail: 'Territorium wählen' },
@@ -45,15 +60,99 @@ const variants: Record<ScreenKey, Variant[]> = {
   ],
 }
 
+const paletteOptions: Palette[] = [
+  {
+    id: 'canopy-signal',
+    label: 'Canopy signal',
+    note: 'Deep pine / tea green / warm token',
+    ink: '#092219',
+    jungle: '#123d2a',
+    leaf: '#c7e9a7',
+    accent: '#e4b84c',
+    cream: '#f5f3e6',
+    muted: '#9fc3a8',
+    line: 'rgb(245 243 230 / 24%)',
+    contrast: '12.5 : 1 on light',
+    swatches: ['#092219', '#123d2a', '#c7e9a7', '#e4b84c'],
+  },
+  {
+    id: 'acid-orchard',
+    label: 'Acid orchard',
+    note: 'Dark leaf / sharp lime / paper white',
+    ink: '#081811',
+    jungle: '#0b4429',
+    leaf: '#e7f7b6',
+    accent: '#caff4a',
+    cream: '#fbf8ed',
+    muted: '#8fc7a2',
+    line: 'rgb(251 248 237 / 24%)',
+    contrast: '16.0 : 1 on light',
+    swatches: ['#081811', '#0b4429', '#e7f7b6', '#caff4a'],
+  },
+  {
+    id: 'digital-emerald',
+    label: 'Digital emerald',
+    note: 'Black green / vivid emerald / mint pulse',
+    ink: '#071a19',
+    jungle: '#008c63',
+    leaf: '#c9f3d0',
+    accent: '#62f5b3',
+    cream: '#f4f5e9',
+    muted: '#8cc9ba',
+    line: 'rgb(244 245 233 / 28%)',
+    contrast: '14.7 : 1 on light',
+    swatches: ['#071a19', '#008c63', '#c9f3d0', '#62f5b3'],
+  },
+  {
+    id: 'lime-cypress',
+    label: 'Lime cypress',
+    note: 'Olive green / highlighter lime / soft ivory',
+    ink: '#14210c',
+    jungle: '#3d5f1f',
+    leaf: '#eff7c8',
+    accent: '#dfff3e',
+    cream: '#fff9e4',
+    muted: '#a7ba8d',
+    line: 'rgb(255 249 228 / 28%)',
+    contrast: '15.0 : 1 on light',
+    swatches: ['#14210c', '#3d5f1f', '#eff7c8', '#dfff3e'],
+  },
+  {
+    id: 'deep-aqua',
+    label: 'Deep aqua',
+    note: 'Cypress ink / blue-green field / clean mint',
+    ink: '#041d1b',
+    jungle: '#126b5b',
+    leaf: '#d7f1df',
+    accent: '#8bf2bd',
+    cream: '#f5f4e9',
+    muted: '#9bcfc0',
+    line: 'rgb(245 244 233 / 27%)',
+    contrast: '14.7 : 1 on light',
+    swatches: ['#041d1b', '#126b5b', '#d7f1df', '#8bf2bd'],
+  },
+]
+
 const activeScreen = ref<ScreenKey>('setup')
 const selectedVariants = reactive<Record<ScreenKey, number>>({ setup: 0, categories: 0, question: 0 })
 const selectedCategory = ref('')
 const selectedAnswer = ref<number | null>(null)
 const timerPaused = ref(false)
 const setupNames = reactive({ one: 'TEAM ONE', two: 'TEAM TWO' })
+const selectedPalette = ref(0)
 
 const activeVariant = computed<Variant>(() => variants[activeScreen.value][selectedVariants[activeScreen.value]]!)
+const activePalette = computed(() => paletteOptions[selectedPalette.value]!)
 const totalStudies = computed(() => Object.values(variants).reduce((total, screenVariants) => total + screenVariants.length, 0))
+const splitFieldPaletteStyle = computed<Record<string, string>>(() => ({
+  '--split-ink': activePalette.value.ink,
+  '--split-jungle': activePalette.value.jungle,
+  '--split-leaf': activePalette.value.leaf,
+  '--split-accent': activePalette.value.accent,
+  '--split-cream': activePalette.value.cream,
+  '--split-muted': activePalette.value.muted,
+  '--split-line': activePalette.value.line,
+}))
 
 function chooseScreen(screen: ScreenKey) {
   activeScreen.value = screen
@@ -208,7 +307,7 @@ function chooseAnswer(index: number) {
               <div class="quiet-room-foot">5 rounds · 45 sec · 4 territories</div>
             </div>
 
-            <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="study study-split-field">
+            <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="study study-split-field" :style="splitFieldPaletteStyle">
               <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><span class="mini-kicker">01 / Player setup</span><h2>Who's<br><em>playing?</em></h2><p>Name your teams, then open the room.</p><div class="split-field-meta"><span>5 rounds</span><span>45 sec</span><span>4 territories</span></div></div>
               <div class="split-field-form"><div class="split-field-head"><span>Players</span><span>Ready when you are</span></div><label><span>01 / Team one</span><input v-model="setupNames.one" aria-label="Name Team One"></label><label><span>02 / Team two</span><input v-model="setupNames.two" aria-label="Name Team Two"></label><button class="study-action study-action--cream" @click="chooseScreen('categories')">Enter the jungle <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div>
             </div>
@@ -388,6 +487,18 @@ function chooseAnswer(index: number) {
             <span><b class="preview-dot preview-dot--gold" /> Click the specimen to feel the flow</span>
             <span class="preview-footer-key">{{ activeVariant.code }} / {{ activeVariant.label.toUpperCase() }}</span>
           </div>
+
+          <section v-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="palette-dock" aria-label="Farbpaletten für Split field">
+            <div class="palette-dock-head"><span>Color directions</span><span>Applied to I / Split field</span></div>
+            <div class="palette-grid">
+              <button v-for="palette in paletteOptions" :key="palette.id" class="palette-option" :class="{ 'palette-option--active': activePalette.id === palette.id }" :aria-pressed="activePalette.id === palette.id" @click="selectedPalette = paletteOptions.indexOf(palette)">
+                <span class="palette-swatches" aria-hidden="true"><i v-for="color in palette.swatches" :key="color" :style="{ backgroundColor: color }" /></span>
+                <span class="palette-copy"><strong>{{ palette.label }}</strong><small>{{ palette.note }}</small></span>
+                <span class="palette-contrast">{{ palette.contrast }}</span>
+              </button>
+            </div>
+            <p class="palette-dock-note">{{ activePalette.label }} · {{ activePalette.ink }} ink · {{ activePalette.leaf }} field · {{ activePalette.accent }} accent</p>
+          </section>
         </div>
       </section>
 
@@ -554,19 +665,20 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .quiet-room-form .study-action { width: 100%; margin-top: 1.4rem; }
 .quiet-room-foot { border-top: 1px solid rgb(7 26 19 / 32%); padding-top: .8rem; }
 
-.study-split-field { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(270px, .78fr); min-height: 665px; padding: 0; background: var(--lab-jungle); }
-.split-field-copy { display: flex; flex-direction: column; justify-content: space-between; min-height: 665px; background: var(--lab-leaf); padding: 2rem clamp(1.5rem, 5vw, 4.5rem); color: var(--lab-ink); }
+.study-split-field { --split-ink: var(--lab-ink); --split-jungle: var(--lab-jungle); --split-leaf: var(--lab-leaf); --split-accent: var(--lab-gold); --split-cream: var(--lab-cream); --split-muted: var(--lab-muted); --split-line: var(--lab-line); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(270px, .78fr); min-height: 665px; padding: 0; background: var(--split-jungle); }
+.split-field-copy { display: flex; flex-direction: column; justify-content: space-between; min-height: 665px; background: var(--split-leaf); padding: 2rem clamp(1.5rem, 5vw, 4.5rem); color: var(--split-ink); }
 .split-field-wordmark, .press-card-top, .low-slung-top { color: var(--lab-ink); font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2.5rem); font-weight: 600; letter-spacing: -.035em; }
-.split-field-wordmark span, .press-card-top i { color: var(--lab-jungle); }
-.split-field-copy .mini-kicker { margin-top: 5rem; color: rgb(7 26 19 / 68%); }
-.split-field-copy h2 { max-width: 8ch; margin-top: 1.2rem; color: var(--lab-ink); font-size: clamp(4.6rem, 8vw, 7.4rem); letter-spacing: -.012em; line-height: .87; }
-.split-field-copy h2 em { color: var(--lab-jungle); font-style: normal; }
-.split-field-copy p { max-width: 18rem; margin-top: 1.7rem; color: rgb(7 26 19 / 70%); font-size: .88rem; }
-.split-field-meta { display: flex; gap: 1.3rem; border-top: 1px solid rgb(7 26 19 / 32%); padding-top: .8rem; color: rgb(7 26 19 / 70%); font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.split-field-form { align-self: center; margin: 2rem; border: 1px solid var(--lab-line); padding: 1.15rem; color: var(--lab-cream); }
-.split-field-form label { display: grid; grid-template-columns: 6rem 1fr; align-items: center; gap: .7rem; min-height: 74px; border-bottom: 1px solid var(--lab-line); }
-.split-field-form label span { color: var(--lab-gold); font-size: .62rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
-.split-field-form input { width: 100%; padding: .5rem 0; font-size: .95rem; font-weight: 600; }
+.split-field-wordmark { color: var(--split-ink); }
+.split-field-wordmark span, .split-field-copy h2 em { color: var(--split-jungle); }
+.split-field-copy .mini-kicker { margin-top: 5rem; color: color-mix(in srgb, var(--split-ink) 68%, transparent); }
+.split-field-copy h2 { max-width: 8ch; margin-top: 1.2rem; color: var(--split-ink); font-size: clamp(4.6rem, 8vw, 7.4rem); letter-spacing: -.012em; line-height: .87; }
+.split-field-copy h2 em { font-style: normal; }
+.split-field-copy p { max-width: 18rem; margin-top: 1.7rem; color: color-mix(in srgb, var(--split-ink) 70%, transparent); font-size: .88rem; }
+.split-field-meta { display: flex; gap: 1.3rem; border-top: 1px solid color-mix(in srgb, var(--split-ink) 32%, transparent); padding-top: .8rem; color: color-mix(in srgb, var(--split-ink) 70%, transparent); font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.split-field-form { align-self: center; margin: 2rem; border: 1px solid var(--split-line); padding: 1.15rem; color: var(--split-cream); }
+.split-field-form label { display: grid; grid-template-columns: 6rem 1fr; align-items: center; gap: .7rem; min-height: 74px; border-bottom: 1px solid var(--split-line); }
+.split-field-form label span { color: var(--split-accent); font-size: .62rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
+.split-field-form input { width: 100%; border-color: color-mix(in srgb, var(--split-cream) 42%, transparent); padding: .5rem 0; font-size: .95rem; font-weight: 600; }
 .split-field-form .study-action { width: 100%; margin-top: 1.4rem; }
 
 .study-host-rail { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) minmax(250px, .7fr); gap: clamp(1.5rem, 4vw, 4rem); min-height: 665px; padding: 2rem clamp(1.5rem, 5vw, 4rem); background: var(--lab-jungle); }
@@ -617,6 +729,24 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .low-slung-inputs input { width: 100%; border-color: rgb(7 26 19 / 38%); color: var(--lab-ink); padding: .5rem 0; font-size: .9rem; font-weight: 600; }
 .low-slung-bar .study-action { flex: 0 0 10rem; }
 .low-slung-foot { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; color: rgb(7 26 19 / 68%); font-size: .61rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+
+.study-split-field .study-action--cream { background: var(--split-cream); color: var(--split-ink); }
+
+.palette-dock { margin-top: 1.6rem; border-top: 1px solid var(--lab-line); padding-top: 1rem; }
+.palette-dock-head { display: flex; justify-content: space-between; gap: 1rem; color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.palette-dock-head span:first-child { color: var(--lab-gold); }
+.palette-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
+.palette-option { display: grid; grid-template-columns: 1fr auto; gap: .75rem; align-items: center; min-height: 82px; border: 1px solid var(--lab-line); background: transparent; color: var(--lab-muted); padding: .75rem; text-align: left; transition: border-color 160ms ease, background 160ms ease, transform 160ms ease; }
+.palette-option:hover, .palette-option--active { border-color: var(--lab-gold); background: var(--lab-jungle); color: var(--lab-cream); transform: translateY(-2px); }
+.palette-swatches { display: flex; grid-column: 1 / -1; height: 20px; }
+.palette-swatches i { flex: 1; border-right: 1px solid rgb(7 26 19 / 20%); }
+.palette-swatches i:first-child { border-radius: 2px 0 0 2px; }
+.palette-swatches i:last-child { border-right: 0; border-radius: 0 2px 2px 0; }
+.palette-copy strong, .palette-copy small { display: block; }
+.palette-copy strong { color: var(--lab-cream); font-size: .78rem; font-weight: 600; }
+.palette-copy small { max-width: 15rem; margin-top: .2rem; color: var(--lab-muted); font-size: .64rem; line-height: 1.3; }
+.palette-contrast { color: var(--lab-gold); font-size: .62rem; font-weight: 700; letter-spacing: .08em; white-space: nowrap; }
+.palette-dock-note { margin-top: .7rem; color: var(--lab-muted); font-size: .68rem; }
 
 .study-flap { display: grid; grid-template-columns: 1fr minmax(240px, .8fr); gap: clamp(2rem, 7vw, 6rem); align-items: center; padding: clamp(2rem, 7vw, 5rem); }
 .study-flap-title h2 { margin-top: 1.2rem; font-size: clamp(3.5rem, 7vw, 6.6rem); }
@@ -722,6 +852,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .variant-picker-copy strong { font-size: .68rem; }
   .preview-bar { display: block; line-height: 1.7; }
   .preview-context { margin-top: .2rem; }
+  .palette-dock-head { display: block; line-height: 1.5; }.palette-dock-head span:last-child { display: block; margin-top: .25rem; }.palette-grid { grid-template-columns: 1fr; }
   .preview-frame, .study, .preview-frame--setup { min-height: 680px; }
   .study-monogram, .study-green-signal { min-height: 680px; }
   .study-quiet-room, .study-split-field, .study-host-rail, .study-press-card, .study-low-slung { min-height: 680px; }
