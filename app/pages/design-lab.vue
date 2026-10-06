@@ -181,11 +181,12 @@ onBeforeUnmount(() => clearInterval(labTimerHandle))
 const sampleProgress = { question: 4, questions: 10, round: 2, rounds: 5, scores: [2, 1], active: 1 }
 
 const activeScreen = ref<ScreenKey>('setup')
-const selectedVariants = reactive<Record<ScreenKey, number>>({ setup: 0, toss: 2, categories: 0, question: 0 })
+const selectedVariants = reactive<Record<ScreenKey, number>>({ setup: 0, toss: 1, categories: 0, question: 0 })
 
 // Coin toss studies run the real 3D coin. Every change of layout, finish or
 // names throws a fresh coin so the whole sequence can be judged.
 const tossFinishes: { id: CoinFinish, label: string, note: string, swatches: string[] }[] = [
+  { id: 'bimetal-portrait', label: 'Bimetall Porträt', note: 'Kopf: Profil-Relief / Zahl: die 2', swatches: ['#c8cccb', '#d8b25c', '#5e4211'] },
   { id: 'bimetal', label: 'Bimetall', note: '2-Euro / silver ring, gold core', swatches: ['#c8cccb', '#d8b25c'] },
   { id: 'bimetal-inverse', label: 'Bimetall invers', note: '1-Euro / gold ring, silver core', swatches: ['#d8b25c', '#c8cccb'] },
   { id: 'gold', label: 'Gold strike', note: 'First coin / full detail', swatches: ['#dfba64', '#5c4414'] },
@@ -195,7 +196,7 @@ const tossNameSets = {
   short: ['TEAM ONE', 'TEAM TWO'],
   long: ['Die Kölner Klugscheißer', 'Quizzly Bears'],
 } as const satisfies Record<string, readonly [string, string]>
-const tossFinish = ref<CoinFinish>('bimetal')
+const tossFinish = ref<CoinFinish>('bimetal-portrait')
 const tossNameSet = ref<keyof typeof tossNameSets>('short')
 const tossNames = computed<[string, string]>(() => [...tossNameSets[tossNameSet.value]])
 const tossResult = ref<'kopf' | 'zahl'>('kopf')
@@ -930,7 +931,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .config-variant-dock-head span:first-child { color: var(--lab-gold); }
 .config-variant-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
 .config-variant-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.config-variant-grid--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.config-variant-grid--four { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
 .tv-dock-row { margin-top: 1.2rem; }
 
 /* Coin toss studies. Sized in container units so each layout is judged at a

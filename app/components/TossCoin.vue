@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CoinFaceSpec, CoinFinish } from '~/lib/coin-face'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { coinEdgeMetal, loadCoinRuntime, paintCoinEdge, paintCoinFace } from '~/lib/coin-face'
+import { coinEdgeMetal, loadCoinPortrait, loadCoinRuntime, paintCoinEdge, paintCoinFace } from '~/lib/coin-face'
 
 const props = withDefaults(defineProps<{
   names: [string, string]
@@ -38,7 +38,10 @@ onMounted(async () => {
 onBeforeUnmount(() => stop?.())
 
 async function mountCoin() {
-  const [THREE, { RoomEnvironment }] = await loadCoinRuntime()
+  const [[THREE, { RoomEnvironment }], portrait] = await Promise.all([
+    loadCoinRuntime(),
+    props.finish === 'bimetal-portrait' ? loadCoinPortrait() : undefined,
+  ])
   const el = host.value
   if (!el)
     return
@@ -88,7 +91,7 @@ async function mountCoin() {
   const edgeBump = texture(paintCoinEdge('height'), false)
   const materials = [
     new THREE.MeshStandardMaterial({ map: edgeMap, bumpMap: edgeBump, bumpScale: 1.5, metalness: 0.95, roughness: 0.3 }),
-    faceMaterial({ team: props.names[0], side: 'Kopf', caption: 'TEAM 1 · BEGINNT BEI KOPF', numeral: '1' }, -Math.PI / 2),
+    faceMaterial({ team: props.names[0], side: 'Kopf', caption: 'TEAM 1 · BEGINNT BEI KOPF', numeral: '1', portrait }, -Math.PI / 2),
     faceMaterial({ team: props.names[1], side: 'Zahl', caption: 'TEAM 2 · BEGINNT BEI ZAHL', numeral: '2' }, Math.PI / 2),
   ]
 

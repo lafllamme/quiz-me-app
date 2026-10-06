@@ -45,7 +45,7 @@ const teams = computed(() => [
           <small aria-hidden="true">beginnt</small>
         </div>
         <ClientOnly>
-          <TossCoin :names="names" :result="result" finish="bimetal" @landed="landed = true" />
+          <TossCoin :names="names" :result="result" finish="bimetal-portrait" @landed="landed = true" />
         </ClientOnly>
       </div>
 

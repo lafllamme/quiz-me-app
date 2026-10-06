@@ -7,12 +7,13 @@ export type CoinFaceSpec = {
   side: string
   caption: string
   numeral: string
+  portrait?: CanvasImageSource
 }
 
 // Bimetal follows the 2-euro coin: silver ring, gold core, a big numeral as
 // the image. Gold and enamel are single-metal struck coins.
-export type CoinFinish = 'bimetal' | 'bimetal-inverse' | 'gold' | 'enamel'
-type StruckFinish = Exclude<CoinFinish, 'bimetal' | 'bimetal-inverse'>
+export type CoinFinish = 'bimetal' | 'bimetal-portrait' | 'bimetal-inverse' | 'gold' | 'enamel'
+type StruckFinish = Exclude<CoinFinish, 'bimetal' | 'bimetal-portrait' | 'bimetal-inverse'>
 
 type PaintMode = 'color' | 'height' | 'metal'
 
@@ -38,6 +39,21 @@ const FACE_SIZE = 1024
 const DISPLAY_FONT = '"Clash Display", sans-serif'
 const UI_FONT = '"General Sans", sans-serif'
 
+// Relief height map of the Kopf portrait: grey levels are height, alpha is the
+// silhouette. Generated offline from a cut-out profile photo.
+const PORTRAIT_URL = '/coin/kopf-relief.png'
+let portraitPromise: Promise<HTMLImageElement> | undefined
+
+export function loadCoinPortrait() {
+  portraitPromise ??= new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = PORTRAIT_URL
+  })
+  return portraitPromise
+}
+
 // Three.js is only needed on the toss screen. Calling this early (e.g. while
 // the setup screen is idle) keeps the coin from appearing late.
 export function loadCoinRuntime() {
@@ -45,6 +61,7 @@ export function loadCoinRuntime() {
     import('three'),
     import('three/examples/jsm/environments/RoomEnvironment.js'),
     loadCoinFonts(),
+    loadCoinPortrait().catch(() => undefined),
   ])
 }
 
@@ -58,7 +75,7 @@ export async function loadCoinFonts() {
 }
 
 export function paintCoinFace(spec: CoinFaceSpec, mode: PaintMode, finishId: CoinFinish = 'gold') {
-  if (finishId === 'bimetal' || finishId === 'bimetal-inverse')
+  if (finishId === 'bimetal' || finishId === 'bimetal-portrait' || finishId === 'bimetal-inverse')
     return paintBimetalFace(spec, mode, finishId === 'bimetal-inverse')
 
   const canvas = document.createElement('canvas')
@@ -134,7 +151,7 @@ export function paintCoinFace(spec: CoinFaceSpec, mode: PaintMode, finishId: Coi
 }
 
 export function coinEdgeMetal(finish: CoinFinish): Metal {
-  return finish === 'bimetal' ? 'silver' : 'gold'
+  return finish === 'bimetal' || finish === 'bimetal-portrait' ? 'silver' : 'gold'
 }
 
 export function paintCoinEdge(mode: 'color' | 'height', metal: Metal = 'gold') {
@@ -234,6 +251,12 @@ function paintBimetalFace(spec: CoinFaceSpec, mode: PaintMode, inverse: boolean)
     arcText(ctx, spec.side.toUpperCase(), c, 420, Math.PI / 2 + 0.3, `700 44px ${UI_FONT}`, 0.32, true)
   })
 
+  if (spec.portrait) {
+    paintPortrait(ctx, mode, spec.portrait, core, c)
+    relief(ctx, mode, core.ink, core.light, 'engraved', () => portraitName(ctx, spec.team, c))
+    return canvas
+  }
+
   // Core: stippled monstera leaf upper right, clipped to the core like the
   // euro map that runs up to the seam.
   ctx.save()
@@ -277,6 +300,67 @@ function paintBimetalFace(spec: CoinFaceSpec, mode: PaintMode, inverse: boolean)
   relief(ctx, mode, core.ink, core.light, 'engraved', () => coreName(ctx, spec.team, c))
 
   return canvas
+}
+
+// Portrait layout of the Kopf side, like the national side of a euro coin:
+// profile facing left, truncated at the neck, the name in the free space
+// behind the head.
+const PORTRAIT_BOX = { x: -352, y: -318, size: 600 }
+
+function paintPortrait(ctx: CanvasRenderingContext2D, mode: PaintMode, img: CanvasImageSource, core: { light: string, mid: string, dark: string, shade: string }, c: number) {
+  const x = c + PORTRAIT_BOX.x
+  const y = c + PORTRAIT_BOX.y
+  const { size } = PORTRAIT_BOX
+
+  if (mode === 'height') {
+    ctx.drawImage(img, x, y, size, size)
+    return
+  }
+
+  // Colour: tint the relief with gold so lower parts read darker, cut it back
+  // to the silhouette, then lay it down with a cast shadow.
+  const layer = document.createElement('canvas')
+  layer.width = layer.height = FACE_SIZE
+  const l = layer.getContext('2d')!
+  l.drawImage(img, x, y, size, size)
+  l.globalCompositeOperation = 'screen'
+  l.fillStyle = 'rgb(70 70 70)'
+  l.fillRect(0, 0, FACE_SIZE, FACE_SIZE)
+  l.globalCompositeOperation = 'multiply'
+  const g = l.createLinearGradient(x, y, x + size, y + size)
+  g.addColorStop(0, core.light)
+  g.addColorStop(1, core.mid)
+  l.fillStyle = g
+  l.fillRect(0, 0, FACE_SIZE, FACE_SIZE)
+  l.globalCompositeOperation = 'destination-in'
+  l.drawImage(img, x, y, size, size)
+
+  ctx.save()
+  ctx.shadowColor = core.shade
+  ctx.shadowOffsetX = 5
+  ctx.shadowOffsetY = 8
+  ctx.shadowBlur = 10
+  ctx.drawImage(layer, 0, 0)
+  ctx.restore()
+}
+
+function portraitName(ctx: CanvasRenderingContext2D, raw: string, c: number) {
+  const name = raw.trim().toUpperCase() || 'TEAM'
+  const cx = c + 252
+  const maxWidth = 150
+  const lines = name.includes(' ') ? splitInTwo(name) : [name]
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  for (let size = 60; size >= 30; size -= 3) {
+    ctx.font = `600 ${size}px ${DISPLAY_FONT}`
+    if (lines.every(line => ctx.measureText(line).width <= maxWidth)) {
+      const lead = size * 0.95
+      lines.forEach((line, i) => ctx.fillText(line, cx, c + 60 + (i - (lines.length - 1) / 2) * lead))
+      return
+    }
+  }
+  ctx.font = `600 30px ${DISPLAY_FONT}`
+  lines.forEach((line, i) => ctx.fillText(line, cx, c + 60 + i * 30, maxWidth))
 }
 
 function satin(ctx: CanvasRenderingContext2D, c: number, metal: { light: string, mid: string, dark: string }, r: number) {
