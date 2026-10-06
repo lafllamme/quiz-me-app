@@ -1,0 +1,33 @@
+{
+  "name": "quiz-me-app",
+  "type": "module",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt typecheck",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/fonts": "^0.14.0",
+    "@nuxt/icon": "^2.2.2",
+    "@unocss/nuxt": "^66.6.8",
+    "@unocss/reset": "^66.6.8",
+    "nuxt": "^4.4.5",
+    "unocss": "^66.6.8",
+    "vue": "^3.5.34",
+    "vue-router": "^5.0.6"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.125",
+    "@unocss/eslint-plugin": "^66.6.8",
+    "@unocss/preset-icons": "^66.6.8",
+    "@unocss/preset-wind4": "^66.6.8",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.1.0"
+  }
+}

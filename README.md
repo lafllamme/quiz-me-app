@@ -11,20 +11,21 @@ Spielzustand, Fragen, Sounds und UI-Komponenten sauber getrennt werden.
 
 ## Status
 
-Initiales Repository für die Nuxt-Migration des Prototyps.
+Nuxt-4-MVP der Quiz-App ist angelegt. Die Startansicht, Team-Setup,
+Kategorien, Countdown, Steal-Regel, Antwortauflösung, Tiebreaker und
+Web-Audio-Sounds sind als Vue-Komponenten und Composables umgesetzt.
 
 Geplante Bausteine:
 
 - wiederverwendbare Header-, Footer- und Spielfeld-Komponenten
 - zentraler Quiz-State für Teams, Runden, Timer und Spielverlauf
 - UnoCSS-Tokens für Jungle-Grün, Creme, Gold, Typografie und Motion
-- austauschbare Fragenbank und Sound-Adapter
+- Nuxt Fonts mit Clash Display + General Sans via Fontshare
+- Nuxt Icons mit Lucide-Iconset
 - responsive Darstellung für Desktop und kleinere Screens
 - reduzierte Bewegung und sichtbare Tastaturfokusse für Accessibility
 
 ## Setup
-
-Sobald das Nuxt-Scaffold angelegt ist:
 
 ```bash
 pnpm install
@@ -40,9 +41,16 @@ pnpm build
 pnpm preview
 ```
 
+## Checks
+
+```bash
+pnpm typecheck
+pnpm build
+```
+
 ## Ausgangspunkt
 
 Der aktuelle Verhaltens- und Content-Stand liegt in der ursprünglichen
 `index.html`-Datei. Sie dient als Referenz für Spielregeln, Beispiel-Fragen,
 Timer-Verhalten und Sound-Events, bis die einzelnen Verantwortlichkeiten in
-Nuxt-Komponenten und Composables überführt sind.
+Nuxt-Komponenten und Composables überführt wurden.
