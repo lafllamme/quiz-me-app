@@ -82,8 +82,8 @@ function rules() {
 </script>
 
 <template>
-  <section class="game-setup stage-enter-active">
-    <GameSetupHero :rounds="draft.rounds" :seconds="draft.seconds" :difficulty="draft.difficulty" />
+  <section class="game-setup">
+    <GameSetupHero />
     <GameSetupPanel
       :draft="draft"
       :has-saved-game="hasSavedGame"

@@ -42,6 +42,12 @@ const screenOptions: { id: ScreenKey; label: string; detail: string }[] = [
 const variants: Record<ScreenKey, Variant[]> = {
   setup: [
     { id: 'split-field', label: 'Split field', note: 'Light left / dark right', code: 'I' },
+    { id: 'open-sheet', label: 'Open sheet', note: 'No card / ruled rows on green', code: 'J' },
+    { id: 'versus', label: 'Versus', note: 'Teams face off / settings as a sentence', code: 'K' },
+    { id: 'versus-centered', label: 'Versus centered', note: 'Centered names / big VS as the axis', code: 'K1' },
+    { id: 'stepper-card', label: 'Stepper card', note: 'One quiet card / three steppers', code: 'L' },
+    { id: 'two-blocks', label: 'Two blocks', note: 'Teams, then rules / segmented rows', code: 'M' },
+    { id: 'split-duty', label: 'Split duty', note: 'Rules live left / teams own the right', code: 'N' },
   ],
   categories: [
     { id: 'soft-field', label: 'Territory grid', note: 'Sechs Kategorien / drei mal zwei', code: 'A' },
@@ -207,6 +213,21 @@ function selectSetupOptionFor(field: SetupField, value: number | string) {
   activeSetupField.value = field
 }
 
+const setupFields: SetupField[] = ['rounds', 'seconds', 'difficulty']
+const refinedSetupVariants = ['open-sheet', 'versus', 'versus-centered', 'stepper-card', 'two-blocks', 'split-duty']
+const isRefinedSetup = computed(() => activeScreen.value === 'setup' && refinedSetupVariants.includes(activeVariant.value.id))
+
+function formatSetupOption(field: SetupField, value: number | string) {
+  return field === 'seconds' ? `${value} Sek.` : String(value)
+}
+
+function stepSetupOption(field: SetupField, direction: 1 | -1) {
+  const options = setupFieldOptions[field]
+  const index = options.indexOf(setupOptions[field])
+  const next = options[(index + direction + options.length) % options.length]!
+  selectSetupOptionFor(field, next)
+}
+
 function isSelectedSetupOption(value: number | string) {
   return setupOptions[activeSetupField.value] === value
 }
@@ -339,6 +360,107 @@ function isSelectedSetupOption(value: number | string) {
               </div>
             </div>
 
+            <!-- Refined setup studies: same content, calmer form, bigger copy -->
+            <div v-else-if="isRefinedSetup" class="study setup-v" :class="`setup-v--${activeVariant.id}`" :style="splitFieldPaletteStyle">
+              <div class="setup-v-grid">
+                <div class="setup-v-copy">
+                  <div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div>
+                  <div class="setup-v-copy-main">
+                    <h2>Wer<br><em>spielt?</em></h2>
+                    <p>Gib den Teams einen Namen. Den Rest regeln wir.</p>
+                  </div>
+                  <div v-if="activeVariant.id === 'split-duty'" class="setup-n-rules" aria-label="Spieleinstellungen">
+                    <div v-for="field in setupFields" :key="field" class="setup-n-row">
+                      <span>{{ setupFieldLabel[field] }}</span>
+                      <div role="group" :aria-label="`${setupFieldLabel[field]} auswählen`">
+                        <button v-for="option in setupFieldOptions[field]" :key="option" type="button" :class="{ 'is-on': setupOptions[field] === option }" :aria-pressed="setupOptions[field] === option" @click="selectSetupOptionFor(field, option)">{{ formatSetupOption(field, option) }}</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else-if="activeVariant.id === 'open-sheet' || activeVariant.id === 'two-blocks'" class="setup-v-meta">
+                    <span>{{ setupOptions.rounds }} Runden</span><span>{{ setupOptions.seconds }} Sek.</span><span>{{ setupOptions.difficulty }}</span>
+                  </div>
+                </div>
+
+                <!-- J / Open sheet -->
+                <form v-if="activeVariant.id === 'open-sheet'" class="setup-v-side setup-j" @submit.prevent="chooseScreen('categories')">
+                  <label class="setup-j-team"><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label>
+                  <label class="setup-j-team"><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label>
+                  <div class="setup-j-rules">
+                    <div v-for="field in setupFields" :key="field" class="setup-j-row">
+                      <span>{{ setupFieldLabel[field] }}</span>
+                      <div role="group" :aria-label="`${setupFieldLabel[field]} auswählen`">
+                        <button v-for="option in setupFieldOptions[field]" :key="option" type="button" :class="{ 'is-on': setupOptions[field] === option }" :aria-pressed="setupOptions[field] === option" @click="selectSetupOptionFor(field, option)">{{ formatSetupOption(field, option) }}</button>
+                      </div>
+                    </div>
+                  </div>
+                  <button type="submit" class="setup-v-action">Spiel starten <Icon name="lucide:arrow-up-right" size="18" aria-hidden="true" /></button>
+                </form>
+
+                <!-- K / Versus, K1 / Versus centered -->
+                <form v-else-if="activeVariant.id === 'versus' || activeVariant.id === 'versus-centered'" class="setup-v-side setup-k" @submit.prevent="chooseScreen('categories')">
+                  <label class="setup-k-team"><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label>
+                  <div class="setup-k-vs" aria-hidden="true"><i /><b>vs</b><i /></div>
+                  <label class="setup-k-team"><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label>
+                  <p class="setup-k-sentence">
+                    <button type="button" :aria-label="`Runden: ${setupOptions.rounds}, ändern`" @click="stepSetupOption('rounds', 1)">{{ setupOptions.rounds }} Runden</button>
+                    <span aria-hidden="true">·</span>
+                    <button type="button" :aria-label="`Zeit: ${setupOptions.seconds} Sekunden, ändern`" @click="stepSetupOption('seconds', 1)">{{ setupOptions.seconds }} Sek.</button>
+                    <span aria-hidden="true">·</span>
+                    <button type="button" :aria-label="`Modus: ${setupOptions.difficulty}, ändern`" @click="stepSetupOption('difficulty', 1)">{{ setupOptions.difficulty }}</button>
+                  </p>
+                  <button type="submit" class="setup-v-action">Spiel starten <Icon name="lucide:arrow-up-right" size="18" aria-hidden="true" /></button>
+                </form>
+
+                <!-- L / Stepper card -->
+                <form v-else-if="activeVariant.id === 'stepper-card'" class="setup-v-side setup-l" @submit.prevent="chooseScreen('categories')">
+                  <div class="setup-l-card">
+                    <div class="setup-l-teams">
+                      <label><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label>
+                      <label><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label>
+                    </div>
+                    <div class="setup-l-steppers">
+                      <div v-for="field in setupFields" :key="field" class="setup-l-stepper">
+                        <span>{{ setupFieldLabel[field] }}</span>
+                        <strong>{{ setupOptions[field] }}</strong>
+                        <div>
+                          <button type="button" :aria-label="`${setupFieldLabel[field]} verringern`" @click="stepSetupOption(field, -1)"><Icon name="lucide:minus" size="15" aria-hidden="true" /></button>
+                          <button type="button" :aria-label="`${setupFieldLabel[field]} erhöhen`" @click="stepSetupOption(field, 1)"><Icon name="lucide:plus" size="15" aria-hidden="true" /></button>
+                        </div>
+                      </div>
+                    </div>
+                    <button type="submit" class="setup-v-action">Spiel starten <Icon name="lucide:arrow-up-right" size="18" aria-hidden="true" /></button>
+                  </div>
+                </form>
+
+                <!-- M / Two blocks -->
+                <form v-else-if="activeVariant.id === 'two-blocks'" class="setup-v-side setup-m" @submit.prevent="chooseScreen('categories')">
+                  <section class="setup-m-block">
+                    <h3>Teams</h3>
+                    <label><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label>
+                    <label><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label>
+                  </section>
+                  <section class="setup-m-block">
+                    <h3>Spielregeln</h3>
+                    <div v-for="field in setupFields" :key="field" class="setup-m-row">
+                      <span>{{ setupFieldLabel[field] }}</span>
+                      <div role="group" :aria-label="`${setupFieldLabel[field]} auswählen`">
+                        <button v-for="option in setupFieldOptions[field]" :key="option" type="button" :class="{ 'is-on': setupOptions[field] === option }" :aria-pressed="setupOptions[field] === option" @click="selectSetupOptionFor(field, option)">{{ formatSetupOption(field, option) }}</button>
+                      </div>
+                    </div>
+                  </section>
+                  <button type="submit" class="setup-v-action">Spiel starten <Icon name="lucide:arrow-up-right" size="18" aria-hidden="true" /></button>
+                </form>
+
+                <!-- N / Split duty -->
+                <form v-else class="setup-v-side setup-n" @submit.prevent="chooseScreen('categories')">
+                  <label class="setup-n-team"><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label>
+                  <label class="setup-n-team"><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label>
+                  <button type="submit" class="setup-v-action">Spiel starten <Icon name="lucide:arrow-up-right" size="18" aria-hidden="true" /></button>
+                </form>
+              </div>
+            </div>
+
             <!-- Category studies -->
             <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'soft-field'" class="study category-study category-study--soft-field">
               <div class="category-study-top category-study-top--soft-field">
@@ -388,7 +510,7 @@ function isSelectedSetupOption(value: number | string) {
             </div>
           </section>
 
-          <section v-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="palette-dock" aria-label="Farbpaletten für Split field">
+          <section v-if="activeScreen === 'setup'" class="palette-dock" aria-label="Farbpaletten für Split field">
             <div class="palette-dock-head"><span>Color directions</span><span>Applied to setup study</span></div>
             <div class="palette-grid">
               <button v-for="palette in paletteOptions" :key="palette.id" class="palette-option" :class="{ 'palette-option--active': activePalette.id === palette.id }" :aria-pressed="activePalette.id === palette.id" @click="selectedPalette = paletteOptions.indexOf(palette)">
@@ -633,6 +755,117 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 
 .preview-footer { border-top: 1px solid var(--lab-line); padding-top: .8rem; }.preview-footer-key { color: var(--lab-gold); }
 .lab-footer { display: flex; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--lab-line); padding: 1.2rem 0 2rem; color: var(--lab-muted); font-size: .68rem; }.lab-footer p { margin: 0; }.lab-footer p span:first-child { color: var(--lab-gold); margin-right: .45rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }.lab-footer-slash { color: var(--lab-gold); }
+
+/* Refined setup studies (J–N). Sizes use container units so the study scales like the real full-screen setup. */
+.setup-v { container-type: inline-size; min-height: 665px; padding: 0; background: var(--split-jungle); color: var(--split-cream); }
+.setup-v-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); min-height: 665px; }
+.setup-v-copy { display: flex; flex-direction: column; justify-content: flex-start; gap: 3cqi; background: var(--split-leaf); padding: 4cqi 5cqi 3.4cqi; color: var(--split-ink); }
+.setup-v-copy-main { margin-block: auto; }
+.setup-v-copy .split-field-wordmark { font-size: clamp(1.3rem, 2.9cqi, 2.6rem); }
+.setup-v-copy h2 { color: var(--split-ink); font-size: clamp(4.6rem, 13.2cqi, 13rem); letter-spacing: -.035em; line-height: .84; }
+.setup-v-copy h2 em { color: var(--split-jungle); font-style: normal; }
+.setup-v-copy p { max-width: 25ch; margin: 3.4cqi 0 0; color: color-mix(in srgb, var(--split-ink) 78%, transparent); font-size: clamp(1.1rem, 2.15cqi, 1.75rem); font-weight: 500; letter-spacing: -.01em; line-height: 1.3; text-wrap: balance; }
+.setup-v-meta { display: flex; border-top: 1px solid color-mix(in srgb, var(--split-ink) 28%, transparent); padding-top: 1.1rem; color: color-mix(in srgb, var(--split-ink) 72%, transparent); font-size: .7rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.setup-v-meta span + span::before { margin: 0 .8rem; color: color-mix(in srgb, var(--split-ink) 40%, transparent); content: '·'; }
+.setup-v-side { display: flex; min-width: 0; flex-direction: column; justify-content: center; padding: 4cqi 4.4cqi; }
+.setup-v-side input { width: 100%; border: 0; background: transparent; color: var(--split-cream); font-family: var(--font-display); font-weight: 600; letter-spacing: -.02em; caret-color: var(--split-accent); }
+.setup-v-side input:focus-visible { outline: none; }
+.setup-v-side label > span, .setup-v-side h3, .setup-j-row > span, .setup-m-row > span, .setup-l-stepper > span { color: var(--split-muted); font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.setup-v-action { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; min-height: 60px; margin-top: 2.2rem; border: 0; border-radius: 14px; background: var(--split-accent); color: var(--split-ink); cursor: pointer; padding: 0 1.4rem; font-size: .82rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; transition: transform 200ms cubic-bezier(.16, 1, .3, 1), background 160ms ease; }
+.setup-v-action:hover { transform: translateY(-2px); }
+.setup-v-action:active { transform: translateY(0) scale(.99); }
+
+/* Shared segmented control */
+.setup-j-row > div, .setup-m-row > div, .setup-n-row > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .3rem; }
+.setup-j-row button, .setup-m-row button { min-height: 44px; border: 1px solid var(--split-line); border-radius: 10px; background: transparent; color: var(--split-cream); cursor: pointer; font-size: .82rem; font-weight: 600; transition: background 160ms ease, border-color 160ms ease, color 160ms ease; }
+.setup-j-row button:hover, .setup-m-row button:hover { border-color: color-mix(in srgb, var(--split-accent) 70%, transparent); }
+.setup-j-row button.is-on, .setup-m-row button.is-on { border-color: var(--split-accent); background: var(--split-accent); color: var(--split-ink); }
+
+/* J / Open sheet: no card, ruled rows directly on green */
+.setup-j-team { display: grid; gap: .55rem; border-bottom: 1px solid var(--split-line); padding: 1.3rem 0 1rem; transition: border-color 160ms ease; }
+.setup-j-team:focus-within { border-bottom-color: var(--split-accent); }
+.setup-j-team input { font-size: clamp(1.6rem, 3.4cqi, 2.7rem); }
+.setup-j-rules { display: grid; gap: .9rem; margin-top: 2.2rem; }
+.setup-j-row { display: grid; grid-template-columns: 5.6rem minmax(0, 1fr); align-items: center; gap: 1rem; }
+
+/* K / Versus: names face off, settings as one tappable sentence */
+.setup-k { gap: 0; }
+.setup-k-team { display: grid; gap: .5rem; }
+.setup-k-team input { border-bottom: 1px solid var(--split-line); padding: .25rem 0 .7rem; font-size: clamp(2rem, 4.6cqi, 3.6rem); line-height: 1; transition: border-color 160ms ease; }
+.setup-k-team input:focus { border-bottom-color: var(--split-accent); }
+.setup-k-vs { display: flex; align-items: center; gap: 1rem; margin: 1.6rem 0; color: var(--split-accent); }
+.setup-k-vs i { height: 1px; flex: 1; background: var(--split-line); }
+.setup-k-vs b { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; font-style: italic; }
+.setup-k-sentence { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .55rem; margin: 2.8rem 0 0; color: var(--split-muted); }
+.setup-k-sentence button { border: 0; border-bottom: 2px dotted color-mix(in srgb, var(--split-accent) 60%, transparent); background: transparent; color: var(--split-cream); cursor: pointer; padding: 0 0 .1rem; font-family: var(--font-display); font-size: clamp(1.25rem, 2.6cqi, 2rem); font-weight: 600; letter-spacing: -.02em; transition: color 160ms ease, border-color 160ms ease; }
+.setup-k-sentence button:hover { border-bottom-style: solid; color: var(--split-accent); }
+
+/* K1 / Versus centered: names on one centre axis, VS carries the composition, lines only around VS */
+.setup-v--versus-centered .setup-k { align-items: center; text-align: center; }
+.setup-v--versus-centered .setup-k-team { width: 100%; justify-items: center; gap: .7rem; }
+.setup-v--versus-centered .setup-k-team input { max-width: 100%; border-bottom: 2px solid transparent; padding: .1rem 0 .35rem; text-align: center; font-size: clamp(2.2rem, 5.2cqi, 4.2rem); }
+.setup-v--versus-centered .setup-k-team input:hover { border-bottom-color: var(--split-line); }
+.setup-v--versus-centered .setup-k-team input:focus { border-bottom-color: var(--split-accent); }
+.setup-v--versus-centered .setup-k-vs { width: 100%; gap: clamp(1rem, 2.4cqi, 1.8rem); margin: clamp(1.4rem, 3.4cqi, 2.6rem) 0; }
+.setup-v--versus-centered .setup-k-vs i:first-child { background: linear-gradient(to right, transparent, color-mix(in srgb, var(--split-accent) 45%, transparent)); }
+.setup-v--versus-centered .setup-k-vs i:last-child { background: linear-gradient(to left, transparent, color-mix(in srgb, var(--split-accent) 45%, transparent)); }
+.setup-v--versus-centered .setup-k-vs b { font-size: clamp(3.2rem, 8cqi, 6.4rem); font-weight: 600; letter-spacing: -.03em; line-height: .8; }
+.setup-v--versus-centered .setup-k-sentence { justify-content: center; margin-top: clamp(2.2rem, 4.8cqi, 3.6rem); }
+.setup-v--versus-centered .setup-v-action { justify-content: center; gap: .8rem; }
+
+/* L / Stepper card: one card, no inner borders doubled, steppers instead of tabs + picker */
+.setup-l-card { border: 1px solid var(--split-line); border-radius: 16px; background: color-mix(in srgb, var(--split-ink) 30%, transparent); padding: 1.6rem; }
+.setup-l-teams { display: grid; gap: .6rem; }
+.setup-l-teams label { display: grid; gap: .35rem; border-radius: 10px; background: color-mix(in srgb, var(--split-cream) 7%, transparent); padding: .8rem 1rem .7rem; transition: box-shadow 160ms ease; }
+.setup-l-teams label:focus-within { box-shadow: inset 0 0 0 1px var(--split-accent); }
+.setup-l-teams input { font-size: clamp(1.3rem, 2.6cqi, 2rem); }
+.setup-l-steppers { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 1.1rem; margin-top: 1.6rem; border-top: 1px solid var(--split-line); }
+.setup-l-stepper { display: grid; min-width: 0; gap: .5rem; padding-top: 1.1rem; }
+.setup-l-stepper strong { font-family: var(--font-display); font-size: clamp(1.3rem, 2.7cqi, 2.1rem); font-weight: 600; letter-spacing: -.02em; line-height: 1; white-space: nowrap; }
+.setup-l-stepper > div { display: flex; gap: .3rem; }
+.setup-l-stepper button { display: grid; min-width: 0; height: 40px; flex: 1; place-items: center; border: 1px solid var(--split-line); border-radius: 8px; background: transparent; color: var(--split-cream); cursor: pointer; transition: background 160ms ease, color 160ms ease; }
+.setup-l-stepper button:hover { border-color: var(--split-accent); background: var(--split-accent); color: var(--split-ink); }
+
+/* M / Two blocks: teams, then rules, with clear separation */
+.setup-m { gap: 2.4rem; }
+.setup-m-block { display: grid; gap: .3rem; }
+.setup-m-block h3 { margin: 0 0 .6rem; color: var(--split-accent); }
+.setup-m-block label { display: grid; grid-template-columns: 6rem minmax(0, 1fr); align-items: center; gap: 1rem; min-height: 60px; border-bottom: 1px solid var(--split-line); }
+.setup-m-block label:focus-within { border-bottom-color: var(--split-accent); }
+.setup-m-block input { font-size: clamp(1.2rem, 2.4cqi, 1.8rem); }
+.setup-m-row { display: grid; grid-template-columns: 6rem minmax(0, 1fr); align-items: center; gap: 1rem; padding: .35rem 0; }
+.setup-m .setup-v-action { margin-top: 0; }
+
+/* N / Split duty: rules move to the light field, right side only names and start */
+.setup-v--split-duty .setup-v-copy { gap: 2.4cqi; }
+.setup-v--split-duty .setup-v-copy h2 { font-size: clamp(4.2rem, 11.6cqi, 11.5rem); }
+.setup-n-rules { display: grid; border-top: 1px solid color-mix(in srgb, var(--split-ink) 24%, transparent); }
+.setup-n-row { display: grid; grid-template-columns: 5.4rem minmax(0, 1fr); align-items: center; gap: .8rem; border-bottom: 1px solid color-mix(in srgb, var(--split-ink) 14%, transparent); padding: .45rem 0; }
+.setup-n-row > span { color: color-mix(in srgb, var(--split-ink) 70%, transparent); font-size: .66rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.setup-n-row button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: var(--split-ink); cursor: pointer; font-size: .85rem; font-weight: 600; transition: background 160ms ease, color 160ms ease; }
+.setup-n-row button:hover { background: color-mix(in srgb, var(--split-ink) 8%, transparent); }
+.setup-n-row button.is-on { background: var(--split-ink); color: var(--split-leaf); }
+.setup-n { gap: 0; }
+.setup-n-team { display: grid; gap: .6rem; border-bottom: 1px solid var(--split-line); padding: 1.6rem 0 1.1rem; }
+.setup-n-team:focus-within { border-bottom-color: var(--split-accent); }
+.setup-n-team input { font-size: clamp(2rem, 4.8cqi, 3.8rem); line-height: 1; }
+
+@container (max-width: 700px) {
+  .setup-v-grid { grid-template-columns: 1fr; }
+  .setup-v-copy { gap: 2.5rem; padding: 1.6rem 1.5rem 1.8rem; }
+  .setup-v-copy h2, .setup-v--split-duty .setup-v-copy h2 { font-size: clamp(4rem, 21cqi, 6.4rem); }
+  .setup-v-copy p { margin-top: 1.4rem; font-size: 1.15rem; }
+  .setup-v-side { padding: 1.8rem 1.5rem 2rem; }
+  .setup-j-team input, .setup-n-team input { font-size: 1.8rem; }
+  .setup-k-team input, .setup-v--versus-centered .setup-k-team input { font-size: 2.1rem; }
+  .setup-v--versus-centered .setup-k-vs b { font-size: 3.6rem; }
+  .setup-j-row, .setup-m-row, .setup-m-block label { grid-template-columns: 1fr; gap: .45rem; }
+  .setup-m-block label { padding: .6rem 0; }
+  .setup-l-steppers { grid-template-columns: 1fr; }
+  .setup-l-steppers { gap: 0; }
+  .setup-l-stepper { grid-template-columns: 1fr auto 6.5rem; align-items: center; padding: .8rem 0; }
+  .setup-l-stepper + .setup-l-stepper { border-top: 1px solid var(--split-line); }
+}
 
 @media (max-width: 900px) {
   .lab-intro { align-items: flex-start; }

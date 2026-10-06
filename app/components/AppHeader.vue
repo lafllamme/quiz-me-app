@@ -1,21 +1,30 @@
 <script setup lang="ts">
 defineProps<{
   tone?: 'dark' | 'light'
+  split?: boolean
+  canBack?: boolean
+  canForward?: boolean
 }>()
 
 const emit = defineEmits<{
   home: []
+  back: []
+  forward: []
 }>()
 </script>
 
 <template>
-  <header class="app-header" :class="{ 'app-header--light': tone === 'light' }">
+  <header class="app-header" :class="{ 'app-header--light': tone === 'light', 'app-header--split': split }">
     <div class="app-header-inner">
-      <button class="group inline-flex items-center gap-2 border-0 bg-transparent p-0 text-left focus-visible:outline-3 focus-visible:outline-gold focus-visible:outline-offset-4" aria-label="Zum Menü" @click="emit('home')">
-        <span class="font-display text-[20px] font-600 uppercase tracking-[-0.02em] md:text-2xl">Jungle</span>
-        <span class="font-display text-xl text-gold md:text-2xl">/</span>
-        <span class="font-display text-[20px] font-600 uppercase tracking-[-0.02em] md:text-2xl">Quiz</span>
-      </button>
+      <JungleLogo :tone="tone === 'light' ? 'ink' : 'cream'" interactive @activate="emit('home')" />
+      <nav class="app-header-nav" aria-label="Spielnavigation">
+        <button type="button" :disabled="!canBack" aria-label="Zurück" title="Zurück" @click="emit('back')">
+          <Icon name="lucide:arrow-left" size="18" aria-hidden="true" />
+        </button>
+        <button type="button" :disabled="!canForward" aria-label="Weiter" title="Weiter" @click="emit('forward')">
+          <Icon name="lucide:arrow-right" size="18" aria-hidden="true" />
+        </button>
+      </nav>
     </div>
   </header>
 </template>

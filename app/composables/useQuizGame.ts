@@ -73,6 +73,8 @@ export function useQuizGame() {
   const timeRemaining = ref(defaultConfig.seconds)
   const timerRunning = ref(false)
   const hasSavedGame = ref(false)
+  const tossReady = ref(false)
+  const tossResult = ref<'kopf' | 'zahl'>('kopf')
   const tieIndex = ref(0)
   let timer: number | undefined
   let tossTimeout: number | undefined
@@ -183,10 +185,12 @@ export function useQuizGame() {
     stopTimer()
     sound.stopTrack('startScreen')
     Object.assign(game, emptyGame())
-    game.first = Math.random() < 0.5 ? 0 : 1
+    tossResult.value = Math.random() < 0.5 ? 'kopf' : 'zahl'
+    game.first = tossResult.value === 'kopf' ? 0 : 1
     game.active = game.first
     hasSavedGame.value = false
     screen.value = 'toss'
+    tossReady.value = false
     sound.play('ring')
     persist()
 
@@ -195,11 +199,28 @@ export function useQuizGame() {
     tossTimeout = window.setTimeout(() => {
       if (screen.value !== 'toss')
         return
-      screen.value = 'category'
-      prepareCategories()
+      tossReady.value = true
       sound.play('drum')
-      persist()
-    }, 1100)
+    }, 2400)
+  }
+
+  function continueFromToss() {
+    if (screen.value !== 'toss' || !tossReady.value)
+      return
+
+    if (tossTimeout)
+      window.clearTimeout(tossTimeout)
+    prepareCategories()
+  }
+
+  function backToCategory() {
+    if (screen.value !== 'question' || game.resolved)
+      return
+
+    stopTimer()
+    if (game.currentQuestion)
+      game.used = game.used.filter(id => id !== game.currentQuestion?.id)
+    prepareCategories()
   }
 
   function resumeGame() {
@@ -407,6 +428,8 @@ export function useQuizGame() {
     timeRemaining,
     timerRunning,
     hasSavedGame,
+    tossReady,
+    tossResult,
     questionCount,
     roundNumber,
     availableQuestions,
@@ -417,6 +440,8 @@ export function useQuizGame() {
     tieQuestion,
     openMenu,
     startGame,
+    continueFromToss,
+    backToCategory,
     resumeGame,
     newGame,
     chooseCategory,
