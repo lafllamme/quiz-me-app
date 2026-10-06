@@ -53,7 +53,15 @@ const variants: Record<ScreenKey, Variant[]> = {
     { id: 'soft-field', label: 'Territory grid', note: 'Sechs Kategorien / drei mal zwei', code: 'A' },
   ],
   question: [
-    { id: 'live-question', label: 'Live Question', note: 'One stage / clear answer', code: 'Q' },
+    { id: 'header-duel', label: 'Header duel', note: 'Score in the logo row / timer right', code: 'Q1' },
+    { id: 'score-rail', label: 'Score rail', note: 'All status in one bottom rail', code: 'Q2' },
+    { id: 'timer-band', label: 'Timer band', note: 'Full-width time band / question gets the width', code: 'Q3' },
+    { id: 'side-panel', label: 'Side panel', note: 'Question left / status column right', code: 'Q4' },
+    { id: 'progress-ticks', label: 'Progress ticks', note: 'Ten ticks show where you stand', code: 'Q5' },
+    { id: 'clock-band', label: 'Clock band', note: 'Q5 + Q3 / big clock at the end of the band', code: 'Q6' },
+    { id: 'clock-panel', label: 'Clock panel', note: 'Q5 + Q4 / status column with a big clock', code: 'Q7' },
+    { id: 'hero-clock', label: 'Hero clock', note: 'Q5 / the clock as the second headline', code: 'Q8' },
+    { id: 'draining-panel', label: 'Draining panel', note: 'Q7 / the panel itself empties with time', code: 'Q9' },
   ],
 }
 
@@ -131,6 +139,35 @@ const paletteOptions: Palette[] = [
     swatches: ['#041d1b', '#126b5b', '#d7f1df', '#8bf2bd'],
   },
 ]
+
+const questionSamples = {
+  short: { category: 'WTF-Wissen', text: 'Wie viele Herzen hat ein Oktopus?', options: ['Eins', 'Zwei', 'Drei', 'Vier'], correct: 2 },
+  long: { category: 'Internet', text: 'Welches Meme-Format zeigt meistens eine Reihe von Bildern mit einer immer weiter eskalierenden Reaktion?', options: ['Reaction-Meme', 'Listicle', 'Threadjack', 'Screenshot-Story'], correct: 0 },
+} as const
+const questionLength = ref<keyof typeof questionSamples>('short')
+const sampleQuestion = computed(() => questionSamples[questionLength.value])
+// Same thresholds as QuestionStage: long questions step down so the stage never scrolls.
+const sampleQuestionSize = computed(() => {
+  const length = sampleQuestion.value.text.length
+  return length <= 40 ? 's' : length <= 65 ? 'm' : length <= 90 ? 'l' : 'xl'
+})
+// Live countdown so timer studies can be judged in motion. Pause in the study stops it; it loops at zero.
+const labTimerLimit = 45
+const labSeconds = ref(39)
+const labTimerProgress = computed(() => labSeconds.value / labTimerLimit)
+let labTimerHandle: ReturnType<typeof setInterval> | undefined
+
+onMounted(() => {
+  labTimerHandle = setInterval(() => {
+    if (activeScreen.value !== 'question' || timerPaused.value)
+      return
+    labSeconds.value = labSeconds.value <= 0 ? labTimerLimit : labSeconds.value - 1
+  }, 1000)
+})
+
+onBeforeUnmount(() => clearInterval(labTimerHandle))
+
+const sampleProgress = { question: 4, questions: 10, round: 2, rounds: 5, scores: [2, 1], active: 1 }
 
 const activeScreen = ref<ScreenKey>('setup')
 const selectedVariants = reactive<Record<ScreenKey, number>>({ setup: 0, categories: 0, question: 0 })
@@ -477,20 +514,47 @@ function isSelectedSetupOption(value: number | string) {
               <p class="category-study-foot">{{ selectedCategory ? `${selectedCategory} gewählt` : 'Bereit für den ersten Pick.' }} <span>↗</span></p>
             </div>
 
-            <!-- Question studies -->
-            <div v-else-if="activeScreen === 'question' && activeVariant.id === 'live-question'" class="study question-live-stage">
-              <div class="question-live-top">
-                <div class="question-live-context"><span>Frage</span><strong>Zweite / Zehn Fragen</strong></div>
-                <div class="question-live-active-team"><span>Ist dran</span><strong>TEAM TWO</strong><small>Antwort wählen</small></div>
-                <div class="question-live-context question-live-context--round"><span>Runde</span><strong>1 / 5</strong></div>
+            <!-- Question studies: one DOM, five layouts. Each fits its frame without scrolling. -->
+            <div v-else-if="activeScreen === 'question'" class="study qv" :class="[`qv--${activeVariant.id}`, { 'qv--warning': labSeconds <= 10 }]" :style="{ '--q-progress': labTimerProgress }">
+              <div class="qv-grid">
+                <div class="qv-brand">JUNGLE <i>/</i> QUIZ</div>
+                <div class="qv-nav" aria-hidden="true"><span><Icon name="lucide:arrow-left" size="14" /></span><span><Icon name="lucide:arrow-right" size="14" /></span></div>
+                <div class="qv-duel" aria-label="Punktestand">
+                  <div v-for="index in [0, 1]" :key="index" class="qv-team" :class="[`qv-team--${index === 0 ? 'one' : 'two'}`, { 'qv-team--active': sampleProgress.active === index }]">
+                    <span>{{ index === 0 ? 'TEAM ONE' : 'TEAM TWO' }}</span>
+                    <strong>{{ sampleProgress.scores[index] }}</strong>
+                    <small v-if="sampleProgress.active === index">Ist dran</small>
+                  </div>
+                  <i aria-hidden="true">:</i>
+                </div>
+                <div class="qv-ticks" :aria-label="`Frage ${sampleProgress.question} von ${sampleProgress.questions}`">
+                  <div><i v-for="tick in sampleProgress.questions" :key="tick" :class="{ 'is-done': tick < sampleProgress.question, 'is-current': tick === sampleProgress.question }" /></div>
+                  <span>Frage {{ sampleProgress.question }} / {{ sampleProgress.questions }} · Runde {{ sampleProgress.round }} / {{ sampleProgress.rounds }}</span>
+                </div>
+                <div class="qv-copy">
+                  <div class="qv-meta">
+                    <span class="qv-category">{{ sampleQuestion.category }}</span>
+                    <span class="qv-meta-progress">Frage {{ sampleProgress.question }} / {{ sampleProgress.questions }}</span>
+                    <span class="qv-meta-progress">Runde {{ sampleProgress.round }} / {{ sampleProgress.rounds }}</span>
+                  </div>
+                  <h2 :class="`qv-question--${sampleQuestionSize}`">{{ sampleQuestion.text }}</h2>
+                </div>
+                <aside class="qv-timer" aria-label="Antwortzeit">
+                  <span class="qv-timer-label">Noch Zeit</span>
+                  <strong>{{ labSeconds }}<small>Sek.</small></strong>
+                  <i aria-hidden="true"><b /></i>
+                  <div class="qv-timer-actions"><button type="button" @click="timerPaused = !timerPaused">{{ timerPaused ? 'Weiter' : 'Pause' }}</button><button type="button" @click="labSeconds = labTimerLimit">Reset</button></div>
+                </aside>
+                <div class="qv-answers" aria-label="Antwortmöglichkeiten">
+                  <button v-for="(answer, index) in sampleQuestion.options" :key="answer" type="button" class="qv-option" :class="{ 'qv-option--correct': selectedAnswer !== null && index === sampleQuestion.correct, 'qv-option--wrong': selectedAnswer === index && index !== sampleQuestion.correct }" @click="chooseAnswer(index)">
+                    <span class="qv-option-letter">{{ ['A', 'B', 'C', 'D'][index] }}</span><span class="qv-option-copy">{{ answer }}</span>
+                  </button>
+                </div>
+                <div class="qv-foot">
+                  <button type="button" class="qv-action" @click="selectedAnswer = sampleQuestion.correct">Antwort zeigen <span>A</span></button>
+                  <p>Wähle A, B, C oder D</p>
+                </div>
               </div>
-              <div class="question-live-scoreline"><span>TEAM ONE <strong>1</strong></span><span class="question-live-scoreline--active">TEAM TWO <strong>0</strong></span></div>
-              <div class="question-live-main">
-                <div class="question-live-copy"><span class="question-live-category">WTF-WISSEN</span><h2>Wie viele Herzen hat ein <em>Oktopus?</em></h2></div>
-                <aside class="question-live-timer"><span class="question-live-timer-label">Noch Zeit</span><strong>43</strong><span class="question-live-timer-unit">Sekunden</span><i aria-hidden="true"><b style="transform: scaleX(.78)" /></i><div class="question-live-timer-actions"><button @click="timerPaused = !timerPaused">{{ timerPaused ? 'Weiter' : 'Pause' }}</button><button>Reset</button></div></aside>
-              </div>
-              <div class="question-live-answers" aria-label="Antwortmöglichkeiten"><button v-for="(answer, index) in ['Eins', 'Zwei', 'Drei', 'Vier']" :key="answer" class="question-live-option" :class="{ 'question-live-option--wrong': selectedAnswer === index }" @click="chooseAnswer(index)"><span class="question-live-option-letter">{{ ['A', 'B', 'C', 'D'][index] }}</span><span class="question-live-option-copy">{{ answer }}</span></button></div>
-              <div class="question-live-foot"><button class="question-live-action" @click="timerPaused = !timerPaused">Antwort zeigen <span>A</span></button><p class="question-live-hint">Wähle A, B, C oder D</p></div>
             </div>
           </div>
 
@@ -498,6 +562,17 @@ function isSelectedSetupOption(value: number | string) {
             <span><b class="preview-dot preview-dot--gold" /> Click the specimen to feel the flow</span>
             <span class="preview-footer-key">{{ activeVariant.code }} / {{ activeVariant.label.toUpperCase() }}</span>
           </div>
+
+          <section v-if="activeScreen === 'question'" class="config-variant-dock" aria-label="Fragelänge testen">
+            <div class="config-variant-dock-head"><span>Question length</span><span>Skalierung testen</span></div>
+            <div class="config-variant-grid config-variant-grid--two">
+              <button v-for="length in (['short', 'long'] as const)" :key="length" type="button" class="config-variant-option" :class="{ 'config-variant-option--active': questionLength === length }" :aria-pressed="questionLength === length" @click="questionLength = length; selectedAnswer = null">
+                <span class="config-variant-code">{{ length === 'short' ? 'S' : 'XL' }}</span>
+                <span class="config-variant-copy"><strong>{{ length === 'short' ? 'Kurze Frage' : 'Lange Frage' }}</strong><small>{{ questionSamples[length].text.length }} Zeichen</small></span>
+                <span class="config-variant-arrow">↗</span>
+              </button>
+            </div>
+          </section>
 
           <section v-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="config-variant-dock" aria-label="Varianten für die Spieleinstellungen">
             <div class="config-variant-dock-head"><span>Config studies</span><span>Auswahlmodell testen</span></div>
@@ -686,6 +761,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .config-variant-dock-head { display: flex; justify-content: space-between; gap: 1rem; color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
 .config-variant-dock-head span:first-child { color: var(--lab-gold); }
 .config-variant-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
+.config-variant-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .config-variant-option { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: .65rem; min-height: 74px; border: 1px solid var(--lab-line); background: transparent; color: var(--lab-muted); cursor: pointer; padding: .75rem; text-align: left; transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease; }
 .config-variant-option:hover, .config-variant-option--active { border-color: var(--lab-gold); background: var(--lab-jungle); color: var(--lab-cream); transform: translateY(-2px); }
 .config-variant-code { display: grid; width: 1.35rem; height: 1.35rem; place-items: center; border: 1px solid currentcolor; color: var(--lab-gold); font-family: var(--font-display); font-size: .68rem; }
@@ -812,6 +888,175 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .setup-v--versus-centered .setup-k-vs b { font-size: clamp(3.2rem, 8cqi, 6.4rem); font-weight: 600; letter-spacing: -.03em; line-height: .8; }
 .setup-v--versus-centered .setup-k-sentence { justify-content: center; margin-top: clamp(2.2rem, 4.8cqi, 3.6rem); }
 .setup-v--versus-centered .setup-v-action { justify-content: center; gap: .8rem; }
+
+/* Question studies (Q1–Q5). The study is a size container so every layout must fit its frame, like a real screen. */
+.qv { --q-ink: #081811; --q-forest: #0b4429; --q-cream: #fbf8ed; --q-accent: #caff4a; --q-leaf: #e7f7b6; --q-muted: #8fc7a2; --q-coral: #dd927b; --q-line: rgb(251 248 237 / 20%); container-type: size; height: 650px; min-height: 0; padding: 0; background: var(--q-ink); color: var(--q-cream); }
+.qv-grid { position: relative; display: grid; height: 100%; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "brand duel nav" "copy copy timer" "answers answers answers" "foot foot foot"; align-items: center; gap: 2.6cqh 3cqw; padding: 3.6cqh 5cqw 2.6cqh; }
+.qv-brand { grid-area: brand; z-index: 1; font-family: var(--font-display); font-size: 2.1cqw; font-weight: 600; letter-spacing: -.04em; line-height: .9; white-space: nowrap; }
+.qv-brand i { color: var(--lab-gold); font-style: normal; }
+.qv-nav { grid-area: nav; z-index: 1; display: flex; justify-self: end; gap: .35rem; }
+.qv-nav span > * { width: 2.4cqh !important; height: 2.4cqh !important; font-size: 2.4cqh; }
+.qv-nav span { display: grid; width: 5.4cqh; height: 5.4cqh; place-items: center; border: 1px solid var(--q-line); border-radius: 999px; color: var(--q-muted); }
+.qv-duel { grid-area: duel; position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; justify-self: center; }
+.qv-duel > i { grid-column: 2; grid-row: 1; padding: 0 1.4cqw; color: var(--q-line); font-family: var(--font-display); font-size: 3.4cqh; font-style: normal; }
+.qv-team { position: relative; display: flex; grid-row: 1; align-items: baseline; gap: .9cqw; color: var(--q-muted); white-space: nowrap; }
+.qv-team--one { grid-column: 1; justify-content: flex-end; }
+.qv-team--two { grid-column: 3; flex-direction: row-reverse; justify-content: flex-end; }
+.qv-team span { font-size: max(.6rem, 1.1cqw); font-weight: 700; letter-spacing: .13em; }
+.qv-team strong { color: var(--q-cream); font-family: var(--font-display); font-size: 4.6cqh; font-variant-numeric: tabular-nums; font-weight: 500; line-height: .85; }
+.qv-team--active span, .qv-team--active strong { color: var(--q-accent); }
+.qv-team small { position: absolute; top: calc(100% + .5cqh); color: var(--q-accent); font-size: max(.5rem, .85cqw); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.qv-team--one small { right: 0; }
+.qv-team--two small { left: 0; }
+.qv-ticks { grid-area: ticks; display: none; }
+.qv-ticks > div { display: flex; gap: .45cqw; }
+.qv-ticks i { width: 3.2cqw; height: 4px; border-radius: 2px; background: var(--q-line); }
+.qv-ticks i.is-done { background: color-mix(in srgb, var(--q-cream) 62%, transparent); }
+.qv-ticks i.is-current { background: var(--q-accent); }
+.qv-ticks span { display: block; margin-top: 1cqh; color: var(--q-muted); font-size: max(.55rem, .95cqw); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.qv-copy { grid-area: copy; min-width: 0; align-self: center; }
+.qv-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.8cqw; color: var(--q-muted); font-size: max(.55rem, 1cqw); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.qv-category { border: 1px solid rgb(202 255 74 / 28%); border-radius: 999px; background: rgb(202 255 74 / 10%); color: var(--q-accent); padding: .45rem .75rem .4rem; line-height: 1; }
+.qv-copy h2 { margin: 2.6cqh 0 0; color: var(--q-cream); font-family: var(--font-display); font-weight: 500; letter-spacing: -.02em; text-wrap: balance; }
+.qv .qv-copy h2.qv-question--s { max-width: 13ch; font-size: min(6.6cqw, 11cqh); line-height: .88; }
+.qv .qv-copy h2.qv-question--m { max-width: 17ch; font-size: min(5.4cqw, 8.8cqh); line-height: .92; }
+.qv .qv-copy h2.qv-question--l { max-width: 21ch; font-size: min(4.2cqw, 6.8cqh); line-height: .96; }
+.qv .qv-copy h2.qv-question--xl { max-width: 25ch; font-size: min(3.5cqw, 5.8cqh); line-height: 1; }
+.qv-timer { grid-area: timer; display: flex; min-width: 0; flex-direction: column; width: 19cqw; justify-self: end; }
+.qv-timer-label { color: var(--q-muted); font-size: max(.55rem, .95cqw); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.qv-timer strong { display: flex; align-items: baseline; gap: .8cqw; margin-top: 1.2cqh; color: var(--q-accent); font-family: var(--font-display); font-size: min(10cqw, 16cqh); font-variant-numeric: tabular-nums; font-weight: 500; letter-spacing: -.06em; line-height: .75; }
+.qv-timer strong small { color: var(--q-muted); font-family: var(--font-ui); font-size: max(.55rem, 1cqw); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.qv-timer > i { display: block; height: 4px; margin-top: 1.8cqh; overflow: hidden; background: rgb(251 248 237 / 12%); }
+.qv-timer > i b { display: block; width: 100%; height: 100%; background: var(--q-accent); transform: scaleX(var(--q-progress, .78)); transform-origin: left center; transition: transform 1s linear, background 200ms ease; }
+.qv--warning .qv-timer strong, .qv--warning .qv-timer-label { color: var(--q-coral); }
+.qv--warning .qv-timer > i b { background: var(--q-coral); }
+.qv-timer-actions { display: flex; gap: 1.6cqw; margin-top: .8cqh; }
+.qv-timer-actions button, .qv-action { border: 0; background: transparent; color: var(--q-muted); cursor: pointer; padding: .4rem 0; font-size: max(.55rem, .95cqw); font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.qv-timer-actions button:hover, .qv-action:hover { color: var(--q-cream); }
+.qv-action span { margin-left: .25rem; color: var(--q-accent); }
+.qv-answers { grid-area: answers; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6cqh 1.4cqw; }
+.qv-option { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 1.4cqw; min-height: 10cqh; border: 0; border-radius: .7rem; background: var(--q-forest); color: var(--q-cream); cursor: pointer; padding: 1.3cqh 1.6cqw 1.3cqh 1.3cqh; text-align: left; transition: background 160ms ease, color 160ms ease, transform 160ms ease; }
+.qv-option:hover { background: var(--q-accent); color: var(--q-ink); transform: translateY(-2px); }
+.qv-option-letter { display: grid; align-self: stretch; width: 4cqw; min-height: 6cqh; place-items: center; border-radius: .4rem; background: rgb(8 24 17 / 74%); color: var(--q-accent); font-family: var(--font-display); font-size: max(.8rem, 1.5cqw); font-weight: 600; }
+.qv-option-copy { min-width: 0; font-size: min(2.3cqw, 3.8cqh); font-weight: 500; letter-spacing: -.015em; line-height: 1.1; }
+.qv-option--correct { background: var(--q-leaf); color: var(--q-ink); }
+.qv-option--correct .qv-option-letter { background: rgb(7 26 19 / 12%); color: var(--q-ink); }
+.qv-option--wrong { background: rgb(221 146 123 / 16%); color: var(--q-coral); }
+.qv-option--wrong .qv-option-letter { background: rgb(221 146 123 / 18%); color: var(--q-coral); }
+.qv-foot { grid-area: foot; display: flex; align-items: center; justify-content: space-between; gap: 1rem; border-top: 1px solid var(--q-line); padding-top: 1.4cqh; }
+.qv-foot p { margin: 0; color: var(--q-muted); font-size: max(.55rem, .95cqw); letter-spacing: .08em; text-transform: uppercase; }
+
+/* Q2 / Score rail: header stays empty, all status lives in one rail under the answers. */
+.qv--score-rail .qv-grid { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto auto; grid-template-areas: "brand . nav" "copy copy copy" "answers answers answers" "duel foot timer"; }
+.qv--score-rail .qv-duel { justify-self: start; border-top: 1px solid var(--q-line); padding-top: 1.4cqh; }
+.qv--score-rail .qv-team small { position: static; margin-left: .4rem; }
+.qv--score-rail .qv-team--two { flex-direction: row; }
+.qv--score-rail .qv-foot { justify-content: center; }
+.qv--score-rail .qv-foot p { display: none; }
+.qv--score-rail .qv-timer { display: grid; width: 26cqw; grid-template-columns: auto 1fr auto; align-items: center; gap: 0 1.2cqw; border-top: 1px solid var(--q-line); padding-top: 1.4cqh; }
+.qv--score-rail .qv-timer-label { display: none; }
+.qv--score-rail .qv-timer strong { margin: 0; font-size: 5.6cqh; letter-spacing: -.03em; }
+.qv--score-rail .qv-timer > i { margin: 0; }
+.qv--score-rail .qv-timer-actions { margin: 0; }
+.qv--score-rail .qv-timer-actions button:last-child { display: none; }
+.qv--score-rail .qv-copy h2 { max-width: 22ch; }
+.qv--score-rail .qv-copy h2.qv-question--s { font-size: min(7cqw, 12cqh); max-width: 16ch; }
+
+/* Q3 / Timer band: the remaining time stretches across the stage; the question gets the full width. */
+.qv--timer-band .qv-grid { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: "brand duel nav" "timer timer timer" "copy copy copy" "answers answers answers" "foot foot foot"; }
+.qv--timer-band .qv-timer { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "bar num actions"; align-items: center; gap: 2cqw; margin-top: 2cqh; }
+.qv--timer-band .qv-timer-label { display: none; }
+.qv--timer-band .qv-timer > i { grid-area: bar; height: 6px; margin: 0; border-radius: 3px; }
+.qv--timer-band .qv-timer strong { grid-area: num; margin: 0; font-size: 7cqh; letter-spacing: -.03em; }
+.qv--timer-band .qv-timer-actions { grid-area: actions; margin: 0; }
+.qv--timer-band .qv-copy h2 { max-width: 24ch; }
+.qv--timer-band .qv-copy h2.qv-question--s { max-width: 18ch; font-size: min(7.2cqw, 11cqh); }
+.qv--timer-band .qv-copy h2.qv-question--xl { max-width: 32ch; font-size: min(3.9cqw, 6cqh); }
+
+/* Q4 / Side panel: one status column carries turn, score, progress and time. */
+.qv--side-panel .qv-grid { grid-template-columns: minmax(0, 1fr) 26cqw; grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: "brand nav" "copy duel" "copy ticks" "answers timer" "foot timer"; column-gap: 7cqw; }
+.qv--side-panel .qv-grid::before { position: absolute; inset: 0 0 0 auto; width: calc(26cqw + 8.5cqw); background: var(--q-forest); content: ''; }
+.qv--side-panel .qv-duel, .qv--side-panel .qv-ticks, .qv--side-panel .qv-timer { position: relative; z-index: 1; }
+.qv--side-panel .qv-duel { display: flex; flex-direction: column; align-items: stretch; justify-self: stretch; gap: 1.4cqh; align-self: start; margin-top: 4cqh; }
+.qv--side-panel .qv-duel > i { display: none; }
+.qv--side-panel .qv-team, .qv--side-panel .qv-team--two { flex-direction: row; justify-content: space-between; border-bottom: 1px solid var(--q-line); padding-bottom: 1.2cqh; }
+.qv--side-panel .qv-team span { order: 1; }
+.qv--side-panel .qv-team small { position: static; order: 2; margin-right: auto; border-radius: 999px; background: var(--q-accent); color: var(--q-ink); padding: .3rem .5rem; line-height: 1; }
+.qv--side-panel .qv-team strong { order: 3; margin-left: auto; }
+.qv--side-panel .qv-team strong { font-size: 6cqh; }
+.qv--side-panel .qv-ticks { display: block; align-self: start; }
+.qv--side-panel .qv-ticks i { width: auto; flex: 1; }
+.qv--side-panel .qv-meta-progress { display: none; }
+.qv--side-panel .qv-timer { width: 100%; align-self: end; }
+.qv--side-panel .qv-answers { grid-template-columns: 1fr 1fr; }
+.qv--side-panel .qv-nav span { border-color: rgb(251 248 237 / 30%); }
+.qv--side-panel .qv-copy h2.qv-question--s { font-size: min(6cqw, 10cqh); }
+.qv--side-panel .qv-copy h2.qv-question--xl { font-size: min(3cqw, 5.2cqh); }
+
+/* Q5 / Progress ticks: the header shows how far the game has come; the turn gets its own line. */
+.qv--progress-ticks .qv-grid { grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: "brand ticks nav" "duel duel duel" "copy copy timer" "answers answers answers" "foot foot foot"; }
+.qv--progress-ticks .qv-ticks { display: block; text-align: center; }
+.qv--progress-ticks .qv-meta-progress { display: none; }
+.qv--progress-ticks .qv-duel { margin-top: 1.6cqh; }
+.qv--progress-ticks .qv-team small { position: static; order: 3; border-radius: 999px; background: var(--q-accent); color: var(--q-ink); padding: .35rem .6rem; line-height: 1; }
+.qv--progress-ticks .qv-team--two small { order: -1; }
+
+/* Q6–Q9 build on Q5: ticks in the header, a badge for the team on turn, and a clock you can read across the room. */
+.qv--clock-band .qv-ticks, .qv--clock-panel .qv-ticks, .qv--hero-clock .qv-ticks, .qv--draining-panel .qv-ticks { display: block; text-align: center; }
+.qv--clock-band .qv-meta-progress, .qv--clock-panel .qv-meta-progress, .qv--hero-clock .qv-meta-progress, .qv--draining-panel .qv-meta-progress { display: none; }
+.qv--clock-band .qv-team small, .qv--hero-clock .qv-team small { position: static; order: 3; border-radius: 999px; background: var(--q-accent); color: var(--q-ink); padding: .35rem .6rem; line-height: 1; }
+.qv--clock-band .qv-team--two small, .qv--hero-clock .qv-team--two small { order: -1; }
+
+/* Q6 / Clock band: Q3's full-width question, with the band ending in a big number. */
+.qv--clock-band .qv-grid { grid-template-rows: auto auto auto minmax(0, 1fr) auto auto; grid-template-areas: "brand ticks nav" "duel duel duel" "timer timer timer" "copy copy copy" "answers answers answers" "foot foot foot"; row-gap: 2cqh; }
+.qv--clock-band .qv-duel { margin-top: 1cqh; }
+.qv--clock-band .qv-timer { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "bar num" "actions num"; align-items: center; gap: .6cqh 2.4cqw; }
+.qv--clock-band .qv-timer-label { display: none; }
+.qv--clock-band .qv-timer > i { grid-area: bar; align-self: end; height: 1.6cqh; margin: 0; border-radius: 99px; }
+.qv--clock-band .qv-timer-actions { grid-area: actions; align-self: start; margin: 0; }
+.qv--clock-band .qv-timer strong { grid-area: num; margin: 0; font-size: min(10cqw, 15cqh); }
+.qv--clock-band .qv-copy h2 { max-width: 26ch; }
+.qv--clock-band .qv-copy h2.qv-question--s { max-width: 18ch; font-size: min(6.4cqw, 9cqh); }
+.qv--clock-band .qv-copy h2.qv-question--xl { max-width: 34ch; font-size: min(3.5cqw, 5cqh); }
+.qv--clock-band .qv-option { min-height: 8.6cqh; }
+
+/* Q7 / Clock panel: Q4's status column, the clock fills the lower half of it. */
+.qv--clock-panel .qv-grid, .qv--draining-panel .qv-grid { grid-template-columns: minmax(0, 1fr) 30cqw; grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: "brand nav" "copy duel" "copy timer" "answers timer" "foot timer"; column-gap: 7cqw; }
+.qv--clock-panel .qv-grid::before, .qv--draining-panel .qv-grid::before { position: absolute; inset: 0 0 0 auto; width: calc(30cqw + 8.5cqw); background: var(--q-forest); content: ''; }
+.qv--clock-panel .qv-ticks, .qv--draining-panel .qv-ticks { grid-area: brand; justify-self: end; }
+.qv--clock-panel .qv-ticks i, .qv--draining-panel .qv-ticks i { width: 2.4cqw; }
+.qv--clock-panel .qv-ticks span, .qv--draining-panel .qv-ticks span { text-align: right; }
+.qv--clock-panel .qv-duel, .qv--clock-panel .qv-timer, .qv--draining-panel .qv-duel, .qv--draining-panel .qv-timer { position: relative; z-index: 1; }
+.qv--clock-panel .qv-duel, .qv--draining-panel .qv-duel { display: flex; flex-direction: column; align-items: stretch; justify-self: stretch; gap: 1.6cqh; align-self: start; margin-top: 3cqh; }
+.qv--clock-panel .qv-duel > i, .qv--draining-panel .qv-duel > i { display: none; }
+.qv--clock-panel .qv-team, .qv--draining-panel .qv-team { flex-direction: row; justify-content: flex-start; border-bottom: 1px solid var(--q-line); padding-bottom: 1.4cqh; }
+.qv--clock-panel .qv-team span, .qv--draining-panel .qv-team span { order: 1; }
+.qv--clock-panel .qv-team small, .qv--draining-panel .qv-team small { position: static; order: 2; border-radius: 999px; background: var(--q-accent); color: var(--q-ink); padding: .3rem .5rem; line-height: 1; }
+.qv--clock-panel .qv-team strong, .qv--draining-panel .qv-team strong { order: 3; margin-left: auto; font-size: 6.4cqh; }
+.qv--clock-panel .qv-timer, .qv--draining-panel .qv-timer { width: 100%; align-self: end; }
+.qv--clock-panel .qv-timer strong, .qv--draining-panel .qv-timer strong { font-size: min(14cqw, 27cqh); letter-spacing: -.07em; }
+.qv--clock-panel .qv-timer > i, .qv--draining-panel .qv-timer > i { height: 1.2cqh; border-radius: 99px; }
+.qv--clock-panel .qv-copy h2.qv-question--s, .qv--draining-panel .qv-copy h2.qv-question--s { font-size: min(5.6cqw, 10cqh); }
+.qv--clock-panel .qv-copy h2.qv-question--xl, .qv--draining-panel .qv-copy h2.qv-question--xl { font-size: min(2.9cqw, 5.2cqh); }
+.qv--clock-panel .qv-option-copy, .qv--draining-panel .qv-option-copy { font-size: min(1.9cqw, 3.4cqh); }
+.qv--clock-panel .qv-nav span, .qv--draining-panel .qv-nav span { border-color: rgb(251 248 237 / 30%); }
+
+/* Q8 / Hero clock: Q5's layout, the clock column doubles and reads as a second headline. */
+.qv--hero-clock .qv-grid { grid-template-columns: minmax(0, 1fr) auto 30cqw; grid-template-rows: auto auto minmax(0, 1fr) auto auto; grid-template-areas: "brand ticks nav" "duel duel duel" "copy copy timer" "answers answers answers" "foot foot foot"; }
+.qv--hero-clock .qv-duel { margin-top: 1.6cqh; }
+.qv--hero-clock .qv-timer { width: 100%; border-left: 1px solid var(--q-line); padding-left: 3cqw; }
+.qv--hero-clock .qv-timer strong { font-size: min(15cqw, 29cqh); letter-spacing: -.07em; }
+.qv--hero-clock .qv-timer > i { height: 1.2cqh; border-radius: 99px; }
+.qv--hero-clock .qv-copy h2.qv-question--s { font-size: min(5.4cqw, 10cqh); }
+.qv--hero-clock .qv-copy h2.qv-question--xl { font-size: min(2.9cqw, 5.2cqh); }
+
+/* Q9 / Draining panel: Q7, but the panel colour is the countdown and sinks as time runs out. */
+.qv--draining-panel .qv-grid::before { background: color-mix(in srgb, var(--q-forest) 45%, var(--q-ink)); }
+.qv--draining-panel .qv-grid { overflow: hidden; }
+.qv--draining-panel .qv-grid::after { position: absolute; top: 0; right: 0; width: calc(30cqw + 8.5cqw); height: 100%; border-top: 2px solid var(--q-accent); background: var(--q-forest); content: ''; transform: translateY(calc((1 - var(--q-progress, .78)) * 100%)); transition: transform 1s linear, background 300ms ease; }
+.qv--draining-panel.qv--warning .qv-grid::after { border-top-color: var(--q-coral); background: color-mix(in srgb, var(--q-coral) 34%, var(--q-ink)); }
+.qv--draining-panel .qv-timer > i { display: none; }
+.qv--draining-panel .qv-brand, .qv--draining-panel .qv-nav { z-index: 2; }
 
 /* L / Stepper card: one card, no inner borders doubled, steppers instead of tabs + picker */
 .setup-l-card { border: 1px solid var(--split-line); border-radius: 16px; background: color-mix(in srgb, var(--split-ink) 30%, transparent); padding: 1.6rem; }

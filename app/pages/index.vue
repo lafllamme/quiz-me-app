@@ -45,6 +45,56 @@ function goBack() {
     quiz.openMenu()
 }
 
+const optionKeys = ['1', '2', '3', '4']
+const optionLetters = ['a', 'b', 'c', 'd']
+
+// Host shortcuts. Ignored while typing or while a modal is open (the modal owns Escape then).
+function onKeydown(event: KeyboardEvent) {
+  if (modal.value || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey)
+    return
+  if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]'))
+    return
+
+  const key = event.key.toLowerCase()
+  const screen = quiz.screen.value
+  let handled = true
+
+  if (screen === 'question') {
+    const optionIndex = optionKeys.includes(key) ? optionKeys.indexOf(key) : optionLetters.indexOf(key)
+    if (optionIndex >= 0)
+      quiz.selectOption(optionIndex)
+    else if (key === 'z')
+      quiz.revealAnswer()
+    else if (key === 'r')
+      quiz.markCorrect()
+    else if (key === 'f')
+      quiz.markWrong()
+    else if (key === ' ')
+      toggleTimer()
+    else if (key === 'enter' && quiz.game.resolved)
+      quiz.nextQuestion()
+    else if (key === 'escape')
+      quiz.openMenu()
+    else
+      handled = false
+  }
+  else if (screen === 'toss' && key === 'enter') {
+    quiz.continueFromToss()
+  }
+  else if (key === 'escape' && screen !== 'menu') {
+    quiz.openMenu()
+  }
+  else {
+    handled = false
+  }
+
+  if (handled)
+    event.preventDefault()
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+
 function goForward() {
   if (quiz.screen.value === 'toss')
     quiz.continueFromToss()
@@ -71,7 +121,7 @@ function goForward() {
           <template v-else-if="quiz.screen.value === 'category' || quiz.screen.value === 'question' || quiz.screen.value === 'tie'">
             <Scoreboard v-if="quiz.screen.value === 'tie'" :names="quiz.config.names" :scores="quiz.game.scores" :active="quiz.game.active" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :turn="quiz.game.turn" :per-round="quiz.config.perRound" :tie="true" />
             <CategoryBoard v-if="quiz.screen.value === 'category'" :categories="visibleCategories" :active-name="quiz.config.names[quiz.game.active]" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :question-number="quiz.game.turn + 1" :question-count="quiz.questionCount.value" :preview-only="isCategoryPreview" @choose="quiz.chooseCategory" />
-            <QuestionStage v-else-if="quiz.screen.value === 'question' && quiz.game.currentQuestion" :question="quiz.game.currentQuestion" :names="quiz.config.names" :scores="quiz.game.scores" :active-name="quiz.config.names[quiz.game.active]" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :turn="quiz.game.turn" :per-round="quiz.config.perRound" :stolen="quiz.game.stolen" :revealed="quiz.game.revealed" :resolved="quiz.game.resolved" :result="quiz.game.result" :winner="quiz.game.winner" :selected-option="quiz.game.selectedOption" :time-expired="quiz.game.timeExpired" :time-remaining="quiz.timeRemaining.value" :time-limit="quiz.game.stolen && quiz.config.steal !== 'remaining' ? Number(quiz.config.steal) : quiz.config.seconds" :timer-running="quiz.timerRunning.value" :drink="quiz.config.drink" :winner-name="resolvedWinnerName" @select="quiz.selectOption" @reveal="quiz.revealAnswer" @toggle-timer="toggleTimer" @reset-timer="quiz.resetTimer" @next="quiz.nextQuestion" />
+            <QuestionStage v-else-if="quiz.screen.value === 'question' && quiz.game.currentQuestion" :question="quiz.game.currentQuestion" :names="quiz.config.names" :scores="quiz.game.scores" :active-name="quiz.config.names[quiz.game.active]" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :turn="quiz.game.turn" :per-round="quiz.config.perRound" :stolen="quiz.game.stolen" :revealed="quiz.game.revealed" :resolved="quiz.game.resolved" :result="quiz.game.result" :winner="quiz.game.winner" :selected-option="quiz.game.selectedOption" :wrong-options="quiz.game.wrongOptions" :time-expired="quiz.game.timeExpired" :time-remaining="quiz.timeRemaining.value" :time-limit="quiz.game.stolen && quiz.config.steal !== 'remaining' ? Number(quiz.config.steal) : quiz.config.seconds" :timer-running="quiz.timerRunning.value" :drink="quiz.config.drink" :winner-name="resolvedWinnerName" @select="quiz.selectOption" @reveal="quiz.revealAnswer" @toggle-timer="toggleTimer" @reset-timer="quiz.resetTimer" @next="quiz.nextQuestion" />
             <TieBreaker v-else-if="quiz.screen.value === 'tie'" :names="quiz.config.names" :question="quiz.tieQuestion.value.question" :answer="quiz.tieQuestion.value.answer" @submit="quiz.submitTie" />
           </template>
 
@@ -83,7 +133,7 @@ function goForward() {
     <AppModal v-if="modal === 'rules'" title="So wird gespielt" @close="modal = null">
       <p>Die Münze bestimmt das erste Team. Ihr wählt abwechselnd eine von sechs Kategorien. Der Host liest die Frage vor und bewertet die Antwort.</p>
       <p class="mt-4">Richtig: +1 Punkt. Falsch oder Zeit abgelaufen: Das andere Team bekommt eine Steal-Chance. Danach wird aufgelöst. Bei Gleichstand entscheidet eine Schätzfrage.</p>
-      <p class="mt-4 text-cream">Tastatur: R richtig · F falsch · A Antwort zeigen · Leertaste Pause / Start · Enter nächste Frage · Esc Menü</p>
+      <p class="mt-4 text-cream">Tastatur: 1–4 oder A–D Antwort wählen · Z Antwort zeigen · R richtig · F falsch · Leertaste Pause / Start · Enter nächste Frage · Esc Menü</p>
     </AppModal>
 
     <AppModal v-if="modal === 'settings'" title="Host Settings" @close="modal = null">

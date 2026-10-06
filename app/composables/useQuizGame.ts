@@ -1,6 +1,7 @@
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { TIE_QUESTIONS, type QuizQuestion } from '~/data/quiz-catalog'
 import { useQuestionDeck } from '~/composables/useQuestionDeck'
+import type { MusicName } from '~/composables/useSound'
 import type { DifficultyMode } from '~/types/setup'
 
 export type GameScreen = 'menu' | 'toss' | 'category' | 'question' | 'tie' | 'final'
@@ -27,6 +28,8 @@ interface GameState {
   categories: string[]
   currentQuestion: QuizQuestion | null
   selectedOption: number | null
+  /** Options already answered wrong on this question; they stay locked during the steal. */
+  wrongOptions: number[]
   timeExpired: boolean
   stolen: boolean
   revealed: boolean
@@ -56,6 +59,7 @@ const emptyGame = (): GameState => ({
   categories: [],
   currentQuestion: null,
   selectedOption: null,
+  wrongOptions: [],
   timeExpired: false,
   stolen: false,
   revealed: false,
@@ -63,6 +67,13 @@ const emptyGame = (): GameState => ({
   winner: null,
   result: '',
 })
+
+// One music track per screen; screens without an entry are silent. The question screen's
+// tension track is driven by the timer instead, so it pauses and resumes with it.
+const screenMusic: Partial<Record<GameScreen, MusicName>> = {
+  menu: 'startScreen',
+  category: 'categorySelection',
+}
 
 export function useQuizGame() {
   const sound = useSound()
@@ -113,8 +124,14 @@ export function useQuizGame() {
       // Local storage is optional; a fresh session is a valid state.
     }
 
-    if (screen.value === 'menu')
-      sound.playTrack('startScreen', true)
+  }
+
+  function applyScreenMusic() {
+    const music = screenMusic[screen.value]
+    if (music)
+      sound.playMusic(music)
+    else
+      sound.stopMusic()
   }
 
   function stopTimer() {
@@ -128,7 +145,7 @@ export function useQuizGame() {
     if (screen.value !== 'question' || game.resolved || game.revealed || timeRemaining.value <= 0 || timerRunning.value)
       return
 
-    sound.resumeTrack('tension')
+    sound.playMusic('tension', { loop: false })
     timerRunning.value = true
     timer = window.setInterval(() => {
       timeRemaining.value = Math.max(0, timeRemaining.value - 0.1)
@@ -144,7 +161,7 @@ export function useQuizGame() {
 
   function pauseTimer() {
     stopTimer()
-    sound.pauseTrack('tension')
+    sound.pauseMusic()
   }
 
   function resetTimer() {
@@ -157,9 +174,7 @@ export function useQuizGame() {
 
   function openMenu() {
     stopTimer()
-    sound.stopAllTracks()
     screen.value = 'menu'
-    sound.playTrack('startScreen', true)
     if (catalogExhausted.value) {
       hasSavedGame.value = false
       if (!import.meta.server)
@@ -183,7 +198,6 @@ export function useQuizGame() {
     }
 
     stopTimer()
-    sound.stopTrack('startScreen')
     Object.assign(game, emptyGame())
     tossResult.value = Math.random() < 0.5 ? 'kopf' : 'zahl'
     game.first = tossResult.value === 'kopf' ? 0 : 1
@@ -241,6 +255,7 @@ export function useQuizGame() {
     game.active = ((game.first + game.turn) % 2) as 0 | 1
     game.currentQuestion = null
     game.selectedOption = null
+    game.wrongOptions = []
     game.timeExpired = false
     game.stolen = false
     game.revealed = false
@@ -254,7 +269,6 @@ export function useQuizGame() {
     }
 
     screen.value = 'category'
-    sound.playTrack('categorySelection', true)
     persist()
   }
 
@@ -262,9 +276,9 @@ export function useQuizGame() {
     const question = deck.pickQuestion(category, config.difficulty, game.used)
     if (!question)
       return
-    sound.stopTrack('categorySelection')
     game.currentQuestion = question
     game.selectedOption = null
+    game.wrongOptions = []
     game.timeExpired = false
     if (!game.used.includes(question.id))
       game.used.push(question.id)
@@ -281,8 +295,8 @@ export function useQuizGame() {
   }
 
   function resolve(winner: 0 | 1 | null, result: string) {
-    pauseTimer()
-    sound.stopTrack('tension')
+    stopTimer()
+    sound.stopMusic()
     game.resolved = true
     game.winner = winner
     game.result = result
@@ -300,57 +314,52 @@ export function useQuizGame() {
     resolve(game.active, `${config.names[game.active]} bekommt +1 Punkt.`)
   }
 
+  /** Wrong answer or timeout: the first miss hands the question to the other team (steal), the second ends it. */
   function markWrong(timeout = false) {
     if (screen.value !== 'question' || game.resolved)
       return
 
-    sound.stopTrack('tension')
+    stopTimer()
+    sound.stopMusic()
     sound.playTrack(timeout ? 'timeOver' : 'wrong')
 
-    if (timeout) {
-      game.timeExpired = true
-      game.result = 'Zeit abgelaufen. Wähle jetzt eine Antwort.'
-      persist()
-      return
-    }
-
-    if (game.timeExpired) {
-      resolve(null, 'Zeit abgelaufen. Kein Punkt.')
-      return
-    }
-
     if (!game.stolen && !game.revealed) {
-      pauseTimer()
-      game.stolen = true
-      game.active = (1 - game.active) as 0 | 1
-      timeRemaining.value = config.steal === 'remaining' ? Math.max(0, timeRemaining.value) : Number(config.steal)
-      sound.play('steal')
-      if (timeRemaining.value > 0) {
+      const stealSeconds = config.steal === 'remaining' ? Math.max(0, timeRemaining.value) : Number(config.steal)
+      if (stealSeconds > 0) {
+        game.stolen = true
+        game.active = (1 - game.active) as 0 | 1
+        game.result = `${timeout ? 'Zeit abgelaufen' : 'Falsch'}. ${config.names[game.active]} darf stehlen.`
+        timeRemaining.value = stealSeconds
+        sound.play('steal')
         persist()
         void nextTick(startTimer)
         return
       }
     }
 
+    game.timeExpired = timeout
     resolve(null, timeout ? 'Zeit abgelaufen. Kein Punkt.' : 'Kein Punkt für diese Frage.')
   }
 
   function selectOption(index: number) {
     if (screen.value !== 'question' || game.resolved || game.revealed || !game.currentQuestion)
       return
+    if (index < 0 || index >= game.currentQuestion.options.length || game.wrongOptions.includes(index))
+      return
 
     game.selectedOption = index
-    if (index === game.currentQuestion.correctIndex)
+    if (index === game.currentQuestion.correctIndex) {
       markCorrect()
-    else
+    }
+    else {
+      game.wrongOptions.push(index)
       markWrong()
+    }
   }
 
   function revealAnswer() {
     if (screen.value !== 'question' || game.resolved)
       return
-    pauseTimer()
-    sound.stopTrack('tension')
     game.revealed = true
     resolve(null, 'Antwort aufgedeckt. Kein Punkt.')
   }
@@ -395,12 +404,13 @@ export function useQuizGame() {
     persist()
   }
 
+  // Browsers block autoplay until the first gesture; retry the screen music then.
   function unlockAmbientSound() {
-    if (screen.value === 'menu')
-      sound.resumeTrack('startScreen')
-    else if (screen.value === 'category')
-      sound.resumeTrack('categorySelection')
+    if (screenMusic[screen.value])
+      sound.resumeMusic()
   }
+
+  watch(screen, applyScreenMusic, { flush: 'sync' })
 
   function newGame() {
     startGame()
@@ -409,11 +419,13 @@ export function useQuizGame() {
   onMounted(() => {
     deck.hydrate()
     hydrate()
+    applyScreenMusic()
     window.addEventListener('pointerdown', unlockAmbientSound, { passive: true })
     window.addEventListener('keydown', unlockAmbientSound)
   })
   onBeforeUnmount(() => {
     stopTimer()
+    sound.stopMusic()
     if (tossTimeout)
       window.clearTimeout(tossTimeout)
     window.removeEventListener('pointerdown', unlockAmbientSound)

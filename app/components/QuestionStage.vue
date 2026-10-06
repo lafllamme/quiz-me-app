@@ -16,6 +16,7 @@ const props = defineProps<{
   result: string
   winner: 0 | 1 | null
   selectedOption: number | null
+  wrongOptions: number[]
   timeExpired: boolean
   timeRemaining: number
   timeLimit: number
@@ -33,23 +34,36 @@ const emit = defineEmits<{
 }>()
 
 const letters = ['A', 'B', 'C', 'D']
-const questionOrdinals = ['Erste', 'Zweite', 'Dritte', 'Vierte', 'Fünfte', 'Sechste', 'Siebte', 'Achte', 'Neunte', 'Zehnte']
-const numberNames: Record<number, string> = { 1: 'Eine', 2: 'Zwei', 3: 'Drei', 4: 'Vier', 5: 'Fünf', 6: 'Sechs', 7: 'Sieben', 8: 'Acht', 9: 'Neun', 10: 'Zehn' }
 
-const questionLabel = computed(() => questionOrdinals[props.turn] ?? `${props.turn + 1}.`)
-const questionCountLabel = computed(() => `${numberNames[props.rounds * props.perRound] ?? props.rounds * props.perRound} Fragen`)
+const questionCount = computed(() => props.rounds * props.perRound)
+const activeIndex = computed(() => props.activeName === props.names[1] && props.activeName !== props.names[0] ? 1 : 0)
 const timerProgress = computed(() => Math.max(0, Math.min(1, props.timeRemaining / props.timeLimit)))
+const seconds = computed(() => Math.ceil(props.timeRemaining))
+const isOpen = computed(() => !props.resolved && !props.revealed)
+const timerWarning = computed(() => isOpen.value && seconds.value <= 10)
+
+// Long questions step down in size so the whole stage fits one screen without scrolling.
+const questionSize = computed(() => {
+  const length = props.question.question.length
+  if (length <= 40)
+    return 's'
+  if (length <= 65)
+    return 'm'
+  if (length <= 90)
+    return 'l'
+  return 'xl'
+})
 
 function optionClass(index: number) {
-  if (props.resolved || props.revealed) {
+  if (!isOpen.value) {
     if (index === props.question.correctIndex)
       return 'question-live-option--correct'
-    if (index === props.selectedOption)
+    if (props.wrongOptions.includes(index))
       return 'question-live-option--wrong'
     return 'question-live-option--muted'
   }
 
-  if (index === props.selectedOption)
+  if (props.wrongOptions.includes(index))
     return 'question-live-option--wrong'
 
   return ''
@@ -57,43 +71,35 @@ function optionClass(index: number) {
 </script>
 
 <template>
-  <section class="question-live-stage" :class="{ 'question-live-stage--expired': timeExpired, 'question-live-stage--resolved': resolved || revealed }">
-    <div class="question-live-top">
-      <div class="question-live-context">
-        <span>Frage</span>
-        <strong>{{ questionLabel }} / {{ questionCountLabel }}</strong>
+  <section class="question-live-stage" :class="{ 'question-live-stage--steal': stolen && isOpen, 'question-live-stage--resolved': !isOpen }">
+    <div class="question-live-progress" :aria-label="`Frage ${turn + 1} von ${questionCount}, Runde ${round} von ${rounds}`">
+      <div aria-hidden="true">
+        <i v-for="tick in questionCount" :key="tick" :class="{ 'is-done': tick < turn + 1, 'is-current': tick === turn + 1 }" />
       </div>
-
-      <div class="question-live-active-team">
-        <span>Ist dran</span>
-        <strong>{{ activeName }}</strong>
-        <small>{{ stolen ? 'Steal' : 'Antwort wählen' }}</small>
-      </div>
-
-      <div class="question-live-context question-live-context--round">
-        <span>Runde</span>
-        <strong>{{ round }} / {{ rounds }}</strong>
-      </div>
+      <span>Frage {{ turn + 1 }} / {{ questionCount }} · Runde {{ round }} / {{ rounds }}</span>
     </div>
 
-    <div class="question-live-scoreline" aria-label="Punktestand">
-      <span :class="{ 'question-live-scoreline--active': activeName === names[0] }">{{ names[0] }} <strong>{{ scores[0] }}</strong></span>
-      <span :class="{ 'question-live-scoreline--active': activeName === names[1] }">{{ names[1] }} <strong>{{ scores[1] }}</strong></span>
+    <div class="question-live-duel" aria-label="Punktestand">
+      <div v-for="index in [0, 1] as const" :key="index" class="question-live-team" :class="[`question-live-team--${index === 0 ? 'one' : 'two'}`, { 'question-live-team--active': activeIndex === index && isOpen }]">
+        <span class="question-live-team-name">{{ names[index] }}</span>
+        <strong class="question-live-team-score">{{ scores[index] }}</strong>
+        <small v-if="activeIndex === index && isOpen" class="question-live-team-badge">{{ stolen ? 'Steal-Chance' : 'Ist dran' }}</small>
+      </div>
+      <span class="question-live-duel-divider" aria-hidden="true">:</span>
     </div>
 
     <div class="question-live-main">
       <div class="question-live-copy">
         <span class="question-live-category">{{ question.category }}</span>
-        <h2>{{ question.question }}</h2>
+        <h2 :class="`question-live-question--${questionSize}`">{{ question.question }}</h2>
       </div>
 
-      <aside class="question-live-timer" :class="{ 'question-live-timer--warning': timeRemaining <= 10 && !timeExpired, 'question-live-timer--expired': timeExpired }" aria-label="Antwortzeit">
-        <span class="question-live-timer-label">{{ timeExpired ? 'Zeit vorbei' : 'Noch Zeit' }}</span>
-        <strong>{{ Math.ceil(timeRemaining) }}</strong>
-        <span class="question-live-timer-unit">Sekunden</span>
+      <aside class="question-live-timer" :class="{ 'question-live-timer--warning': timerWarning, 'question-live-timer--done': !isOpen }" aria-label="Antwortzeit">
+        <span class="question-live-timer-label">{{ stolen && isOpen ? 'Steal-Zeit' : timeExpired ? 'Zeit vorbei' : 'Noch Zeit' }}</span>
+        <strong>{{ seconds }}<small>Sek.</small></strong>
         <i aria-hidden="true"><b :style="{ transform: `scaleX(${timerProgress})` }" /></i>
-        <div v-if="!timeExpired && !resolved && !revealed" class="question-live-timer-actions">
-          <button data-uisfx-hover="hover" data-uisfx-press="press" @click="emit('toggleTimer')">{{ timerRunning ? 'Pause' : 'Weiter' }}</button>
+        <div v-if="isOpen" class="question-live-timer-actions">
+          <button data-uisfx-hover="hover" data-uisfx-press="press" @click="emit('toggleTimer')">{{ timerRunning ? 'Pause' : 'Weiter' }} <kbd>Leertaste</kbd></button>
           <button data-uisfx-hover="hover" data-uisfx-press="press" @click="emit('resetTimer')">Reset</button>
         </div>
       </aside>
@@ -106,31 +112,29 @@ function optionClass(index: number) {
         class="question-live-option"
         :class="optionClass(index)"
         data-uisfx-hover="hover"
-        :disabled="resolved || revealed"
+        :disabled="!isOpen || wrongOptions.includes(index)"
+        :aria-keyshortcuts="`${index + 1} ${letters[index]}`"
         :aria-label="`Antwort ${letters[index]}: ${option}`"
         @click="emit('select', index)"
       >
         <span class="question-live-option-letter">{{ letters[index] }}</span>
         <span class="question-live-option-copy">{{ option }}</span>
-        <Icon v-if="resolved && index === question.correctIndex" name="lucide:check" size="20" aria-hidden="true" />
-        <Icon v-else-if="selectedOption === index && !revealed" name="lucide:x" size="20" aria-hidden="true" />
+        <Icon v-if="!isOpen && index === question.correctIndex" name="lucide:check" size="22" aria-hidden="true" />
+        <Icon v-else-if="wrongOptions.includes(index)" name="lucide:x" size="22" aria-hidden="true" />
       </button>
     </div>
 
-    <div v-if="revealed || resolved" class="question-live-reveal">
-      <div>
-        <span>{{ resolved ? (winner === null ? 'Keine Punkte' : 'Aufgelöst') : 'Antwort' }}</span>
-        <strong>{{ question.answer }}</strong>
-        <p>{{ result || 'Antwort aufgedeckt. Kein Steal mehr möglich.' }}</p>
-      </div>
-      <p v-if="drink && resolved">{{ winner === null ? 'Beide Teams: 1 Schluck' : `${winnerName}: 1 Schluck` }} · optional</p>
-    </div>
-
     <div class="question-live-foot">
-      <button v-if="!resolved && !revealed && !timeExpired" data-uisfx-hover="hover" data-uisfx-press="press" class="question-live-action" @click="emit('reveal')">Antwort zeigen <span>A</span></button>
-      <button v-if="resolved" data-uisfx-hover="hover" data-uisfx-press="press" class="button-primary" @click="emit('next')">Weiter <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
-      <p v-if="timeExpired && !resolved" class="question-live-timeout" role="status">Zeit abgelaufen — jetzt Antwort wählen.</p>
-      <p v-else class="question-live-hint">{{ resolved ? 'Punktestand aktualisiert' : 'Wähle A, B, C oder D' }}</p>
+      <div v-if="!isOpen" class="question-live-reveal">
+        <span>{{ resolved && winner !== null ? 'Richtig' : 'Antwort' }}</span>
+        <strong>{{ question.answer }}</strong>
+        <p>{{ result }}<template v-if="drink && resolved"> · {{ winner === null ? 'Beide Teams: 1 Schluck' : `${winnerName}: 1 Schluck` }} (optional)</template></p>
+      </div>
+      <button v-else data-uisfx-hover="hover" data-uisfx-press="press" class="question-live-action" @click="emit('reveal')">Antwort zeigen <kbd>Z</kbd></button>
+
+      <button v-if="!isOpen" data-uisfx-hover="hover" data-uisfx-press="press" class="button-primary question-live-next" @click="emit('next')">Weiter <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
+      <p v-else-if="stolen" class="question-live-steal" role="status">{{ result }}</p>
+      <p v-else class="question-live-hint">Antwort mit <kbd>1</kbd>–<kbd>4</kbd> oder <kbd>A</kbd>–<kbd>D</kbd></p>
     </div>
   </section>
 </template>
