@@ -109,7 +109,7 @@ function goForward() {
 <template>
   <div class="page-shell relative min-h-screen">
     <div class="app-noise" aria-hidden="true" />
-    <AppHeader :tone="quiz.screen.value === 'menu' || quiz.screen.value === 'category' ? 'light' : 'dark'" :can-back="canGoBack" :can-forward="canGoForward" :split="quiz.screen.value === 'category'" @home="quiz.openMenu" @back="goBack" @forward="goForward" />
+    <AppHeader :tone="quiz.screen.value === 'category' ? 'light' : 'dark'" :can-back="canGoBack" :can-forward="canGoForward" :split="quiz.screen.value === 'category'" @home="quiz.openMenu" @back="goBack" @forward="goForward" />
 
     <main :class="quiz.screen.value === 'menu' ? 'game-stage-wrap relative z-1' : 'game-screen-transition relative z-1'">
       <Transition name="stage" mode="out-in">

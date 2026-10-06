@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { QUIZ_CATEGORIES } from '~/data/quiz-catalog'
+import { PaperGrainGradient } from '~/ui/paper-grain-gradient'
+import type { PaperGrainGradientProps } from '~/ui/paper-grain-gradient/types'
 
 type ScreenKey = 'setup' | 'categories' | 'question'
 
@@ -45,6 +47,7 @@ const variants: Record<ScreenKey, Variant[]> = {
     { id: 'open-sheet', label: 'Open sheet', note: 'No card / ruled rows on green', code: 'J' },
     { id: 'versus', label: 'Versus', note: 'Teams face off / settings as a sentence', code: 'K' },
     { id: 'versus-centered', label: 'Versus centered', note: 'Centered names / big VS as the axis', code: 'K1' },
+    { id: 'versus-grain', label: 'Versus grain', note: 'K1 + Paper grain gradient on the left field', code: 'K2' },
     { id: 'stepper-card', label: 'Stepper card', note: 'One quiet card / three steppers', code: 'L' },
     { id: 'two-blocks', label: 'Two blocks', note: 'Teams, then rules / segmented rows', code: 'M' },
     { id: 'split-duty', label: 'Split duty', note: 'Rules live left / teams own the right', code: 'N' },
@@ -250,8 +253,38 @@ function selectSetupOptionFor(field: SetupField, value: number | string) {
   activeSetupField.value = field
 }
 
+// Paper Shaders grain gradient. "paper" entries are the library presets 1:1
+// (@paper-design/shaders-react grainGradientPresets); "jungle" entries are mixes in the setup palette.
+type GrainPreset = { id: string, label: string, note: string, group: 'paper' | 'jungle', tone: 'light' | 'dark', params: PaperGrainGradientProps }
+
+const objectSizing = { fit: 'contain', scale: 1 } as const
+const patternSizing = { fit: 'none', scale: 1 } as const
+
+const grainPresets: GrainPreset[] = [
+  { id: 'paper-default', label: 'Default', note: 'Paper preset', group: 'paper', tone: 'dark', params: { ...objectSizing, speed: 1, colorBack: '#000000', colors: ['#7300ff', '#eba8ff', '#00bfff', '#2a00ff'], softness: 0.5, intensity: 0.5, noise: 0.25, shape: 'corners' } },
+  { id: 'paper-wave', label: 'Wave', note: 'Paper preset', group: 'paper', tone: 'dark', params: { ...patternSizing, speed: 1, colorBack: '#000a0f', colors: ['#c4730b', '#bdad5f', '#d8ccc7'], softness: 0.7, intensity: 0.15, noise: 0.5, shape: 'wave' } },
+  { id: 'paper-dots', label: 'Dots', note: 'Paper preset', group: 'paper', tone: 'dark', params: { ...patternSizing, scale: 0.6, speed: 1, colorBack: '#0a0000', colors: ['#6f0000', '#0080ff', '#f2ebc9', '#33cc33'], softness: 1, intensity: 1, noise: 0.7, shape: 'dots' } },
+  { id: 'paper-truchet', label: 'Truchet', note: 'Paper preset', group: 'paper', tone: 'dark', params: { ...patternSizing, speed: 1, colorBack: '#0a0000', colors: ['#6f2200', '#eabb7c', '#39b523'], softness: 0, intensity: 0.2, noise: 1, shape: 'truchet' } },
+  { id: 'paper-ripple', label: 'Ripple', note: 'Paper preset', group: 'paper', tone: 'dark', params: { ...objectSizing, scale: 0.5, speed: 1, colorBack: '#140a00', colors: ['#6f2d00', '#88ddae', '#2c0b1d'], softness: 0.5, intensity: 0.5, noise: 0.5, shape: 'ripple' } },
+  { id: 'paper-blob', label: 'Blob', note: 'Paper preset', group: 'paper', tone: 'dark', params: { ...objectSizing, scale: 1.3, speed: 1, colorBack: '#0f0e18', colors: ['#3e6172', '#a49b74', '#568c50'], softness: 0, intensity: 0.15, noise: 0.5, shape: 'blob' } },
+  { id: 'jungle-tea', label: 'Tea field', note: 'Corners / tea green into lime, soft grain', group: 'jungle', tone: 'light', params: { ...objectSizing, fit: 'cover', speed: 0.45, colorBack: '#e7f7b6', colors: ['#caff4a', '#d9f59a', '#b9e27c', '#f4fbdc'], softness: 0.85, intensity: 0.35, noise: 0.35, shape: 'corners' } },
+  { id: 'jungle-wave', label: 'Lime wave', note: 'Wave / slow lime bands', group: 'jungle', tone: 'light', params: { ...patternSizing, speed: 0.5, colorBack: '#e7f7b6', colors: ['#caff4a', '#addb6c', '#f3f9d8'], softness: 0.75, intensity: 0.18, noise: 0.45, shape: 'wave' } },
+  { id: 'jungle-truchet', label: 'Game board', note: 'Truchet / printed tiles, heavy grain', group: 'jungle', tone: 'light', params: { ...patternSizing, scale: 1.4, speed: 0.35, colorBack: '#e7f7b6', colors: ['#d4f18c', '#bfe27f', '#eef8c8'], softness: 0, intensity: 0.2, noise: 0.9, shape: 'truchet' } },
+  { id: 'jungle-gold', label: 'Gold corner', note: 'Corners / warm token gold in the lime', group: 'jungle', tone: 'light', params: { ...objectSizing, fit: 'cover', speed: 0.4, colorBack: '#e7f7b6', colors: ['#f1dd8c', '#caff4a', '#e7f7b6', '#d7ef9c'], softness: 0.9, intensity: 0.3, noise: 0.4, shape: 'corners' } },
+  { id: 'jungle-ripple', label: 'Canopy ripple', note: 'Ripple / forest green rings from the corner', group: 'jungle', tone: 'light', params: { ...objectSizing, fit: 'cover', scale: 0.7, originX: 0.15, originY: 0.9, speed: 0.4, colorBack: '#e7f7b6', colors: ['#cdf27a', '#9fcf6a', '#e7f7b6'], softness: 0.6, intensity: 0.4, noise: 0.4, shape: 'ripple' } },
+  { id: 'jungle-night', label: 'Night jungle', note: 'Blob / dark field, text flips to cream', group: 'jungle', tone: 'dark', params: { ...objectSizing, scale: 1.3, speed: 0.5, colorBack: '#081811', colors: ['#0b4429', '#2f7a3d', '#caff4a'], softness: 0.4, intensity: 0.2, noise: 0.5, shape: 'blob' } },
+]
+const selectedGrain = ref('jungle-tea')
+const activeGrain = computed(() => grainPresets.find(preset => preset.id === selectedGrain.value) ?? grainPresets[0]!)
+const prefersReducedMotion = ref(false)
+onMounted(() => {
+  prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+})
+// Reduced motion renders one still frame instead of animating.
+const grainParams = computed<PaperGrainGradientProps>(() => ({ ...activeGrain.value.params, speed: prefersReducedMotion.value ? 0 : activeGrain.value.params.speed }))
+
 const setupFields: SetupField[] = ['rounds', 'seconds', 'difficulty']
-const refinedSetupVariants = ['open-sheet', 'versus', 'versus-centered', 'stepper-card', 'two-blocks', 'split-duty']
+const refinedSetupVariants = ['open-sheet', 'versus', 'versus-centered', 'versus-grain', 'stepper-card', 'two-blocks', 'split-duty']
 const isRefinedSetup = computed(() => activeScreen.value === 'setup' && refinedSetupVariants.includes(activeVariant.value.id))
 
 function formatSetupOption(field: SetupField, value: number | string) {
@@ -398,9 +431,10 @@ function isSelectedSetupOption(value: number | string) {
             </div>
 
             <!-- Refined setup studies: same content, calmer form, bigger copy -->
-            <div v-else-if="isRefinedSetup" class="study setup-v" :class="`setup-v--${activeVariant.id}`" :style="splitFieldPaletteStyle">
+            <div v-else-if="isRefinedSetup" class="study setup-v" :class="[`setup-v--${activeVariant.id}`, { 'setup-v--versus-centered': activeVariant.id === 'versus-grain', 'setup-v--grain-dark': activeVariant.id === 'versus-grain' && activeGrain.tone === 'dark' }]" :style="splitFieldPaletteStyle">
               <div class="setup-v-grid">
                 <div class="setup-v-copy">
+                  <PaperGrainGradient v-if="activeVariant.id === 'versus-grain'" :key="activeGrain.id" v-bind="grainParams" class="setup-grain" />
                   <div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div>
                   <div class="setup-v-copy-main">
                     <h2>Wer<br><em>spielt?</em></h2>
@@ -435,7 +469,7 @@ function isSelectedSetupOption(value: number | string) {
                 </form>
 
                 <!-- K / Versus, K1 / Versus centered -->
-                <form v-else-if="activeVariant.id === 'versus' || activeVariant.id === 'versus-centered'" class="setup-v-side setup-k" @submit.prevent="chooseScreen('categories')">
+                <form v-else-if="activeVariant.id === 'versus' || activeVariant.id === 'versus-centered' || activeVariant.id === 'versus-grain'" class="setup-v-side setup-k" @submit.prevent="chooseScreen('categories')">
                   <label class="setup-k-team"><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label>
                   <div class="setup-k-vs" aria-hidden="true"><i /><b>vs</b><i /></div>
                   <label class="setup-k-team"><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label>
@@ -571,6 +605,19 @@ function isSelectedSetupOption(value: number | string) {
                 <span class="config-variant-copy"><strong>{{ length === 'short' ? 'Kurze Frage' : 'Lange Frage' }}</strong><small>{{ questionSamples[length].text.length }} Zeichen</small></span>
                 <span class="config-variant-arrow">↗</span>
               </button>
+            </div>
+          </section>
+
+          <section v-if="activeScreen === 'setup' && activeVariant.id === 'versus-grain'" class="config-variant-dock" aria-label="Grain gradient presets">
+            <div class="config-variant-dock-head"><span>Grain gradient</span><span>Paper presets 1:1 · Jungle mixes</span></div>
+            <div v-for="group in (['jungle', 'paper'] as const)" :key="group" class="grain-group">
+              <p class="grain-group-title">{{ group === 'jungle' ? 'Jungle mixes' : 'Paper presets (original)' }}</p>
+              <div class="config-variant-grid">
+                <button v-for="preset in grainPresets.filter(item => item.group === group)" :key="preset.id" type="button" class="config-variant-option grain-option" :class="{ 'config-variant-option--active': selectedGrain === preset.id }" :aria-pressed="selectedGrain === preset.id" @click="selectedGrain = preset.id">
+                  <span class="grain-swatch" aria-hidden="true"><i :style="{ background: preset.params.colorBack }" /><i v-for="color in preset.params.colors" :key="color" :style="{ background: color }" /></span>
+                  <span class="config-variant-copy"><strong>{{ preset.label }}</strong><small>{{ preset.note }}</small></span>
+                </button>
+              </div>
             </div>
           </section>
 
@@ -1057,6 +1104,19 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .qv--draining-panel.qv--warning .qv-grid::after { border-top-color: var(--q-coral); background: color-mix(in srgb, var(--q-coral) 34%, var(--q-ink)); }
 .qv--draining-panel .qv-timer > i { display: none; }
 .qv--draining-panel .qv-brand, .qv--draining-panel .qv-nav { z-index: 2; }
+
+/* K2 / Versus grain: the Paper grain gradient sits behind the light field's copy. */
+.setup-v--versus-grain .setup-v-copy { position: relative; isolation: isolate; overflow: hidden; }
+.setup-v--versus-grain .setup-v-copy > :not(.setup-grain) { position: relative; z-index: 1; }
+.setup-grain { position: absolute; inset: 0; z-index: 0; }
+.setup-v--grain-dark .setup-v-copy, .setup-v--grain-dark .setup-v-copy .split-field-wordmark, .setup-v--grain-dark .setup-v-copy h2 { color: var(--split-cream); }
+.setup-v--grain-dark .setup-v-copy h2 em { color: var(--split-accent); }
+.setup-v--grain-dark .setup-v-copy p { color: color-mix(in srgb, var(--split-cream) 80%, transparent); }
+.grain-group { margin-top: .9rem; }
+.grain-group-title { margin: 0; color: var(--lab-muted); font-size: .62rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.grain-option { grid-template-columns: auto 1fr; align-items: center; }
+.grain-swatch { display: flex; overflow: hidden; border: 1px solid var(--lab-line); border-radius: 4px; }
+.grain-swatch i { width: .7rem; height: 1.6rem; }
 
 /* L / Stepper card: one card, no inner borders doubled, steppers instead of tabs + picker */
 .setup-l-card { border: 1px solid var(--split-line); border-radius: 16px; background: color-mix(in srgb, var(--split-ink) 30%, transparent); padding: 1.6rem; }
