@@ -8,6 +8,11 @@ type Variant = {
   code: string
 }
 
+type CategoryOption = {
+  label: string
+  descriptor: string
+}
+
 type Palette = {
   id: string
   label: string
@@ -45,11 +50,10 @@ const variants: Record<ScreenKey, Variant[]> = {
     { id: 'ticket', label: 'Ticket', note: 'Night pass / compact setup', code: 'E' },
   ],
   categories: [
-    { id: 'route', label: 'Route map', note: 'Trace the next move', code: 'A' },
-    { id: 'index', label: 'Index spread', note: 'Fast scan / clear stakes', code: 'B' },
-    { id: 'stack', label: 'Stacked field', note: 'One loud choice at a time', code: 'C' },
-    { id: 'constellation', label: 'Constellation', note: 'Loose map / social pull', code: 'D' },
-    { id: 'dial', label: 'Category dial', note: 'Pick by instinct', code: 'E' },
+    { id: 'soft-field', label: 'Weiche Felder', note: 'Runde Flächen / direkt scannen', code: 'A' },
+    { id: 'signal-grid', label: 'Signalraster', note: 'Große Ziele / klare Wahl', code: 'B' },
+    { id: 'choice-lane', label: 'Wahlbahn', note: 'Eine Zeile / ein Fokus', code: 'C' },
+    { id: 'offset-islands', label: 'Versetzte Inseln', note: 'Mehr Raum / mehr Spannung', code: 'D' },
   ],
   question: [
     { id: 'board', label: 'Question board', note: 'Options as a live board', code: 'A' },
@@ -59,6 +63,13 @@ const variants: Record<ScreenKey, Variant[]> = {
     { id: 'duel', label: 'Duel', note: 'Two teams / one answer', code: 'E' },
   ],
 }
+
+const categoryOptions: CategoryOption[] = [
+  { label: '2000er', descriptor: 'Nostalgie, Netzkultur, große Hits' },
+  { label: 'Musik', descriptor: 'Tracks, Stimmen und Ohrwürmer' },
+  { label: 'Filme', descriptor: 'Kino, Kult und Plot-Twists' },
+  { label: 'WTF-Wissen', descriptor: 'Fakten, die hängen bleiben' },
+]
 
 const paletteOptions: Palette[] = [
   {
@@ -404,52 +415,47 @@ function chooseAnswer(index: number) {
             </div>
 
             <!-- Category studies -->
-            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'route'" class="study study-route">
-              <div class="route-head"><div><span class="mini-kicker">Team two chooses</span><h2>Pick your<br><em>territory.</em></h2></div><div class="route-score"><strong>01</strong><span>round / 05</span></div></div>
-              <div class="route-map">
-                <div class="route-line route-line--one" aria-hidden="true"><i /><i /><i /><i /></div>
-                <div class="route-line route-line--two" aria-hidden="true"><i /><i /><i /><i /></div>
-                <button v-for="(category, index) in ['WTF-WISSEN', 'SERIEN', 'FILME', 'MEMES']" :key="category" class="route-stop" :class="{ 'route-stop--active': selectedCategory === category }" @click="chooseCategory(category)"><span>0{{ index + 1 }}</span><strong>{{ category }}</strong><Icon name="lucide:arrow-up-right" size="15" aria-hidden="true" /></button>
+            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'soft-field'" class="study category-study category-study--soft-field">
+              <div class="category-study-top"><span>Runde 01 / 05</span><strong>TEAM ONE IST DRAN</strong><span>10 Fragen</span></div>
+              <div class="category-study-intro"><h2>Picke eine <em>Kategorie.</em></h2><p>Eine Frage. Ein Fokus. Ihr entscheidet.</p></div>
+              <div class="category-surface-grid" role="group" aria-label="Kategorien auswählen">
+                <button v-for="(option, index) in categoryOptions" :key="option.label" data-uisfx-hover="hover" data-uisfx-press="press" class="category-surface category-surface--soft" :class="{ 'category-surface--selected': selectedCategory === option.label }" @click="chooseCategory(option.label)">
+                  <span class="category-surface-index">0{{ index + 1 }}</span><span class="category-surface-copy"><strong>{{ option.label }}</strong><small>{{ option.descriptor }}</small></span><Icon name="lucide:arrow-up-right" size="19" aria-hidden="true" />
+                </button>
               </div>
-              <p class="route-foot">The chosen line lights up. There is no wrong turn.</p>
+              <p class="category-study-foot">{{ selectedCategory ? `${selectedCategory} gewählt` : 'Bereit für den ersten Pick.' }} <span>↗</span></p>
             </div>
 
-            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'index'" class="study study-index">
-              <div class="index-header"><span class="mini-kicker">Round 01 / Category index</span><span>Team two is choosing</span></div>
-              <h2>What do<br>you know <em>best?</em></h2>
-              <div class="index-list">
-                <button v-for="(category, index) in ['WTF-WISSEN', 'SERIEN', 'FILME', 'MEMES']" :key="category" :class="{ 'index-row--active': selectedCategory === category }" class="index-row" @click="chooseCategory(category)"><span>{{ String(index + 1).padStart(2, '0') }}</span><strong>{{ category }}</strong><small>{{ ['the odd stuff', 'screen time', 'big feelings', 'internet archaeology'][index] }}</small><Icon name="lucide:arrow-up-right" size="17" aria-hidden="true" /></button>
+            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'signal-grid'" class="study category-study category-study--signal-grid">
+              <div class="category-study-top"><span>Kategorie wählen</span><strong>TEAM ONE IST DRAN</strong><span>01 / 05</span></div>
+              <div class="category-study-intro"><h2>Was fühlt sich <em>richtig</em> an?</h2><p>Keine Rangliste. Nur die nächste gute Frage.</p></div>
+              <div class="category-signal-grid" role="group" aria-label="Kategorien auswählen">
+                <button v-for="(option, index) in categoryOptions" :key="option.label" data-uisfx-hover="hover" data-uisfx-press="press" class="category-signal-card" :class="{ 'category-signal-card--selected': selectedCategory === option.label }" @click="chooseCategory(option.label)">
+                  <span class="category-signal-card-number">0{{ index + 1 }}</span><span class="category-signal-card-copy"><strong>{{ option.label }}</strong><small>{{ option.descriptor }}</small></span><Icon name="lucide:arrow-up-right" size="19" aria-hidden="true" />
+                </button>
               </div>
             </div>
 
-            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'stack'" class="study study-stack">
-              <div class="stack-top"><span class="mini-kicker">Your move / Team two</span><span>JQ · 01—05</span></div>
-              <h2>Choose<br><em>a lane.</em></h2>
-              <div class="stack-field">
-                <button v-for="(category, index) in ['WTF-WISSEN', 'SERIEN', 'FILME', 'MEMES']" :key="category" class="stack-row" :class="{ 'stack-row--active': selectedCategory === category }" @click="chooseCategory(category)"><span>{{ ['odd facts', 'long nights', 'plot twists', 'deep scrolls'][index] }}</span><strong>{{ category }}</strong><i>0{{ index + 1 }}</i></button>
+            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'choice-lane'" class="study category-study category-study--choice-lane">
+              <div class="category-study-top"><span>Runde 01 / 05</span><strong>TEAM ONE IST DRAN</strong><span>Dein Pick</span></div>
+              <div class="category-study-intro"><h2>Picke deine <em>Kategorie.</em></h2><p>Scannen. Entscheiden. Los.</p></div>
+              <div class="category-lane" role="group" aria-label="Kategorien auswählen">
+                <button v-for="(option, index) in categoryOptions" :key="option.label" data-uisfx-hover="hover" data-uisfx-press="press" class="category-lane-row" :class="{ 'category-lane-row--selected': selectedCategory === option.label }" @click="chooseCategory(option.label)">
+                  <span class="category-lane-index">0{{ index + 1 }}</span><strong>{{ option.label }}</strong><small>{{ option.descriptor }}</small><Icon name="lucide:arrow-right" size="19" aria-hidden="true" />
+                </button>
               </div>
-              <p class="stack-note">Hover is a hint. Click is a commitment.</p>
+              <p class="category-study-foot">Die Auswahl zählt für beide Teams.</p>
             </div>
 
-            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'constellation'" class="study study-constellation">
-              <div class="constellation-header"><span class="mini-kicker">A social map of things you know</span><strong>ROUND 01</strong></div>
-              <h2>Find your<br><em>strange corner.</em></h2>
-              <div class="constellation-space">
-                <span class="star star--one" aria-hidden="true" /><span class="star star--two" aria-hidden="true" /><span class="star star--three" aria-hidden="true" />
-                <svg viewBox="0 0 500 250" aria-hidden="true"><path d="M35 188 150 62 290 188 430 56" /><path d="M150 62 370 218" /></svg>
-                <button v-for="(category, index) in ['WTF-WISSEN', 'SERIEN', 'FILME', 'MEMES']" :key="category" class="constellation-node" :class="`constellation-node--${index + 1}`" :aria-label="`Kategorie ${category}`" @click="chooseCategory(category)"><small>0{{ index + 1 }}</small><strong>{{ category }}</strong></button>
+            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'offset-islands'" class="study category-study category-study--offset-islands">
+              <div class="category-study-top"><span>01 / Kategorie</span><strong>TEAM ONE IST DRAN</strong><span>Jungle / Quiz</span></div>
+              <div class="category-study-intro"><h2>Geh dahin, wo es <em>interessant</em> wird.</h2><p>Vier Ecken. Eine Richtung für diese Runde.</p></div>
+              <div class="category-islands" role="group" aria-label="Kategorien auswählen">
+                <button v-for="(option, index) in categoryOptions" :key="option.label" data-uisfx-hover="hover" data-uisfx-press="press" class="category-island" :class="{ 'category-island--selected': selectedCategory === option.label }" @click="chooseCategory(option.label)">
+                  <span class="category-island-top"><span>0{{ index + 1 }}</span><Icon name="lucide:arrow-up-right" size="18" aria-hidden="true" /></span><strong>{{ option.label }}</strong><small>{{ option.descriptor }}</small>
+                </button>
               </div>
-              <p class="constellation-foot">{{ selectedCategory || 'Pick a star. Make it yours.' }}</p>
-            </div>
-
-            <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'dial'" class="study study-dial">
-              <div class="dial-top"><span class="mini-kicker">Team two is up</span><span>01 / 05</span></div>
-              <div class="dial-layout">
-                <div class="dial-copy"><h2>Trust<br>your <em>gut.</em></h2><p>Every category is a different kind of trouble.</p><button class="study-action study-action--gold" @click="chooseCategory('WTF-WISSEN')">Spin the room <Icon name="lucide:rotate-cw" size="15" aria-hidden="true" /></button></div>
-                <div class="dial-wheel" role="group" aria-label="Kategorien">
-                  <button v-for="(category, index) in ['WTF-WISSEN', 'SERIEN', 'FILME', 'MEMES']" :key="category" class="dial-node" :class="{ 'dial-node--active': selectedCategory === category }" :style="{ '--dial-angle': `${index * 90 - 45}deg` }" @click="chooseCategory(category)">{{ category }}</button><span class="dial-centre">PICK<br><small>ONE</small></span>
-                </div>
-              </div>
+              <p class="category-study-foot">{{ selectedCategory || 'Noch keine Kategorie gewählt' }}</p>
             </div>
 
             <!-- Question studies -->
@@ -786,16 +792,43 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .study-ticket { min-height: 665px; display: grid; grid-template-rows: auto 1fr auto; padding: 2.2rem clamp(1.5rem, 6vw, 5rem); background: var(--lab-cream); color: var(--lab-ink); }.study-ticket::before { background: linear-gradient(160deg, transparent 0 67%, rgb(183 214 158 / 75%) 67% 77%, transparent 77%); }.ticket-top, .ticket-stub { display: flex; align-items: center; justify-content: space-between; }.ticket-top .mini-kicker { color: var(--lab-jungle); }.ticket-serial { font-size: .6rem; font-weight: 700; letter-spacing: .14em; }.ticket-main { align-self: center; }.ticket-wordmark { color: var(--lab-jungle); font-family: var(--font-display); font-size: 1rem; font-weight: 700; letter-spacing: -.04em; }.ticket-wordmark span { color: var(--lab-gold); margin: 0 .25rem; }.ticket-main h2 { max-width: 8ch; margin-top: 1.8rem; color: var(--lab-ink); font-size: clamp(3.8rem, 8vw, 7rem); }.ticket-main h2 em { color: var(--lab-jungle); }.ticket-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 12rem)); gap: 1rem; margin-top: 2rem; }.ticket-inputs input { width: 100%; border-color: rgb(7 26 19 / 38%); color: var(--lab-ink); font-size: .82rem; font-weight: 600; }.ticket-stub { gap: 1rem; border-top: 1px dashed rgb(7 26 19 / 35%); padding-top: 1rem; color: var(--lab-jungle); font-size: .9rem; font-weight: 800; }.ticket-stub span { display: flex; align-items: baseline; gap: .3rem; }.ticket-stub small { font-size: .55rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }.ticket-stub button { display: inline-flex; align-items: center; gap: .5rem; border: 1px solid var(--lab-ink); background: var(--lab-ink); padding: .7rem .9rem; color: var(--lab-cream); font-size: .68rem; font-weight: 700; text-transform: uppercase; }
 
 /* Category studies */
-.route-head, .index-header, .stack-top, .dial-top, .constellation-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }.route-head h2, .index-header + h2, .stack-top + h2, .dial-copy h2, .constellation-header + h2 { margin-top: 1.1rem; }.route-score { text-align: right; }.route-score strong { display: block; color: var(--lab-gold); font-family: var(--font-display); font-size: 3.7rem; line-height: .75; }.route-score span { color: var(--lab-muted); font-size: .65rem; text-transform: uppercase; }
-.route-map { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; margin-top: 3.5rem; padding: 1rem; }.route-line { position: absolute; z-index: -1; border: 1px solid var(--lab-gold); border-top: 0; transform: rotate(-8deg); }.route-line--one { inset: 0 47% 0 8%; }.route-line--two { inset: 0 8% 0 47%; border-color: var(--lab-leaf); transform: rotate(8deg); }.route-line i { position: absolute; width: .7rem; height: .7rem; border: 2px solid var(--lab-gold); border-radius: 50%; background: var(--lab-jungle); }.route-line i:nth-child(1) { top: -.4rem; left: 20%; }.route-line i:nth-child(2) { top: 34%; right: -.4rem; }.route-line i:nth-child(3) { bottom: 28%; left: -.4rem; }.route-line i:nth-child(4) { right: 20%; bottom: -.4rem; }.route-stop { display: grid; grid-template-columns: 1.6rem 1fr 1rem; align-items: center; gap: .6rem; min-height: 8.2rem; border: 1px solid var(--lab-line); background: rgb(13 42 29 / 75%); padding: 1rem; color: var(--lab-cream); text-align: left; transition: background 180ms ease, transform 180ms ease, border-color 180ms ease; }.route-stop:hover, .route-stop--active { border-color: var(--lab-gold); background: var(--lab-gold); color: var(--lab-ink); transform: rotate(-1deg); }.route-stop span { align-self: start; color: var(--lab-gold); font-family: var(--font-display); }.route-stop--active span { color: var(--lab-ink); }.route-stop strong { font-family: var(--font-display); font-size: clamp(1.5rem, 3.3vw, 3rem); letter-spacing: -.05em; }.route-foot { margin-top: 1.2rem; border-top: 1px solid var(--lab-line); padding-top: 1rem; font-size: .75rem; }
+.category-study { padding: 2rem clamp(1.4rem, 4vw, 3rem); }
+.category-study-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; color: var(--lab-muted); font-size: .62rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.category-study-top strong { color: var(--lab-gold); font-size: .6rem; text-align: center; }
+.category-study-top span:last-child { text-align: right; }
+.category-study-intro { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-top: 4.1rem; }
+.category-study-intro h2 { max-width: 10ch; margin: 0; font-size: clamp(3rem, 6vw, 6rem); }
+.category-study-intro h2 em { color: var(--lab-leaf); font-style: normal; }
+.category-study-intro p { max-width: 14rem; margin: 0 0 .35rem; color: var(--lab-muted); font-size: .78rem; line-height: 1.45; }
+.category-surface-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: 3rem; }
+.category-surface, .category-signal-card, .category-lane-row, .category-island { cursor: pointer; font: inherit; }
+.category-surface { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; min-height: 8.5rem; border: 0; border-radius: 1rem; background: var(--lab-forest); color: var(--lab-cream); padding: 1.2rem 1.25rem; text-align: left; transition: transform 180ms ease, background 180ms ease, color 180ms ease; }
+.category-surface:hover, .category-surface:focus-visible, .category-surface--selected { background: var(--lab-gold); color: var(--lab-ink); transform: translateY(-3px); }
+.category-surface:focus-visible, .category-signal-card:focus-visible, .category-lane-row:focus-visible, .category-island:focus-visible { outline: 3px solid var(--lab-leaf); outline-offset: 3px; }
+.category-surface-index, .category-signal-card-number, .category-lane-index { align-self: start; color: var(--lab-gold); font-family: var(--font-display); font-size: 1.25rem; }
+.category-surface--selected .category-surface-index, .category-surface:hover .category-surface-index, .category-surface:focus-visible .category-surface-index { color: var(--lab-ink); }
+.category-surface-copy, .category-signal-card-copy { display: flex; flex-direction: column; gap: .35rem; }
+.category-surface-copy strong, .category-signal-card-copy strong { font-family: var(--font-display); font-size: clamp(1.7rem, 3vw, 3rem); letter-spacing: -.04em; line-height: .9; }
+.category-surface-copy small, .category-signal-card-copy small { color: var(--lab-muted); font-size: .67rem; line-height: 1.35; }
+.category-surface--selected .category-surface-copy small, .category-surface:hover .category-surface-copy small, .category-surface:focus-visible .category-surface-copy small { color: rgb(7 26 19 / 72%); }
+.category-surface > .iconify { color: var(--lab-gold); }.category-surface:hover > .iconify, .category-surface:focus-visible > .iconify, .category-surface--selected > .iconify { color: var(--lab-ink); }
+.category-study-foot { display: flex; justify-content: space-between; margin: 1.2rem 0 0; border-top: 1px solid var(--lab-line); padding-top: .9rem; color: var(--lab-muted); font-size: .68rem; letter-spacing: .04em; }.category-study-foot span { color: var(--lab-gold); }
 
-.study-index { padding: clamp(2rem, 5vw, 4rem); }.index-header { color: var(--lab-muted); font-size: .66rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }.index-header .mini-kicker { margin: 0; }.study-index > h2 { margin: 3.5rem 0 2.5rem; font-size: clamp(3.4rem, 7vw, 7rem); }.index-list { border-top: 1px solid var(--lab-line); }.index-row { display: grid; grid-template-columns: 2rem minmax(0, 1fr) minmax(8rem, .8fr) 1rem; align-items: center; gap: 1rem; width: 100%; min-height: 70px; border: 0; border-bottom: 1px solid var(--lab-line); background: transparent; color: var(--lab-cream); padding: .5rem 0; text-align: left; transform: translateX(0); transition: transform 160ms ease, color 160ms ease, background 160ms ease; }.index-row:hover, .index-row--active { background: var(--lab-forest); color: var(--lab-cream); transform: translateX(8px); }.index-row > span { color: var(--lab-gold); font-size: .75rem; }.index-row strong { font-family: var(--font-display); font-size: clamp(1.5rem, 3.7vw, 3.5rem); letter-spacing: -.05em; }.index-row small { color: var(--lab-muted); font-size: .7rem; }.index-row > .iconify { color: var(--lab-gold); }
+.category-study--signal-grid { background: var(--lab-forest); }
+.category-signal-grid { display: grid; grid-template-columns: 1.12fr .88fr; gap: .7rem; margin-top: 2.8rem; }
+.category-signal-card { display: flex; min-height: 10.5rem; flex-direction: column; justify-content: space-between; align-items: flex-start; border: 1px solid rgb(243 238 219 / 22%); border-radius: 1rem; background: var(--lab-jungle); color: var(--lab-cream); padding: 1.2rem 1.25rem; text-align: left; transition: transform 180ms ease, background 180ms ease, border-color 180ms ease; }
+.category-signal-card:nth-child(3), .category-signal-card:nth-child(4) { grid-column: span 2; min-height: 7.5rem; flex-direction: row; align-items: flex-end; }
+.category-signal-card:hover, .category-signal-card:focus-visible, .category-signal-card--selected { border-color: var(--lab-leaf); background: var(--lab-leaf); color: var(--lab-ink); transform: translateY(-3px); }
+.category-signal-card--selected .category-signal-card-number, .category-signal-card:hover .category-signal-card-number, .category-signal-card:focus-visible .category-signal-card-number { color: var(--lab-ink); }
+.category-signal-card-copy small { color: var(--lab-muted); }.category-signal-card--selected .category-signal-card-copy small, .category-signal-card:hover .category-signal-card-copy small, .category-signal-card:focus-visible .category-signal-card-copy small { color: rgb(7 26 19 / 70%); }
+.category-signal-card > .iconify { align-self: flex-end; color: var(--lab-gold); }.category-signal-card:nth-child(3) > .iconify, .category-signal-card:nth-child(4) > .iconify { align-self: flex-end; }.category-signal-card:hover > .iconify, .category-signal-card:focus-visible > .iconify, .category-signal-card--selected > .iconify { color: var(--lab-ink); }
 
-.study-stack { padding: 2rem clamp(1.5rem, 5vw, 4.5rem); }.stack-top { color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }.stack-top .mini-kicker { margin: 0; }.study-stack > h2 { margin-top: 3rem; font-size: clamp(4rem, 8vw, 8rem); }.stack-field { margin-top: 3rem; border-top: 1px solid var(--lab-line); }.stack-row { display: grid; grid-template-columns: minmax(5rem, .5fr) 1fr 2rem; align-items: center; width: 100%; min-height: 64px; border: 0; border-bottom: 1px solid var(--lab-line); background: transparent; color: var(--lab-cream); padding: .5rem 0; text-align: left; transform: translateX(0); transition: transform 160ms ease, background 160ms ease; }.stack-row:hover, .stack-row--active { background: rgb(183 214 158 / 12%); transform: translateX(8px); }.stack-row span { color: var(--lab-muted); font-size: .65rem; }.stack-row strong { font-family: var(--font-display); font-size: clamp(1.5rem, 3.5vw, 3.5rem); letter-spacing: -.05em; }.stack-row i { color: var(--lab-gold); font-size: .65rem; font-style: normal; font-weight: 700; text-align: right; }.stack-note { margin-top: 1.4rem; font-size: .7rem; }
+.category-study--choice-lane { background: var(--lab-cream); color: var(--lab-ink); }.category-study--choice-lane .category-study-top, .category-study--choice-lane .category-study-intro p, .category-study--choice-lane .category-study-foot { color: rgb(7 26 19 / 58%); }.category-study--choice-lane .category-study-top strong { color: var(--lab-jungle); }.category-study--choice-lane .category-study-intro h2 { color: var(--lab-ink); }.category-study--choice-lane .category-study-intro h2 em { color: var(--lab-jungle); }
+.category-lane { margin-top: 2.8rem; border-top: 1px solid rgb(7 26 19 / 18%); }
+.category-lane-row { display: grid; grid-template-columns: 2rem minmax(8rem, .75fr) 1fr auto; align-items: center; gap: 1rem; width: 100%; min-height: 4.6rem; border: 0; border-bottom: 1px solid rgb(7 26 19 / 18%); border-radius: .85rem; background: transparent; color: var(--lab-ink); padding: .7rem .8rem; text-align: left; transition: background 180ms ease, color 180ms ease, transform 180ms ease; }
+.category-lane-row:hover, .category-lane-row:focus-visible, .category-lane-row--selected { background: var(--lab-jungle); color: var(--lab-cream); transform: translateX(.35rem); }.category-lane-index { color: var(--lab-jungle); }.category-lane-row:hover .category-lane-index, .category-lane-row:focus-visible .category-lane-index, .category-lane-row--selected .category-lane-index { color: var(--lab-gold); }.category-lane-row strong { font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2.7rem); letter-spacing: -.04em; }.category-lane-row small { color: rgb(7 26 19 / 58%); font-size: .68rem; }.category-lane-row:hover small, .category-lane-row:focus-visible small, .category-lane-row--selected small { color: var(--lab-muted); }.category-lane-row > .iconify { color: var(--lab-jungle); }.category-lane-row:hover > .iconify, .category-lane-row:focus-visible > .iconify, .category-lane-row--selected > .iconify { color: var(--lab-gold); }
 
-.study-constellation { padding: 2.2rem clamp(1.5rem, 5vw, 4rem); }.constellation-header { color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }.constellation-header .mini-kicker { margin: 0; }.study-constellation > h2 { margin-top: 1.5rem; font-size: clamp(3.4rem, 7vw, 7rem); }.constellation-space { position: relative; height: 285px; margin-top: 1.8rem; }.constellation-space svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: rgb(183 214 158 / 35%); stroke-width: 1; }.star { position: absolute; z-index: 1; width: .5rem; height: .5rem; border: 1px solid var(--lab-gold); border-radius: 50%; background: var(--lab-jungle); }.star--one { top: 9%; left: 30%; }.star--two { right: 19%; top: 39%; }.star--three { bottom: 9%; left: 12%; }.constellation-node { position: absolute; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; border: 0; background: transparent; color: var(--lab-cream); padding: .2rem; text-align: left; }.constellation-node small { color: var(--lab-gold); font-size: .6rem; }.constellation-node strong { font-family: var(--font-display); font-size: clamp(1.25rem, 2.6vw, 2.5rem); letter-spacing: -.04em; }.constellation-node:hover strong, .constellation-node:focus-visible strong { color: var(--lab-gold); }.constellation-node--1 { top: 0; left: 13%; }.constellation-node--2 { top: 37%; left: 39%; }.constellation-node--3 { right: 4%; top: 6%; }.constellation-node--4 { bottom: 3%; left: 26%; }.constellation-foot { border-top: 1px solid var(--lab-line); padding-top: 1rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; }
-
-.study-dial { padding: 2rem clamp(1.5rem, 5vw, 4rem); }.dial-top { color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }.dial-top .mini-kicker { margin: 0; }.dial-layout { display: grid; grid-template-columns: .85fr 1fr; align-items: center; gap: 1rem; min-height: 520px; }.dial-copy p { max-width: 14rem; margin: 1.5rem 0; font-size: .82rem; }.dial-wheel { position: relative; width: min(29vw, 310px); aspect-ratio: 1; margin-left: auto; border: 1px solid var(--lab-gold); border-radius: 50%; }.dial-wheel::before { position: absolute; inset: 14%; border: 1px solid rgb(183 214 158 / 45%); border-radius: 50%; content: ''; }.dial-wheel::after { position: absolute; inset: 29%; border: 1px dashed rgb(243 238 219 / 24%); border-radius: 50%; content: ''; }.dial-centre { position: absolute; z-index: 1; inset: 39%; display: grid; place-items: center; border: 1px solid var(--lab-gold); border-radius: 50%; background: var(--lab-jungle); color: var(--lab-gold); font-family: var(--font-display); font-size: .95rem; line-height: .75; text-align: center; }.dial-centre small { font-family: var(--font-ui); font-size: .45rem; letter-spacing: .13em; }.dial-node { position: absolute; top: 44%; left: 44%; z-index: 2; width: 5rem; border: 0; background: transparent; color: var(--lab-cream); padding: .2rem; font-family: var(--font-display); font-size: .95rem; line-height: .9; transform: rotate(var(--dial-angle)) translateY(-12.8vw) rotate(calc(var(--dial-angle) * -1)); transform-origin: center; }.dial-node:hover, .dial-node--active { color: var(--lab-gold); }
+.category-study--offset-islands { background: var(--lab-jungle); }.category-islands { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; margin-top: 2.8rem; }.category-island { display: flex; min-height: 10.5rem; flex-direction: column; align-items: stretch; justify-content: space-between; border: 0; border-radius: 1.1rem; background: var(--lab-forest); color: var(--lab-cream); padding: 1.25rem; text-align: left; transition: transform 180ms ease, background 180ms ease, color 180ms ease; }.category-island:nth-child(2) { transform: translateY(1.1rem); }.category-island:nth-child(3) { transform: translateY(-.45rem); }.category-island:hover, .category-island:focus-visible, .category-island--selected { background: var(--lab-leaf); color: var(--lab-ink); transform: translateY(-.35rem); }.category-island:nth-child(2):hover, .category-island:nth-child(2):focus-visible, .category-island:nth-child(2).category-island--selected { transform: translateY(.75rem); }.category-island:nth-child(3):hover, .category-island:nth-child(3):focus-visible, .category-island:nth-child(3).category-island--selected { transform: translateY(-.8rem); }.category-island-top { display: flex; justify-content: space-between; color: var(--lab-gold); font-family: var(--font-display); font-size: 1.15rem; }.category-island:hover .category-island-top, .category-island:focus-visible .category-island-top, .category-island--selected .category-island-top { color: var(--lab-ink); }.category-island strong { margin-top: 1.2rem; font-family: var(--font-display); font-size: clamp(1.8rem, 3.4vw, 3.4rem); letter-spacing: -.05em; line-height: .9; }.category-island small { margin-top: .45rem; color: var(--lab-muted); font-size: .67rem; line-height: 1.35; }.category-island:hover small, .category-island:focus-visible small, .category-island--selected small { color: rgb(7 26 19 / 68%); }
 
 /* Question studies */
 .question-board-top, .timer-top, .editorial-top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }.question-board-top .mini-kicker, .timer-top .mini-kicker { margin: 0; }.question-board-top b { color: var(--lab-gold); font-size: .6rem; }.question-board-main { width: min(100%, 52rem); padding-top: 6rem; }.question-board-main h2 { font-size: clamp(3.5rem, 7vw, 7.5rem); }.question-board-main h2 em { color: var(--lab-gold); }.board-answers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; margin-top: 2.8rem; }.answer-chip, .arena-actions button, .timer-answer-grid button, .duel-option { display: flex; align-items: center; gap: .8rem; min-height: 58px; border: 1px solid var(--lab-line); background: rgb(7 26 19 / 22%); color: var(--lab-cream); padding: .65rem .8rem; text-align: left; transition: background 160ms ease, color 160ms ease, transform 160ms ease; }.answer-chip:hover, .answer-chip--selected, .arena-actions button:hover, .arena-answer--selected, .timer-answer-grid button:hover, .timer-answer--selected, .duel-option:hover, .duel-option--selected { background: var(--lab-leaf); color: var(--lab-ink); transform: translateY(-2px); }.answer-chip span, .arena-actions button span, .timer-answer-grid button span, .duel-option span { display: grid; width: 1.6rem; height: 1.6rem; flex: 0 0 auto; place-items: center; background: rgb(223 186 100 / 14%); color: var(--lab-gold); font-family: var(--font-display); font-size: .95rem; }.answer-chip--selected span, .arena-answer--selected span, .timer-answer--selected span, .duel-option--selected span { background: rgb(7 26 19 / 13%); color: var(--lab-ink); }.board-time { position: absolute; right: clamp(1.5rem, 5vw, 4rem); bottom: 4rem; display: flex; flex-direction: column; min-width: 8rem; border-left: 1px solid var(--lab-gold); padding-left: 1rem; }.board-time small, .board-time span { color: var(--lab-muted); font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; }.board-time strong { margin: .5rem 0; color: var(--lab-gold); font-family: var(--font-display); font-size: 6rem; font-weight: 500; line-height: .75; }.board-time i, .timer-giant i { height: 4px; margin: 1rem 0; background: rgb(243 238 219 / 15%); }.board-time i b, .timer-giant i b { display: block; width: 78%; height: 100%; background: var(--lab-gold); }.board-time button, .timer-giant button { align-self: flex-start; border: 0; background: transparent; color: var(--lab-muted); padding: .4rem 0; font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
@@ -832,8 +865,6 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .orbit-ring { width: 240px; height: 240px; }
   .study-poster { min-height: 610px; }
   .study-signal { min-height: 610px; }
-  .dial-wheel { width: min(36vw, 280px); }
-  .dial-node { transform: rotate(var(--dial-angle)) translateY(-16vw) rotate(calc(var(--dial-angle) * -1)); }
 }
 
 @media (max-width: 640px) {
@@ -870,7 +901,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .study-poster { display: block; padding: 1.4rem; }.poster-edge { display: none; }.poster-content { padding-top: 1.5rem; }.poster-content h2 { font-size: 4.2rem; }.poster-form { grid-template-columns: 1fr; margin: 1.5rem 0; }.poster-spec { flex-direction: row; border: 0; border-top: 1px solid rgb(7 26 19 / 32%); margin-top: 2rem; padding: 1rem 0 0; }
   .study-signal { min-height: 680px; grid-template-columns: 3.2rem 1fr; }.signal-main { padding: 2rem 1.2rem; }.signal-main h2 { margin-top: 4rem; font-size: 4.8rem; }.signal-fields { grid-template-columns: 1fr; gap: 1.1rem; }.signal-bottom { flex-wrap: wrap; padding: 1rem 1.2rem; gap: .9rem; }
   .study-ticket { padding: 1.4rem; }.ticket-main h2 { font-size: 4.3rem; }.ticket-inputs { grid-template-columns: 1fr; }.ticket-stub { flex-wrap: wrap; }
-  .route-head h2, .study-index > h2, .study-stack > h2, .dial-copy h2, .study-constellation > h2 { font-size: 4rem; }.route-map { grid-template-columns: 1fr; margin-top: 2.5rem; }.route-line--one { inset: 0 0 50% 0; transform: rotate(2deg); }.route-line--two { inset: 50% 0 0 0; transform: rotate(-2deg); }.route-stop { min-height: 6.2rem; }.index-header { display: block; }.index-header > span:last-child { display: block; margin-top: .7rem; }.index-row { grid-template-columns: 1.5rem 1fr 1rem; }.index-row small { display: none; }.index-row strong { font-size: 1.7rem; }.study-stack { padding: 1.5rem; }.stack-row { grid-template-columns: 1fr 2rem; }.stack-row span { display: none; }.study-constellation { padding: 1.5rem; }.constellation-space { height: 300px; }.constellation-node strong { font-size: 1.35rem; }.study-dial { padding: 1.5rem; }.dial-layout { display: block; min-height: 600px; }.dial-copy p { margin: 1.2rem 0; }.dial-wheel { width: 275px; margin: 3rem auto 0; }.dial-node { transform: rotate(var(--dial-angle)) translateY(-18vw) rotate(calc(var(--dial-angle) * -1)); }
+  .category-study { min-height: 680px; padding: 1.5rem; }.category-study-top { grid-template-columns: 1fr auto; }.category-study-top span:last-child { display: none; }.category-study-top strong { text-align: right; }.category-study-intro { display: block; margin-top: 3.2rem; }.category-study-intro h2 { max-width: 9ch; font-size: 4rem; }.category-study-intro p { margin-top: 1.2rem; }.category-surface-grid, .category-signal-grid, .category-islands { grid-template-columns: 1fr; margin-top: 2.1rem; }.category-surface { min-height: 6.6rem; }.category-signal-card, .category-signal-card:nth-child(3), .category-signal-card:nth-child(4) { min-height: 7rem; grid-column: auto; flex-direction: row; align-items: flex-end; }.category-signal-card-copy strong { font-size: 2rem; }.category-lane { margin-top: 2.1rem; }.category-lane-row { grid-template-columns: 1.5rem 1fr auto; gap: .65rem; min-height: 4.4rem; }.category-lane-row small { display: none; }.category-lane-row strong { font-size: 2rem; }.category-island, .category-island:nth-child(2), .category-island:nth-child(3) { min-height: 7.2rem; transform: none; }.category-island:hover, .category-island:focus-visible, .category-island--selected { transform: translateY(-3px); }
   .question-board-top, .timer-top, .editorial-top { align-items: flex-start; flex-direction: column; gap: .4rem; }.question-board-top b { margin-top: .6rem; }.question-board-main { padding-top: 4rem; }.question-board-main h2 { font-size: 4rem; }.board-answers { grid-template-columns: 1fr; margin-top: 2rem; }.board-time { position: static; flex-direction: row; align-items: baseline; gap: .55rem; min-width: 0; margin-top: 2rem; border-left: 0; border-top: 1px solid var(--lab-gold); padding: .8rem 0 0; }.board-time strong { margin: 0; font-size: 4rem; }.board-time i { flex: 1; margin: 0 0 0 .5rem; }.board-time button { margin-left: .3rem; }.arena-score--one { left: 1.4rem; }.arena-score--two { right: 1.4rem; }.arena-centre { margin-top: 8.5rem; }.arena-centre h2 { font-size: 3.7rem; }.arena-actions { grid-template-columns: repeat(2, 1fr); margin-top: 2rem; }.editorial-grid { display: block; min-height: 0; }.editorial-question h2 { font-size: 4rem; }.editorial-options { margin-top: 2.5rem; }.editorial-bottom { margin-top: 2rem; flex-direction: column; }.timer-layout { display: block; min-height: 0; }.timer-question h2 { margin-top: 4rem; font-size: 3.8rem; }.timer-answer-grid { grid-template-columns: 1fr; margin-top: 2rem; }.timer-giant { display: flex; align-items: baseline; flex-wrap: wrap; gap: .8rem; margin-top: 3rem; border-left: 0; border-top: 1px solid var(--lab-coral); padding: 1rem 0 0; }.timer-giant strong { font-size: 6rem; }.timer-giant i { flex: 1; min-width: 100%; order: 3; }.timer-giant button { order: 4; }.study-duel { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto 1fr; gap: 1.2rem; padding: 1.5rem; }.duel-round { grid-column: 1 / -1; grid-row: 1; order: -1; }.duel-team { grid-row: 2; }.duel-team strong { font-size: 3rem; }.duel-question { grid-row: 3; }.duel-question h2 { font-size: 3.7rem; }.duel-options { grid-template-columns: repeat(2, 1fr); margin-top: 2rem; }.lab-footer { display: block; }.lab-footer p + p { margin-top: .7rem; }
 }
 

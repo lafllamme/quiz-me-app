@@ -24,25 +24,14 @@ function toggleTimer() {
     quiz.startTimer()
 }
 
-async function fullscreen() {
-  try {
-    if (document.fullscreenElement)
-      await document.exitFullscreen()
-    else
-      await document.documentElement.requestFullscreen()
-  }
-  catch {
-    modal.value = 'rules'
-  }
-}
 </script>
 
 <template>
   <div class="page-shell relative min-h-screen">
     <div class="app-noise" aria-hidden="true" />
-    <AppHeader :sound-enabled="quiz.sound.enabled.value" @toggle-sound="quiz.sound.toggle" @fullscreen="fullscreen" @help="modal = 'rules'" @home="quiz.openMenu" />
+    <AppHeader v-if="quiz.screen.value !== 'menu'" :sound-enabled="quiz.sound.enabled.value" @toggle-sound="quiz.sound.toggle" @help="modal = 'rules'" @home="quiz.openMenu" />
 
-    <main class="page-wrap relative z-1">
+    <main :class="quiz.screen.value === 'menu' ? 'game-stage-wrap relative z-1' : 'page-wrap relative z-1'">
       <Transition name="stage" mode="out-in">
         <GameSetup v-if="quiz.screen.value === 'menu'" :config="quiz.config" :has-saved-game="quiz.hasSavedGame.value" :question-count="quiz.questionCount.value" @start="submitSetup" @resume="quiz.resumeGame" @new-game="newGame" @rules="modal = 'rules'" @settings="modal = 'settings'" />
 
@@ -65,7 +54,7 @@ async function fullscreen() {
       </Transition>
     </main>
 
-    <AppFooter />
+    <AppFooter v-if="quiz.screen.value !== 'menu'" />
 
     <AppModal v-if="modal === 'rules'" title="So wird gespielt" @close="modal = null">
       <p>Die Münze bestimmt das erste Team. Ihr wählt abwechselnd eine von vier Kategorien. Der Host liest die Frage vor und bewertet die Antwort.</p>
