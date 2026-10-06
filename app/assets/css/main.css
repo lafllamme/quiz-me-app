@@ -58,24 +58,26 @@ button:disabled {
 }
 
 .app-header {
-  position: relative;
+  position: absolute;
   z-index: 20;
-  background: var(--color-ink);
+  inset: 0 0 auto;
+  pointer-events: none;
 }
 
 .app-header-inner {
   display: flex;
-  min-height: 5.5rem;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 0 var(--page-gutter);
+  padding: 2rem var(--page-gutter);
 }
 
 .app-header-inner > * {
   pointer-events: auto;
+}
+
+.app-header--light .app-header-inner > button {
+  color: #081811;
 }
 
 .turn-indicator {
@@ -1169,6 +1171,12 @@ button:disabled {
 
 .game-stage-wrap {
   display: flex;
+  min-height: 100vh;
+  padding: 0;
+}
+
+.game-screen-wrap {
+  width: 100%;
   min-height: 100vh;
   padding: 0;
 }

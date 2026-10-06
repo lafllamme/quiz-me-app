@@ -35,9 +35,9 @@ function toggleTimer() {
 <template>
   <div class="page-shell relative min-h-screen">
     <div class="app-noise" aria-hidden="true" />
-    <AppHeader v-if="quiz.screen.value !== 'menu'" @home="quiz.openMenu" />
+    <AppHeader v-if="quiz.screen.value !== 'menu'" :tone="quiz.screen.value === 'category' ? 'light' : 'dark'" @home="quiz.openMenu" />
 
-    <main :class="quiz.screen.value === 'menu' ? 'game-stage-wrap relative z-1' : 'page-wrap relative z-1'">
+    <main :class="quiz.screen.value === 'menu' ? 'game-stage-wrap relative z-1' : 'game-screen-wrap relative z-1'">
       <Transition name="stage" mode="out-in">
         <GameSetup v-if="quiz.screen.value === 'menu'" :config="quiz.config" :has-saved-game="quiz.hasSavedGame.value" :catalog-exhausted="quiz.catalogExhausted.value" :remaining-question-count="quiz.remainingQuestionCount.value" :total-question-count="quiz.totalQuestionCount.value" @start="submitSetup" @resume="quiz.resumeGame" @new-game="newGame" @rules="modal = 'rules'" @settings="modal = 'settings'" @reset-history="quiz.resetQuestionHistory" />
 
