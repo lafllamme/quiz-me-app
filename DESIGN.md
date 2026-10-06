@@ -37,7 +37,8 @@ art direction rather than a near-duplicate.
 The role-based contrast thinking is informed by [Khroma](https://www.khroma.co/)
 and [Huemint](https://huemint.com/about/), but the combinations are authored
 for Jungle / Quiz. The global lab tokens stay unchanged until one direction is
-selected as the final system palette.
+selected as the final system palette. The live game setup currently applies
+**Acid orchard** as the first full-screen trial of the I / Split field direction.
 
 Display uses Clash Display. UI uses General Sans. Small labels can use Switzer.
 

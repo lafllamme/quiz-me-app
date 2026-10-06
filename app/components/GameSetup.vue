@@ -40,66 +40,49 @@ function start() {
 </script>
 
 <template>
-  <section class="grid min-h-[calc(100vh-170px)] items-center gap-14 py-10 lg:grid-cols-[1.3fr_1fr] lg:gap-[7vw]">
-    <div class="stage-enter-active">
-      <p class="mb-5 font-sans text-xs font-600 uppercase tracking-[0.2em] text-gold">BIRTHDAY QUIZ</p>
-      <h1 class="display max-w-[8ch] text-[clamp(4rem,15.5vw,11.25rem)]">
-        Wer<br><span class="text-leaf">spielt?</span>
-      </h1>
-      <p class="mt-8 max-w-[34rem] text-lg leading-relaxed text-muted">Zwei Teams. Vier Kategorien. Eine Chance zu stehlen.</p>
-      <div class="mt-8 flex flex-wrap items-center gap-6">
-        <div class="setup-stamp" :aria-label="`${draft.rounds} Runden, ${draft.seconds} Sekunden Antwortzeit`">
-          <strong class="setup-stamp-number">{{ draft.rounds }}</strong>
-          <span class="setup-stamp-copy">Runden<br><b>{{ draft.seconds }} Sek.</b></span>
-        </div>
-        <div class="flex flex-wrap gap-3">
-        <button data-uisfx-hover="hover" class="button-primary" @click="start">
-          <Icon name="lucide:play" size="17" aria-hidden="true" />
-          {{ hasSavedGame ? 'Spiel fortsetzen' : 'Spiel starten' }}
-        </button>
-        <button data-uisfx-hover="hover" class="button-quiet" @click="emit('newGame', payload)">{{ hasSavedGame ? 'Neues Spiel' : 'Schnellstart' }}</button>
-        <button data-uisfx-hover="hover" data-uisfx="open" class="button-quiet" @click="emit('rules')">
-          <Icon name="lucide:circle-help" size="17" aria-hidden="true" />
-          Regeln
-        </button>
-        </div>
+  <section class="game-setup stage-enter-active">
+    <div class="game-setup-copy">
+      <div class="game-setup-wordmark">JUNGLE <span>/</span> QUIZ</div>
+      <h1>Wer<br><em>spielt?</em></h1>
+      <p>Zwei Teams. Vier Kategorien. Eine Chance zu stehlen.</p>
+      <div class="game-setup-meta"><span>{{ draft.rounds }} Runden</span><span>{{ draft.seconds }} Sek.</span><span>4 Kategorien</span></div>
+      <div class="game-setup-stamp" :aria-label="`${draft.rounds} Runden, ${draft.seconds} Sekunden Antwortzeit`">
+        <strong>{{ draft.rounds }}</strong>
+        <span>Runden<br><b>{{ draft.seconds }} Sek.</b></span>
       </div>
     </div>
 
-    <form class="border-t border-line pt-7" @submit.prevent="start">
-      <p class="eyebrow mb-6">Teamnamen</p>
-      <div class="grid gap-5 sm:grid-cols-2">
+    <form class="game-setup-form" @submit.prevent="start">
+      <div class="game-setup-form-head"><span>Teamnamen</span><span>Bereit?</span></div>
+      <div class="game-setup-team-grid">
         <div>
-          <label class="mb-2 block text-xs uppercase tracking-[0.12em] text-muted" for="team-one">Team 1</label>
-          <input id="team-one" v-model="draft.names[0]" class="field" maxlength="28" autocomplete="off">
-          <label class="mb-2 mt-5 block text-xs uppercase tracking-[0.12em] text-muted" for="players-one">Namen <span class="normal-case tracking-normal opacity-70">· optional</span></label>
-          <textarea id="players-one" v-model="draft.players[0]" class="field min-h-18 resize-y" placeholder="Namen, mit Komma getrennt" />
+          <label for="team-one">Team eins</label>
+          <input id="team-one" v-model="draft.names[0]" maxlength="28" autocomplete="off">
+          <label for="players-one">Namen <small>· optional</small></label>
+          <textarea id="players-one" v-model="draft.players[0]" placeholder="Mit Komma trennen" />
         </div>
         <div>
-          <label class="mb-2 block text-xs uppercase tracking-[0.12em] text-muted" for="team-two">Team 2</label>
-          <input id="team-two" v-model="draft.names[1]" class="field" maxlength="28" autocomplete="off">
-          <label class="mb-2 mt-5 block text-xs uppercase tracking-[0.12em] text-muted" for="players-two">Namen <span class="normal-case tracking-normal opacity-70">· optional</span></label>
-          <textarea id="players-two" v-model="draft.players[1]" class="field min-h-18 resize-y" placeholder="Namen, mit Komma getrennt" />
-        </div>
-      </div>
-      <div class="mt-5 grid gap-5 sm:grid-cols-2">
-        <div>
-          <label class="mb-2 block text-xs uppercase tracking-[0.12em] text-muted" for="rounds">Runden</label>
-          <select id="rounds" v-model.number="draft.rounds" class="field">
-            <option v-for="round in [4, 5, 6]" :key="round" :value="round">{{ round }} Runden</option>
-          </select>
-        </div>
-        <div>
-          <label class="mb-2 block text-xs uppercase tracking-[0.12em] text-muted" for="seconds">Antwortzeit</label>
-          <select id="seconds" v-model.number="draft.seconds" class="field">
-            <option v-for="seconds in [30, 45, 60]" :key="seconds" :value="seconds">{{ seconds }} Sekunden</option>
-          </select>
+          <label for="team-two">Team zwei</label>
+          <input id="team-two" v-model="draft.names[1]" maxlength="28" autocomplete="off">
+          <label for="players-two">Namen <small>· optional</small></label>
+          <textarea id="players-two" v-model="draft.players[1]" placeholder="Mit Komma trennen" />
         </div>
       </div>
-      <div class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
-        <span class="text-xs text-muted">{{ questionCount }} Fragen · austauschbar</span>
-        <button type="button" data-uisfx-hover="hover" data-uisfx="open" class="button-quiet px-3 py-2.5 text-xs" @click="emit('settings')">Mehr Einstellungen</button>
+      <div class="game-setup-config">
+        <label for="rounds">Runden<select id="rounds" v-model.number="draft.rounds"><option v-for="round in [4, 5, 6]" :key="round" :value="round">{{ round }}</option></select></label>
+        <label for="seconds">Antwortzeit<select id="seconds" v-model.number="draft.seconds"><option v-for="seconds in [30, 45, 60]" :key="seconds" :value="seconds">{{ seconds }} Sek.</option></select></label>
       </div>
+      <div class="game-setup-form-foot">
+        <span>{{ questionCount }} Fragen · austauschbar</span>
+        <div>
+          <button type="button" @click="emit('newGame', payload)">{{ hasSavedGame ? 'Neues Spiel' : 'Schnellstart' }}</button>
+          <button type="button" @click="emit('rules')">Regeln</button>
+        </div>
+      </div>
+      <button type="submit" class="game-setup-action">
+        {{ hasSavedGame ? 'Spiel fortsetzen' : 'Spiel starten' }}
+        <Icon name="lucide:arrow-up-right" size="17" aria-hidden="true" />
+      </button>
     </form>
   </section>
 </template>
