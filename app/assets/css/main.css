@@ -128,7 +128,7 @@ button:disabled {
   --category-line: rgb(251 248 237 / 24%);
   display: grid;
   grid-template-columns: minmax(290px, .62fr) minmax(0, 1.38fr);
-  min-height: calc(100vh - 5.5rem);
+  min-height: 100vh;
   background: var(--category-jungle);
   color: var(--category-cream);
 }
@@ -327,7 +327,7 @@ button:disabled {
 
 .category-board--preview {
   display: block;
-  min-height: calc(100vh - 5.5rem);
+  min-height: 100vh;
   background: var(--category-ink);
 }
 
@@ -336,7 +336,7 @@ button:disabled {
 }
 
 .category-board--preview .category-board-play {
-  min-height: calc(100vh - 5.5rem);
+  min-height: 100vh;
   background: var(--category-ink);
   padding: clamp(1.5rem, 4vw, 3.5rem);
 }
