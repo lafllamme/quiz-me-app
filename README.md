@@ -25,7 +25,7 @@ Enthalten:
 - UnoCSS-Tokens für Jungle-Grün, Creme, Gold, Typografie und Motion
 - Nuxt Fonts mit Clash Display + General Sans via Fontshare
 - Nuxt Icons mit Lucide-Iconset
-- Audio-Tracks für Tension, Time Over, Correct und Wrong unter `public/audio`
+- Audio-Tracks für Category Selection, Tension, Time Over, Correct und Wrong unter `public/audio`
 - responsive Darstellung für Desktop und kleinere Screens
 - reduzierte Bewegung und sichtbare Tastaturfokusse für Accessibility
 

@@ -97,6 +97,8 @@ export function useQuizGame() {
         Object.assign(game, savedGame)
         screen.value = savedGame.screen === 'question' ? 'category' : (savedGame.screen || 'category')
         hasSavedGame.value = true
+        if (screen.value === 'category')
+          sound.playTrack('categorySelection', true)
       }
     }
     catch {
@@ -199,6 +201,7 @@ export function useQuizGame() {
     game.winner = null
     game.result = ''
     screen.value = 'category'
+    sound.playTrack('categorySelection', true)
     persist()
   }
 
@@ -212,6 +215,7 @@ export function useQuizGame() {
     const question = nearest[Math.floor(Math.random() * nearest.length)] ?? candidates[0]
     if (!question)
       return
+    sound.stopTrack('categorySelection')
     game.currentQuestion = question
     game.selectedOption = null
     game.timeExpired = false

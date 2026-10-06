@@ -1,5 +1,5 @@
 type SoundName = 'menu' | 'select' | 'start' | 'tick' | 'right' | 'wrong' | 'steal' | 'end' | 'drum' | 'ring'
-export type TrackName = 'tension' | 'timeOver' | 'wrong' | 'correct'
+export type TrackName = 'tension' | 'categorySelection' | 'timeOver' | 'wrong' | 'correct'
 
 const patterns: Record<SoundName, Array<[number, number, number, OscillatorType?]>> = {
   menu: [[350, 0, 0.08]],
@@ -16,6 +16,7 @@ const patterns: Record<SoundName, Array<[number, number, number, OscillatorType?
 
 const trackSources: Record<TrackName, string> = {
   tension: '/audio/tension_45s.mp3',
+  categorySelection: '/audio/category_selection.mp3',
   timeOver: '/audio/time_over.mp3',
   wrong: '/audio/wrong.mp3',
   correct: '/audio/correct.mp3',
@@ -53,7 +54,7 @@ export function useSound() {
     return track
   }
 
-  function playTrack(name: TrackName) {
+  function playTrack(name: TrackName, loop = false) {
     if (!enabled.value)
       return
 
@@ -63,6 +64,7 @@ export function useSound() {
 
     track.pause()
     track.currentTime = 0
+    track.loop = loop
     void track.play().catch(() => undefined)
   }
 
