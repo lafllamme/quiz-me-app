@@ -1,5 +1,6 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { QUESTIONS, TIE_QUESTIONS, type QuizQuestion } from '~/data/questions'
+import { TIE_QUESTIONS, type QuizQuestion } from '~/data/quiz-catalog'
+import { useQuestionDeck } from '~/composables/useQuestionDeck'
 import type { DifficultyMode } from '~/types/setup'
 
 export type GameScreen = 'menu' | 'toss' | 'category' | 'question' | 'tie' | 'final'
@@ -65,6 +66,7 @@ const emptyGame = (): GameState => ({
 
 export function useQuizGame() {
   const sound = useSound()
+  const deck = useQuestionDeck()
   const screen = ref<GameScreen>('menu')
   const config = reactive<QuizConfig>(structuredClone(defaultConfig))
   const game = reactive<GameState>(emptyGame())
@@ -77,7 +79,8 @@ export function useQuizGame() {
 
   const questionCount = computed(() => config.rounds * config.perRound)
   const roundNumber = computed(() => Math.floor(game.turn / config.perRound) + 1)
-  const availableQuestions = computed(() => QUESTIONS.filter(question => !game.used.includes(question.id)))
+  const availableQuestions = computed(() => deck.getAvailableQuestions(game.used))
+  const catalogExhausted = computed(() => deck.isExhausted.value)
   const tieQuestion = computed(() => TIE_QUESTIONS[tieIndex.value % TIE_QUESTIONS.length] ?? { question: '', answer: 0 })
 
   function persist() {
@@ -155,12 +158,27 @@ export function useQuizGame() {
     sound.stopAllTracks()
     screen.value = 'menu'
     sound.playTrack('startScreen', true)
-    persist()
+    if (catalogExhausted.value) {
+      hasSavedGame.value = false
+      if (!import.meta.server)
+        localStorage.removeItem('jungle-game')
+    }
+    else {
+      persist()
+    }
   }
 
   function startGame(nextConfig?: Partial<QuizConfig>) {
     if (nextConfig)
       Object.assign(config, nextConfig)
+
+    if (deck.isExhausted.value) {
+      hasSavedGame.value = false
+      screen.value = 'menu'
+      if (!import.meta.server)
+        localStorage.removeItem('jungle-game')
+      return
+    }
 
     stopTimer()
     sound.stopTrack('startScreen')
@@ -197,8 +215,8 @@ export function useQuizGame() {
   }
 
   function prepareCategories() {
-    const categories = [...new Set(availableQuestions.value.map(question => question.category))]
-    game.categories = categories.sort(() => Math.random() - 0.5).slice(0, 4)
+    const categories = deck.getAvailableCategories(game.used)
+    game.categories = categories.sort(() => Math.random() - 0.5).slice(0, 6)
     game.active = ((game.first + game.turn) % 2) as 0 | 1
     game.currentQuestion = null
     game.selectedOption = null
@@ -208,30 +226,27 @@ export function useQuizGame() {
     game.resolved = false
     game.winner = null
     game.result = ''
+
+    if (!game.categories.length) {
+      finish()
+      return
+    }
+
     screen.value = 'category'
     sound.playTrack('categorySelection', true)
     persist()
   }
 
   function chooseCategory(category: string) {
-    const candidates = QUESTIONS.filter(question => question.category === category && !game.used.includes(question.id))
-    if (!candidates.length)
-      return
-
-    const targetDifficulty = config.difficulty === 'easy'
-      ? 1
-      : config.difficulty === 'hard'
-        ? 3
-        : Math.min(3, 1 + Math.floor(game.turn / (config.perRound * 2)))
-    const nearest = candidates.filter(question => Math.abs(question.difficulty - targetDifficulty) === Math.min(...candidates.map(item => Math.abs(item.difficulty - targetDifficulty))))
-    const question = nearest[Math.floor(Math.random() * nearest.length)] ?? candidates[0]
+    const question = deck.pickQuestion(category, config.difficulty, game.used)
     if (!question)
       return
     sound.stopTrack('categorySelection')
     game.currentQuestion = question
     game.selectedOption = null
     game.timeExpired = false
-    game.used.push(question.id)
+    if (!game.used.includes(question.id))
+      game.used.push(question.id)
     game.stolen = false
     game.revealed = false
     game.resolved = false
@@ -250,6 +265,8 @@ export function useQuizGame() {
     game.resolved = true
     game.winner = winner
     game.result = result
+    if (game.currentQuestion)
+      deck.markAnswered(game.currentQuestion.id)
     if (winner !== null)
       game.scores[winner]++
     persist()
@@ -314,7 +331,7 @@ export function useQuizGame() {
     pauseTimer()
     sound.stopTrack('tension')
     game.revealed = true
-    persist()
+    resolve(null, 'Antwort aufgedeckt. Kein Punkt.')
   }
 
   function nextQuestion() {
@@ -369,6 +386,7 @@ export function useQuizGame() {
   }
 
   onMounted(() => {
+    deck.hydrate()
     hydrate()
     window.addEventListener('pointerdown', unlockAmbientSound, { passive: true })
     window.addEventListener('keydown', unlockAmbientSound)
@@ -391,6 +409,11 @@ export function useQuizGame() {
     hasSavedGame,
     questionCount,
     roundNumber,
+    availableQuestions,
+    answeredQuestionCount: deck.answeredCount,
+    remainingQuestionCount: deck.remainingCount,
+    totalQuestionCount: deck.totalCount,
+    catalogExhausted,
     tieQuestion,
     openMenu,
     startGame,
@@ -406,5 +429,6 @@ export function useQuizGame() {
     startTimer,
     resetTimer,
     submitTie,
+    resetQuestionHistory: deck.resetHistory,
   }
 }

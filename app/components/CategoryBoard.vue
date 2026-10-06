@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import territoryMarkerUrl from '~/assets/images/territory-marker.png'
+import { QUIZ_CATEGORIES } from '~/data/quiz-catalog'
 
 const props = defineProps<{
   categories: string[]
@@ -13,20 +14,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ choose: [category: string] }>()
 
-const categoryDescriptors: Record<string, string> = {
-  '2000er': 'Nostalgie, Netzkultur, große Hits',
-  Musik: 'Tracks, Stimmen und Ohrwürmer',
-  Filme: 'Kino, Kult und Plot-Twists',
-  Serien: 'Staffeln, Kultfiguren und Cliffhanger',
-  Memes: 'Internet, Running Gags und Chaos',
-  '2010er': 'Apps, Trends und digitale Meilensteine',
-  'WTF-Wissen': 'Fakten, die hängen bleiben',
-  Köln: 'Stadt, FC und deutsche Geschichte',
-  'Film & Serie': 'Kino, Streaming und Kultfiguren',
-  'Netz & Memes': 'Chat, Running Gags und Internetkultur',
-  Wissen: 'Körper, Alltag und unnütze Fakten',
-  Nostalgie: '2000er, 2010er und frühe Netzkultur',
-}
+const categoryDescriptors = Object.fromEntries(QUIZ_CATEGORIES.map(category => [category.label, category.descriptor]))
 </script>
 
 <template>

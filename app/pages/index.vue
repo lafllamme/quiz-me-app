@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { QuizConfig } from '~/composables/useQuizGame'
+import { QUIZ_CATEGORIES } from '~/data/quiz-catalog'
 
 const quiz = useQuizGame()
 const modal = ref<'rules' | 'settings' | 'new' | null>(null)
 const route = useRoute()
 
-const previewCategories = ['Köln', 'Musik', 'Film & Serie', 'Netz & Memes', 'Wissen', 'Nostalgie']
+const previewCategories = QUIZ_CATEGORIES.map(category => category.label)
 const isCategoryPreview = computed(() => route.query.categoryPreview === '5' || route.query.categoryPreview === '6' || route.query.categoryPreview === '10')
 const visibleCategories = computed(() => isCategoryPreview.value ? previewCategories : quiz.game.categories)
 
@@ -38,7 +39,7 @@ function toggleTimer() {
 
     <main :class="quiz.screen.value === 'menu' ? 'game-stage-wrap relative z-1' : 'page-wrap relative z-1'">
       <Transition name="stage" mode="out-in">
-        <GameSetup v-if="quiz.screen.value === 'menu'" :config="quiz.config" :has-saved-game="quiz.hasSavedGame.value" @start="submitSetup" @resume="quiz.resumeGame" @new-game="newGame" @rules="modal = 'rules'" @settings="modal = 'settings'" />
+        <GameSetup v-if="quiz.screen.value === 'menu'" :config="quiz.config" :has-saved-game="quiz.hasSavedGame.value" :catalog-exhausted="quiz.catalogExhausted.value" :remaining-question-count="quiz.remainingQuestionCount.value" :total-question-count="quiz.totalQuestionCount.value" @start="submitSetup" @resume="quiz.resumeGame" @new-game="newGame" @rules="modal = 'rules'" @settings="modal = 'settings'" @reset-history="quiz.resetQuestionHistory" />
 
         <section v-else-if="quiz.screen.value === 'toss'" class="grid min-h-[calc(100vh-210px)] place-items-center py-14 text-center">
           <div>
@@ -60,16 +61,18 @@ function toggleTimer() {
     </main>
 
     <AppModal v-if="modal === 'rules'" title="So wird gespielt" @close="modal = null">
-      <p>Die Münze bestimmt das erste Team. Ihr wählt abwechselnd eine von vier Kategorien. Der Host liest die Frage vor und bewertet die Antwort.</p>
+      <p>Die Münze bestimmt das erste Team. Ihr wählt abwechselnd eine von sechs Kategorien. Der Host liest die Frage vor und bewertet die Antwort.</p>
       <p class="mt-4">Richtig: +1 Punkt. Falsch oder Zeit abgelaufen: Das andere Team bekommt eine Steal-Chance. Danach wird aufgelöst. Bei Gleichstand entscheidet eine Schätzfrage.</p>
       <p class="mt-4 text-cream">Tastatur: R richtig · F falsch · A Antwort zeigen · Leertaste Pause / Start · Enter nächste Frage · Esc Menü</p>
     </AppModal>
 
     <AppModal v-if="modal === 'settings'" title="Host Settings" @close="modal = null">
-      <p>Die erweiterten Einstellungen kommen in der nächsten Iteration als eigener Host-Dialog. Der spielbare Prototyp nutzt aktuell {{ quiz.config.perRound }} Fragen pro Runde und die konfigurierte Steal-Zeit.</p>
+      <p>Der Fragenkatalog enthält {{ quiz.totalQuestionCount.value }} Fragen. Bereits aufgelöste Fragen bleiben aus dem Pool, damit sich im nächsten Spiel nichts wiederholt.</p>
+      <p class="mt-4 text-cream">{{ quiz.answeredQuestionCount.value }} von {{ quiz.totalQuestionCount.value }} Fragen beantwortet · {{ quiz.remainingQuestionCount.value }} noch offen.</p>
       <div class="mt-7 flex flex-wrap gap-3">
         <button class="button-quiet" @click="quiz.config.motion = !quiz.config.motion; modal = null">Animationen: {{ quiz.config.motion ? 'an' : 'aus' }}</button>
         <button class="button-quiet" @click="quiz.config.drink = !quiz.config.drink; modal = null">Trinkregeln: {{ quiz.config.drink ? 'an' : 'aus' }}</button>
+        <button class="button-quiet" @click="quiz.resetQuestionHistory(); modal = null">Fragenarchiv zurücksetzen</button>
       </div>
     </AppModal>
 

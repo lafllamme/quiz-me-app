@@ -217,7 +217,7 @@ button:disabled {
 
 .category-board-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   margin-top: auto;
   padding-top: clamp(3rem, 7vh, 6rem);
@@ -230,7 +230,7 @@ button:disabled {
   gap: 1rem;
   min-height: clamp(7.4rem, 15vh, 10.5rem);
   border: 1px solid color-mix(in srgb, var(--category-cream) 12%, transparent);
-  border-radius: 0;
+  border-radius: 1rem;
   background: var(--category-forest);
   color: var(--category-cream);
   padding: 1.2rem 1.25rem;
@@ -357,6 +357,12 @@ button:disabled {
 .category-board--preview .category-board-option:hover,
 .category-board--preview .category-board-option:focus-visible {
   background: var(--category-accent);
+}
+
+@media (max-width: 1200px) {
+  .category-board:not(.category-board--preview) .category-board-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 1200px) {
@@ -1430,6 +1436,15 @@ button:disabled {
 .game-setup-form textarea:focus-visible {
   outline: 2px solid var(--setup-accent);
   outline-offset: 3px;
+}
+
+.game-setup-history-warning button {
+  border-bottom: 1px solid currentColor;
+  color: var(--setup-cream);
+  font-size: inherit;
+  letter-spacing: inherit;
+  padding: 0;
+  text-transform: none;
 }
 
 .game-setup-action {

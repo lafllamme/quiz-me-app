@@ -5,6 +5,9 @@ const props = defineProps<{
   draft: SetupDraft
   hasSavedGame: boolean
   questionCount: number
+  catalogExhausted: boolean
+  remainingQuestionCount: number
+  totalQuestionCount: number
   primaryActionLabel: string
 }>()
 
@@ -17,6 +20,7 @@ const emit = defineEmits<{
   start: []
   newGame: []
   rules: []
+  'reset-history': []
 }>()
 
 function updateName(index: 0 | 1, event: Event) {
@@ -64,7 +68,8 @@ const difficultyOptions: { value: DifficultyMode; label: string }[] = [
       </fieldset>
     </div>
     <div class="game-setup-form-foot">
-      <span>{{ questionCount }} Fragen · austauschbar</span>
+      <span v-if="catalogExhausted" class="game-setup-history-warning">Katalog durchgespielt · <button type="button" @click="emit('reset-history')">Archiv zurücksetzen</button></span>
+      <span v-else>{{ questionCount }} Fragen pro Spiel · {{ remainingQuestionCount }} / {{ totalQuestionCount }} im Pool</span>
       <div>
         <button type="button" @click="emit('newGame')">{{ hasSavedGame ? 'Neues Spiel' : 'Schnellstart' }}</button>
         <button type="button" @click="emit('rules')">Regeln</button>

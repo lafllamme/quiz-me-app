@@ -5,6 +5,9 @@ import type { DifficultyMode, SetupDraft } from '~/types/setup'
 const props = defineProps<{
   config: QuizConfig
   hasSavedGame: boolean
+  catalogExhausted: boolean
+  remainingQuestionCount: number
+  totalQuestionCount: number
 }>()
 
 const emit = defineEmits<{
@@ -13,6 +16,7 @@ const emit = defineEmits<{
   newGame: [config: Partial<QuizConfig>]
   rules: []
   settings: []
+  resetHistory: []
 }>()
 
 const draft = reactive<SetupDraft>({
@@ -84,6 +88,9 @@ function rules() {
       :draft="draft"
       :has-saved-game="hasSavedGame"
       :question-count="draft.rounds * config.perRound"
+      :catalog-exhausted="catalogExhausted"
+      :remaining-question-count="remainingQuestionCount"
+      :total-question-count="totalQuestionCount"
       :primary-action-label="primaryActionLabel"
       @update:names="updateNames"
       @update:players="updatePlayers"
@@ -93,6 +100,7 @@ function rules() {
       @start="start"
       @new-game="newGame"
       @rules="rules"
+      @reset-history="emit('resetHistory')"
     />
   </section>
 </template>

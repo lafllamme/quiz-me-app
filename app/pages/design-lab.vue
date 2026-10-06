@@ -13,6 +13,8 @@ type CategoryOption = {
   descriptor: string
 }
 
+type SetupField = 'rounds' | 'seconds' | 'difficulty'
+
 type Palette = {
   id: string
   label: string
@@ -147,6 +149,8 @@ const selectedCategory = ref('')
 const selectedAnswer = ref<number | null>(null)
 const timerPaused = ref(false)
 const setupNames = reactive({ one: 'TEAM ONE', two: 'TEAM TWO' })
+const setupOptions = reactive({ rounds: 7, seconds: 45, difficulty: 'Schwer' })
+const activeSetupField = ref<SetupField>('rounds')
 const selectedPalette = ref(1)
 
 const activeVariant = computed<Variant>(() => variants[activeScreen.value][selectedVariants[activeScreen.value]]!)
@@ -180,6 +184,31 @@ function chooseCategory(category: string) {
 
 function chooseAnswer(index: number) {
   selectedAnswer.value = index
+}
+
+const setupFieldOptions: Record<SetupField, Array<number | string>> = {
+  rounds: [3, 5, 7],
+  seconds: [30, 45, 60],
+  difficulty: ['Leicht', 'Gemischt', 'Schwer'],
+}
+
+const setupFieldLabel: Record<SetupField, string> = {
+  rounds: 'Runden',
+  seconds: 'Sekunden',
+  difficulty: 'Modus',
+}
+
+function selectSetupOption(value: number | string) {
+  if (activeSetupField.value === 'rounds' && typeof value === 'number')
+    setupOptions.rounds = value
+  else if (activeSetupField.value === 'seconds' && typeof value === 'number')
+    setupOptions.seconds = value
+  else if (activeSetupField.value === 'difficulty' && typeof value === 'string')
+    setupOptions.difficulty = value
+}
+
+function isSelectedSetupOption(value: number | string) {
+  return setupOptions[activeSetupField.value] === value
 }
 </script>
 
@@ -316,8 +345,8 @@ function chooseAnswer(index: number) {
             </div>
 
             <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="study study-split-field" :style="splitFieldPaletteStyle">
-              <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><h2>Wer<br><em>spielt?</em></h2><p>Gib den Teams einen Namen. Den Rest regeln wir.</p><div class="split-field-meta"><span>7 Runden</span><span>45 Sek.</span><span>Schwer</span></div></div>
-              <div class="split-field-form"><div class="split-field-head"><span>Teamnamen</span><span>Bereit?</span></div><label><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label><label><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label><div class="split-field-badges" aria-label="Spielmodus: 7 Runden, 45 Sekunden, schwer"><div class="split-field-badge"><strong>7</strong><span>Runden</span></div><div class="split-field-badge"><strong>45</strong><span>Sek.</span></div><div class="split-field-badge"><strong>Schwer</strong><span>Modus</span></div></div><button class="study-action study-action--cream" @click="chooseScreen('categories')">Spiel starten <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div>
+              <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><h2>Wer<br><em>spielt?</em></h2><p>Gib den Teams einen Namen. Den Rest regeln wir.</p><div class="split-field-meta"><span>{{ setupOptions.rounds }} Runden</span><span>{{ setupOptions.seconds }} Sek.</span><span>{{ setupOptions.difficulty }}</span></div></div>
+              <div class="split-field-form"><div class="split-field-head"><span>Teamnamen</span><span>Bereit?</span></div><label><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label><label><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label><div class="split-field-config"><div class="split-field-badges" role="tablist" aria-label="Spieleinstellungen"><button v-for="field in (['rounds', 'seconds', 'difficulty'] as SetupField[])" :key="field" type="button" class="split-field-badge" :class="{ 'split-field-badge--active': activeSetupField === field }" role="tab" :aria-selected="activeSetupField === field" @click="activeSetupField = field"><strong>{{ setupOptions[field] }}</strong><span>{{ setupFieldLabel[field] }}</span></button></div><div class="split-field-picker" :aria-label="`${setupFieldLabel[activeSetupField]} auswählen`"><span>{{ setupFieldLabel[activeSetupField] }} wählen</span><div><button v-for="option in setupFieldOptions[activeSetupField]" :key="option" type="button" :class="{ 'split-field-picker-option--selected': isSelectedSetupOption(option) }" :aria-pressed="isSelectedSetupOption(option)" @click="selectSetupOption(option)">{{ activeSetupField === 'seconds' ? `${option} Sek.` : option }}</button></div></div></div><button class="study-action study-action--cream" @click="chooseScreen('categories')">Spiel starten <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div>
             </div>
 
             <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'control-rail'" class="study study-split-field study-control-rail" :style="splitFieldPaletteStyle">
@@ -685,11 +714,19 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .split-field-form label { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: center; gap: .7rem; min-height: 74px; border-bottom: 1px solid var(--split-line); }
 .split-field-form label span { color: var(--split-accent); font-size: .62rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
 .split-field-form input { width: 100%; border-color: color-mix(in srgb, var(--split-cream) 42%, transparent); padding: .5rem 0; font-size: .95rem; font-weight: 600; }
-.split-field-badges { display: grid; grid-template-columns: .68fr .82fr 1.3fr; margin-top: 1rem; border-top: 1px solid var(--split-line); border-bottom: 1px solid var(--split-line); }
-.split-field-badge { display: flex; min-width: 0; min-height: 4.5rem; flex-direction: column; justify-content: center; gap: .18rem; padding: .7rem .75rem; }
+.split-field-config { margin-top: 1rem; }
+.split-field-badges { display: grid; grid-template-columns: .68fr .82fr 1.3fr; border-top: 1px solid var(--split-line); }
+.split-field-badge { display: flex; min-width: 0; min-height: 4.5rem; flex-direction: column; justify-content: center; gap: .18rem; border: 0; border-bottom: 1px solid var(--split-line); background: transparent; color: var(--split-cream); cursor: pointer; padding: .7rem .75rem; text-align: left; transition: background 160ms ease, color 160ms ease; }
 .split-field-badge + .split-field-badge { border-left: 1px solid var(--split-line); }
+.split-field-badge:hover, .split-field-badge:focus-visible, .split-field-badge--active { background: color-mix(in srgb, var(--split-accent) 15%, transparent); }
+.split-field-badge:focus-visible { outline: 2px solid var(--split-accent); outline-offset: -2px; }
 .split-field-badge strong { overflow: hidden; color: var(--split-cream); font-family: var(--font-display); font-size: clamp(1.35rem, 2.35vw, 2.05rem); font-weight: 600; letter-spacing: -.025em; line-height: .95; text-overflow: ellipsis; white-space: nowrap; }
 .split-field-badge span { color: var(--split-accent); font-size: .52rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.split-field-picker { display: flex; align-items: center; justify-content: space-between; gap: .8rem; border-bottom: 1px solid var(--split-line); padding: .65rem 0 .7rem; }
+.split-field-picker > span { color: var(--split-muted); font-size: .52rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.split-field-picker > div { display: grid; grid-auto-columns: minmax(0, 1fr); grid-auto-flow: column; gap: .35rem; flex: 1; }
+.split-field-picker button { min-height: 2.2rem; border: 1px solid var(--split-line); background: transparent; color: var(--split-muted); cursor: pointer; font: inherit; font-size: .65rem; font-weight: 700; padding: .3rem .45rem; text-align: center; transition: background 160ms ease, border-color 160ms ease, color 160ms ease; }
+.split-field-picker button:hover, .split-field-picker button:focus-visible, .split-field-picker-option--selected { border-color: var(--split-accent); background: var(--split-accent); color: var(--split-ink); outline: none; }
 .split-field-form .study-action { width: 100%; margin-top: 1.4rem; }
 
 .study-host-rail { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) minmax(250px, .7fr); gap: clamp(1.5rem, 4vw, 4rem); min-height: 665px; padding: 2rem clamp(1.5rem, 5vw, 4rem); background: var(--lab-jungle); }
@@ -917,7 +954,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .monogram-team-list, .green-signal-form { margin-top: 2rem; }
   .monogram-footer, .green-signal-footer { flex-wrap: wrap; gap: .65rem 1rem; }
   .quiet-room-layout { display: block; min-height: 0; margin-top: 3rem; }.quiet-room-copy h2 { font-size: 4.6rem; }.quiet-room-form { margin-top: 2rem; }
-  .study-split-field { display: block; }.split-field-copy { display: block; min-height: 405px; padding: 1.5rem; }.split-field-copy .mini-kicker { margin-top: 3rem; }.split-field-copy h2 { font-size: 4.6rem; }.split-field-meta { margin-top: 2rem; }.split-field-form { margin: 0; border-width: 1px 0 0; padding: 1.5rem; }.split-field-badge { min-height: 4.1rem; padding-inline: .55rem; }.split-field-badge strong { font-size: 1.35rem; }.control-rail-form { margin: 0; padding: 1.5rem; }.control-rail-settings { gap: .6rem; }.control-rail-settings strong { font-size: .78rem; }
+  .study-split-field { display: block; }.split-field-copy { display: block; min-height: 405px; padding: 1.5rem; }.split-field-copy .mini-kicker { margin-top: 3rem; }.split-field-copy h2 { font-size: 4.6rem; }.split-field-meta { margin-top: 2rem; }.split-field-form { margin: 0; border-width: 1px 0 0; padding: 1.5rem; }.split-field-badge { min-height: 4.1rem; padding-inline: .55rem; }.split-field-badge strong { font-size: 1.35rem; }.split-field-picker { align-items: stretch; flex-direction: column; }.split-field-picker > div { width: 100%; }.control-rail-form { margin: 0; padding: 1.5rem; }.control-rail-settings { gap: .6rem; }.control-rail-settings strong { font-size: .78rem; }
   .study-host-rail { display: block; padding: 1.5rem; }.host-rail-spine { flex-direction: row; justify-content: space-between; border-right: 0; border-bottom: 1px solid var(--lab-line); padding: 0 0 .8rem; }.host-rail-spine i { margin-top: 0; writing-mode: horizontal-tb; }.host-rail-copy { margin-top: 3rem; }.host-rail-copy h2 { margin-top: 2.8rem; font-size: 4.6rem; }.host-rail-stats { margin-top: 2rem; }.host-rail-form { margin-top: 2.5rem; }
   .study-press-card { padding: 1.5rem; }.press-card-layout { display: block; min-height: 0; margin-top: 2.8rem; }.press-card-mark { display: none; }.press-card-copy h2 { font-size: 4.6rem; }.press-card-form { margin-top: 2rem; }.press-card-foot { margin-top: 2rem; flex-wrap: wrap; }
   .low-slung-top { display: flex; flex-wrap: wrap; gap: .55rem 1rem; }.low-slung-top span:first-child { width: 100%; }.low-slung-copy { min-height: 310px; }.low-slung-copy h2 { font-size: 4.8rem; }.low-slung-bar { display: block; }.low-slung-inputs { grid-template-columns: 1fr; }.low-slung-bar .study-action { width: 100%; margin-top: 1rem; }.low-slung-foot { flex-wrap: wrap; }
