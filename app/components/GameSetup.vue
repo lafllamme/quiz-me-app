@@ -19,13 +19,29 @@ const emit = defineEmits<{
   resetHistory: []
 }>()
 
-const draft = reactive<SetupDraft>({
-  names: [...props.config.names] as [string, string],
-  players: [...props.config.players] as [string, string],
-  rounds: props.config.rounds,
-  seconds: props.config.seconds,
-  difficulty: props.config.difficulty,
-})
+function draftFromConfig(): SetupDraft {
+  return {
+    names: [...props.config.names] as [string, string],
+    players: [...props.config.players] as [string, string],
+    rounds: props.config.rounds,
+    seconds: props.config.seconds,
+    difficulty: props.config.difficulty,
+  }
+}
+
+const draft = reactive<SetupDraft>(draftFromConfig())
+
+// Saved settings are restored after this component is created. Until the host
+// edits the form, the draft follows the config; otherwise restored team names
+// would count as a change and hide "Spiel fortsetzen".
+let edited = false
+watch(
+  () => [...props.config.names, ...props.config.players, props.config.rounds, props.config.seconds, props.config.difficulty],
+  () => {
+    if (!edited)
+      Object.assign(draft, draftFromConfig())
+  },
+)
 
 function payload(): Partial<QuizConfig> {
   return {
@@ -53,22 +69,27 @@ function start() {
 }
 
 function updateNames(names: [string, string]) {
+  edited = true
   draft.names = names
 }
 
 function updatePlayers(players: [string, string]) {
+  edited = true
   draft.players = players
 }
 
 function updateRounds(rounds: number) {
+  edited = true
   draft.rounds = rounds
 }
 
 function updateSeconds(seconds: number) {
+  edited = true
   draft.seconds = seconds
 }
 
 function updateDifficulty(difficulty: DifficultyMode) {
+  edited = true
   draft.difficulty = difficulty
 }
 
