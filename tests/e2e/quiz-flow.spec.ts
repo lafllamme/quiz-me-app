@@ -12,7 +12,10 @@ test.describe('Jungle Quiz flow', () => {
     await page.goto('/')
     await page.waitForTimeout(750)
 
-    await expect(page.getByText('90 / 90 im Pool')).toBeVisible()
+    const pool = page.getByText(/\d+ \/ \d+ im Pool/)
+    await expect(pool).toBeVisible()
+    const total = Number((await pool.textContent())!.match(/(\d+) im Pool/)![1])
+    await expect(page.getByText(`${total} / ${total} im Pool`)).toBeVisible()
     const startButton = page.locator('.game-setup-action')
     await expect(startButton).toBeVisible()
     await startButton.click()
@@ -40,9 +43,9 @@ test.describe('Jungle Quiz flow', () => {
     await expect(page.locator('.question-live-stage').getByRole('button', { name: 'Weiter' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Zum Menü' }).click()
-    await expect(page.getByText('89 / 90 im Pool')).toBeVisible()
+    await expect(page.getByText(`${total - 1} / ${total} im Pool`)).toBeVisible()
 
     await page.reload()
-    await expect(page.getByText('89 / 90 im Pool')).toBeVisible()
+    await expect(page.getByText(`${total - 1} / ${total} im Pool`)).toBeVisible()
   })
 })

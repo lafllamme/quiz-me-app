@@ -276,7 +276,7 @@ export function useQuizGame() {
     const question = deck.pickQuestion(category, config.difficulty, game.used)
     if (!question)
       return
-    game.currentQuestion = question
+    game.currentQuestion = deck.presentQuestion(question)
     game.selectedOption = null
     game.wrongOptions = []
     game.timeExpired = false

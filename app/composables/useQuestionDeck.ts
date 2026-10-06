@@ -10,8 +10,54 @@ export const DIFFICULTY_WEIGHTS: Record<DifficultyMode, Record<DifficultyLevel, 
   hard: { 1: 10, 2: 30, 3: 60 },
 }
 
+/** How many recent correct-answer slots are remembered when placing the next one. */
+const POSITION_MEMORY = 6
+
 function randomItem<T>(items: readonly T[]): T | undefined {
   return items[Math.floor(Math.random() * items.length)]
+}
+
+function shuffle<T>(items: readonly T[]): T[] {
+  const result = [...items]
+  for (let index = result.length - 1; index > 0; index--) {
+    const swap = Math.floor(Math.random() * (index + 1))
+    ;[result[index], result[swap]] = [result[swap]!, result[index]!]
+  }
+  return result
+}
+
+/**
+ * Picks the slot for the next correct answer. The previous slot is never repeated and
+ * slots that were used often in the recent window become increasingly unlikely, so the
+ * answer letter stays unpredictable without following a visible pattern.
+ */
+export function chooseCorrectPosition(recentPositions: readonly number[], optionCount = 4): number {
+  const last = recentPositions.at(-1)
+  const recent = recentPositions.slice(-POSITION_MEMORY)
+  const positions = Array.from({ length: optionCount }, (_, index) => index).filter(index => index !== last)
+  const weights = positions.map(position => 1 / (1 + recent.filter(used => used === position).length) ** 2)
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0)
+
+  let cursor = Math.random() * totalWeight
+  for (const [index, position] of positions.entries()) {
+    cursor -= weights[index]!
+    if (cursor < 0)
+      return position
+  }
+
+  return positions.at(-1)!
+}
+
+/** Returns a copy of the question with the answer at `correctPosition` and shuffled distractors. */
+export function arrangeOptions(question: QuizQuestion, correctPosition: number): QuizQuestion {
+  const options = shuffle(question.options.filter((_, index) => index !== question.correctIndex))
+  options.splice(correctPosition, 0, question.answer)
+
+  return {
+    ...question,
+    options: options as unknown as QuizQuestion['options'],
+    correctIndex: correctPosition,
+  }
 }
 
 function chooseDifficulty(candidates: readonly QuizQuestion[], mode: DifficultyMode): DifficultyLevel | undefined {
@@ -35,6 +81,7 @@ function chooseDifficulty(candidates: readonly QuizQuestion[], mode: DifficultyM
 export function useQuestionDeck() {
   const answeredIds = ref<string[]>([])
   const hydrated = ref(false)
+  const recentCorrectPositions: number[] = []
 
   const knownQuestionIds = new Set(QUESTIONS.map(question => question.id))
   const totalCount = computed(() => QUESTIONS.length)
@@ -103,6 +150,14 @@ export function useQuestionDeck() {
     return randomItem(difficultyPool) ?? randomItem(candidates)
   }
 
+  /** Shuffles the options for display while spreading the correct answer across A–D. */
+  function presentQuestion(question: QuizQuestion) {
+    const position = chooseCorrectPosition(recentCorrectPositions, question.options.length)
+    recentCorrectPositions.push(position)
+    recentCorrectPositions.splice(0, Math.max(0, recentCorrectPositions.length - POSITION_MEMORY))
+    return arrangeOptions(question, position)
+  }
+
   return {
     answeredIds,
     hydrated,
@@ -117,5 +172,6 @@ export function useQuestionDeck() {
     getAvailableQuestions,
     getAvailableCategories,
     pickQuestion,
+    presentQuestion,
   }
 }

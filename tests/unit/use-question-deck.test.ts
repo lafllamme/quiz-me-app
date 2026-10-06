@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DIFFICULTY_WEIGHTS, QUESTION_HISTORY_KEY, useQuestionDeck } from '~/composables/useQuestionDeck'
+import { DIFFICULTY_WEIGHTS, QUESTION_HISTORY_KEY, arrangeOptions, chooseCorrectPosition, useQuestionDeck } from '~/composables/useQuestionDeck'
+import { QUESTIONS } from '~/data/quiz-catalog'
 
 describe('useQuestionDeck', () => {
   beforeEach(() => {
@@ -14,7 +15,7 @@ describe('useQuestionDeck', () => {
     deck.hydrate()
 
     expect(deck.answeredCount.value).toBe(1)
-    expect(deck.remainingCount.value).toBe(89)
+    expect(deck.remainingCount.value).toBe(QUESTIONS.length - 1)
     expect(deck.isAnswered('cologne-e-01')).toBe(true)
     expect(deck.isAnswered('removed-question')).toBe(false)
   })
@@ -69,7 +70,44 @@ describe('useQuestionDeck', () => {
     deck.resetHistory()
 
     expect(deck.answeredCount.value).toBe(0)
-    expect(deck.remainingCount.value).toBe(90)
+    expect(deck.remainingCount.value).toBe(QUESTIONS.length)
     expect(localStorage.getItem(QUESTION_HISTORY_KEY)).toBeNull()
+  })
+
+  it('moves the answer to the requested slot and keeps every option', () => {
+    const question = QUESTIONS[0]!
+
+    for (const position of [0, 1, 2, 3]) {
+      const arranged = arrangeOptions(question, position)
+      expect(arranged.correctIndex).toBe(position)
+      expect(arranged.options[position]).toBe(question.answer)
+      expect([...arranged.options].sort()).toEqual([...question.options].sort())
+    }
+  })
+
+  it('never repeats the previous answer slot and spreads answers across all letters', () => {
+    const positions: number[] = []
+    for (let index = 0; index < 400; index++)
+      positions.push(chooseCorrectPosition(positions))
+
+    for (let index = 1; index < positions.length; index++)
+      expect(positions[index]).not.toBe(positions[index - 1])
+
+    for (const slot of [0, 1, 2, 3]) {
+      const share = positions.filter(position => position === slot).length / positions.length
+      expect(share).toBeGreaterThan(0.15)
+      expect(share).toBeLessThan(0.35)
+    }
+  })
+
+  it('presents questions with shuffled options without touching the catalog entry', () => {
+    const deck = useQuestionDeck()
+    const question = QUESTIONS[0]!
+    const original = [...question.options]
+
+    const presented = deck.presentQuestion(question)
+
+    expect(presented.options[presented.correctIndex]).toBe(question.answer)
+    expect(question.options).toEqual(original)
   })
 })
