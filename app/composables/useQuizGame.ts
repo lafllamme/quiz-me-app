@@ -104,6 +104,9 @@ export function useQuizGame() {
     catch {
       // Local storage is optional; a fresh session is a valid state.
     }
+
+    if (screen.value === 'menu')
+      sound.playTrack('startScreen', true)
   }
 
   function stopTimer() {
@@ -148,6 +151,7 @@ export function useQuizGame() {
     stopTimer()
     sound.stopAllTracks()
     screen.value = 'menu'
+    sound.playTrack('startScreen', true)
     persist()
   }
 
@@ -156,6 +160,7 @@ export function useQuizGame() {
       Object.assign(config, nextConfig)
 
     stopTimer()
+    sound.stopTrack('startScreen')
     Object.assign(game, emptyGame())
     game.first = Math.random() < 0.5 ? 0 : 1
     game.active = game.first
@@ -345,15 +350,28 @@ export function useQuizGame() {
     persist()
   }
 
+  function unlockAmbientSound() {
+    if (screen.value === 'menu')
+      sound.resumeTrack('startScreen')
+    else if (screen.value === 'category')
+      sound.resumeTrack('categorySelection')
+  }
+
   function newGame() {
     startGame()
   }
 
-  onMounted(hydrate)
+  onMounted(() => {
+    hydrate()
+    window.addEventListener('pointerdown', unlockAmbientSound, { passive: true })
+    window.addEventListener('keydown', unlockAmbientSound)
+  })
   onBeforeUnmount(() => {
     stopTimer()
     if (tossTimeout)
       window.clearTimeout(tossTimeout)
+    window.removeEventListener('pointerdown', unlockAmbientSound)
+    window.removeEventListener('keydown', unlockAmbientSound)
   })
 
   return {

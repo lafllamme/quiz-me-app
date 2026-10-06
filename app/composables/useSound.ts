@@ -1,5 +1,5 @@
 type SoundName = 'menu' | 'select' | 'start' | 'tick' | 'right' | 'wrong' | 'steal' | 'end' | 'drum' | 'ring'
-export type TrackName = 'tension' | 'categorySelection' | 'timeOver' | 'wrong' | 'correct'
+export type TrackName = 'startScreen' | 'tension' | 'categorySelection' | 'timeOver' | 'wrong' | 'correct'
 
 const patterns: Record<SoundName, Array<[number, number, number, OscillatorType?]>> = {
   menu: [[350, 0, 0.08]],
@@ -15,6 +15,7 @@ const patterns: Record<SoundName, Array<[number, number, number, OscillatorType?
 }
 
 const trackSources: Record<TrackName, string> = {
+  startScreen: '/audio/start_screen.mp3',
   tension: '/audio/tension_45s.mp3',
   categorySelection: '/audio/category_selection.mp3',
   timeOver: '/audio/time_over.mp3',
