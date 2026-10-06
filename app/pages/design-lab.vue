@@ -308,8 +308,8 @@ function chooseAnswer(index: number) {
             </div>
 
             <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="study study-split-field" :style="splitFieldPaletteStyle">
-              <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><span class="mini-kicker">01 / Player setup</span><h2>Who's<br><em>playing?</em></h2><p>Name your teams, then open the room.</p><div class="split-field-meta"><span>5 rounds</span><span>45 sec</span><span>4 territories</span></div></div>
-              <div class="split-field-form"><div class="split-field-head"><span>Players</span><span>Ready when you are</span></div><label><span>01 / Team one</span><input v-model="setupNames.one" aria-label="Name Team One"></label><label><span>02 / Team two</span><input v-model="setupNames.two" aria-label="Name Team Two"></label><button class="study-action study-action--cream" @click="chooseScreen('categories')">Enter the jungle <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div>
+              <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><h2>Who's<br><em>playing?</em></h2><p>Name the teams. We'll handle the rest.</p><div class="split-field-meta"><span>5 rounds</span><span>45 sec</span><span>4 territories</span></div></div>
+              <div class="split-field-form"><div class="split-field-head"><span>Team names</span><span>Ready when you are</span></div><label><span>Team one</span><input v-model="setupNames.one" aria-label="Name Team One"></label><label><span>Team two</span><input v-model="setupNames.two" aria-label="Name Team Two"></label><button class="study-action study-action--cream" @click="chooseScreen('categories')">Enter the jungle <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div>
             </div>
 
             <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'host-rail'" class="study study-host-rail">
@@ -670,13 +670,13 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .split-field-wordmark, .press-card-top, .low-slung-top { color: var(--lab-ink); font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2.5rem); font-weight: 600; letter-spacing: -.035em; }
 .split-field-wordmark { color: var(--split-ink); }
 .split-field-wordmark span, .split-field-copy h2 em { color: var(--split-jungle); }
-.split-field-copy .mini-kicker { margin-top: 5rem; color: color-mix(in srgb, var(--split-ink) 68%, transparent); }
-.split-field-copy h2 { max-width: 8ch; margin-top: 1.2rem; color: var(--split-ink); font-size: clamp(4.6rem, 8vw, 7.4rem); letter-spacing: -.012em; line-height: .87; }
+.split-field-copy h2 { max-width: 8ch; margin-top: 5rem; color: var(--split-ink); font-size: clamp(4.6rem, 8vw, 7.4rem); letter-spacing: -.012em; line-height: .87; }
 .split-field-copy h2 em { font-style: normal; }
 .split-field-copy p { max-width: 18rem; margin-top: 1.7rem; color: color-mix(in srgb, var(--split-ink) 70%, transparent); font-size: .88rem; }
-.split-field-meta { display: flex; gap: 1.3rem; border-top: 1px solid color-mix(in srgb, var(--split-ink) 32%, transparent); padding-top: .8rem; color: color-mix(in srgb, var(--split-ink) 70%, transparent); font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.split-field-meta { display: flex; border-top: 1px solid color-mix(in srgb, var(--split-ink) 32%, transparent); padding-top: .8rem; color: color-mix(in srgb, var(--split-ink) 70%, transparent); font-size: .62rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.split-field-meta span + span::before { margin: 0 .75rem; color: color-mix(in srgb, var(--split-ink) 42%, transparent); content: '·'; }
 .split-field-form { align-self: center; margin: 2rem; border: 1px solid var(--split-line); padding: 1.15rem; color: var(--split-cream); }
-.split-field-form label { display: grid; grid-template-columns: 6rem 1fr; align-items: center; gap: .7rem; min-height: 74px; border-bottom: 1px solid var(--split-line); }
+.split-field-form label { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: center; gap: .7rem; min-height: 74px; border-bottom: 1px solid var(--split-line); }
 .split-field-form label span { color: var(--split-accent); font-size: .62rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
 .split-field-form input { width: 100%; border-color: color-mix(in srgb, var(--split-cream) 42%, transparent); padding: .5rem 0; font-size: .95rem; font-weight: 600; }
 .split-field-form .study-action { width: 100%; margin-top: 1.4rem; }
