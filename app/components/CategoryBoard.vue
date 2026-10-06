@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import territoryMarkerUrl from '~/assets/images/territory-marker.png'
+import { computed } from 'vue'
 import type { CategoryTile } from '~/composables/useQuestionDeck'
+import type { TurnRecord } from '~/composables/useQuizGame'
 import { QUIZ_CATEGORIES, type VisualKind } from '~/data/quiz-catalog'
 
 const props = defineProps<{
   tiles: CategoryTile[]
   activeName: string
+  names: [string, string]
+  scores: [number, number]
+  history: TurnRecord[]
+  first: 0 | 1
   round: number
   rounds: number
+  perRound: number
   questionNumber: number
   questionCount: number
   previewOnly?: boolean
@@ -16,6 +22,39 @@ const props = defineProps<{
 const emit = defineEmits<{ choose: [tile: CategoryTile] }>()
 
 const categoryDescriptors = Object.fromEntries(QUIZ_CATEGORIES.map(category => [category.label, category.descriptor]))
+
+// Match status for the side panel: score, steals, progress, last moves.
+const activeTeam = computed(() => ((props.first + props.questionNumber - 1) % 2) as 0 | 1)
+const steals = computed(() => ([0, 1] as const).map(team => props.history.filter(turn => turn.winner === team && turn.outcome === 'stolen').length))
+
+const lead = computed(() => {
+  const [a, b] = props.scores
+  if (a === b)
+    return a === 0 ? 'Noch alles offen.' : 'Gleichstand.'
+  const gap = Math.abs(a - b)
+  return `${props.names[a > b ? 0 : 1]} führt mit ${gap} ${gap === 1 ? 'Punkt' : 'Punkten'}.`
+})
+
+const progress = computed(() => Array.from({ length: props.rounds }, (_, round) =>
+  Array.from({ length: props.perRound }, (_, slot) => {
+    const index = round * props.perRound + slot
+    const turn = props.history[index]
+    const state = index < props.questionNumber - 1 ? 'done' : index === props.questionNumber - 1 ? 'now' : 'next'
+    return { index, state, winner: turn?.winner ?? null }
+  })))
+
+const recent = computed(() => props.history.slice(-2).reverse())
+
+function describe(turn: TurnRecord) {
+  if (turn.outcome === 'stolen')
+    return `${props.names[turn.winner as 0 | 1]} klaut ${turn.category}`
+  if (turn.outcome === 'right')
+    return `${props.names[turn.team]} holt ${turn.category}`
+  return `${turn.category}: kein Punkt`
+}
+
+const upcoming = computed(() => Array.from({ length: Math.min(2, props.questionCount - props.questionNumber) }, (_, i) =>
+  props.names[((props.first + props.questionNumber + i) % 2) as 0 | 1]))
 
 const VISUAL_LABELS: Record<VisualKind, string> = {
   emoji: 'Emoji-Rätsel',
@@ -28,14 +67,41 @@ const VISUAL_LABELS: Record<VisualKind, string> = {
 
 <template>
   <section class="category-board" :class="{ 'category-board--preview': previewOnly }">
-    <aside class="category-board-marker" aria-label="Aktueller Spielzug">
-      <div class="category-board-marker-top"><span>Runde {{ round }} / {{ rounds }}</span><span>Jungle Quiz</span></div>
+    <aside class="category-board-marker" aria-label="Spielstand">
+      <div class="category-board-marker-top"><span>Runde {{ round }} / {{ rounds }}</span><span>Frage {{ questionNumber }} / {{ questionCount }}</span></div>
       <div class="category-board-marker-copy">
-        <span>Ist dran</span>
+        <span>Am Zug</span>
         <strong>{{ activeName }}</strong>
       </div>
-      <img class="category-board-marker-art" :src="territoryMarkerUrl" alt="" aria-hidden="true">
-      <div class="category-board-marker-foot"><span>Frage {{ questionNumber }}</span><span>{{ questionCount }} Fragen</span></div>
+
+      <ol class="category-board-score" aria-label="Punktestand">
+        <li v-for="(name, team) in names" :key="team" :class="{ 'category-board-score--active': team === activeTeam }">
+          <i class="category-board-team-mark" :class="`category-board-team-mark--${team}`" aria-hidden="true" />
+          <span>{{ name }}<small v-if="steals[team]">{{ steals[team] }}× geklaut</small></span>
+          <b>{{ scores[team] }}</b>
+        </li>
+      </ol>
+      <p class="category-board-lead">{{ lead }}</p>
+
+      <div class="category-board-progress" role="img" :aria-label="`Frage ${questionNumber} von ${questionCount}`">
+        <div v-for="(slots, round) in progress" :key="round" class="category-board-progress-round">
+          <div class="category-board-progress-ticks">
+            <i v-for="slot in slots" :key="slot.index" :class="[`category-board-tick--${slot.state}`, slot.winner !== null ? `category-board-tick--won-${slot.winner}` : '']" />
+          </div>
+          <small>R{{ round + 1 }}</small>
+        </div>
+      </div>
+
+      <ol v-if="recent.length" class="category-board-recent" aria-label="Letzte Züge">
+        <li v-for="(turn, i) in recent" :key="history.length - i" :class="`category-board-recent--${turn.outcome}`">
+          <Icon :name="turn.outcome === 'stolen' ? 'lucide:arrow-left-right' : turn.outcome === 'right' ? 'lucide:check' : 'lucide:minus'" size="15" aria-hidden="true" />
+          <span>{{ describe(turn) }}</span>
+          <small>{{ i === 0 ? 'zuletzt' : 'davor' }}</small>
+        </li>
+      </ol>
+      <p v-else class="category-board-recent-empty">Noch kein Zug gespielt. Der erste Pick eröffnet das Spiel.</p>
+
+      <div class="category-board-marker-foot"><span>{{ upcoming.length ? `Danach: ${upcoming.join(' · ')}` : 'Letzte Frage' }}</span></div>
     </aside>
 
     <div class="category-board-play">
@@ -72,7 +138,7 @@ const VISUAL_LABELS: Record<VisualKind, string> = {
         </button>
       </div>
 
-      <p class="category-board-foot">Bereit für den ersten Pick. <span>↗</span></p>
+      <p class="category-board-foot">{{ questionNumber === 1 ? 'Bereit für den ersten Pick.' : `${activeName} wählt.` }} <span>↗</span></p>
     </div>
   </section>
 </template>

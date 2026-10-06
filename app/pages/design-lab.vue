@@ -62,6 +62,12 @@ const variants: Record<ScreenKey, Variant[]> = {
   ],
   categories: [
     { id: 'soft-field', label: 'Territory grid', note: 'Sechs Kategorien / drei mal zwei', code: 'A' },
+    { id: 'panel-score', label: 'Score panel', note: 'Stand, Fortschritt und Reihenfolge statt Bild', code: 'B1' },
+    { id: 'panel-tokens', label: 'Point tokens', note: 'B1 / jeder Punkt als Token: Kategorie und wie', code: 'B1a' },
+    { id: 'panel-grid', label: 'Match grid', note: 'B1 / Runden als Raster: wer, was, wie', code: 'B1b' },
+    { id: 'panel-recent', label: 'Last moves', note: 'B1 / die letzten zwei Züge und Klau-Zähler', code: 'B1c' },
+    { id: 'panel-territory', label: 'Territory map', note: 'Wer welche Kategorie erobert hat', code: 'B2' },
+    { id: 'panel-timeline', label: 'Match timeline', note: 'Jeder Zug: gespielt, jetzt, kommend', code: 'B3' },
   ],
   question: [
     { id: 'header-duel', label: 'Header duel', note: 'Score in the logo row / timer right', code: 'Q1' },
@@ -77,6 +83,65 @@ const variants: Record<ScreenKey, Variant[]> = {
 }
 
 const categoryOptions: readonly CategoryOption[] = QUIZ_CATEGORIES
+
+// Category panel studies share one mid-game state: three rounds of two
+// questions, Quizzly Bears started, question four is Dogi's pick. The turn
+// history (who won which question, steals) is not stored by the game yet;
+// these studies show what it would enable.
+type TurnOutcome = 'right' | 'wrong' | 'stolen'
+type MatchTurn = { team: 0 | 1, category?: string, outcome?: TurnOutcome, winner?: 0 | 1 | null }
+
+const match = {
+  names: ['Dogi', 'Quizzly Bears'] as [string, string],
+  scores: [2, 1] as [number, number],
+  active: 0 as 0 | 1,
+  round: 2,
+  rounds: 3,
+  perRound: 2,
+  current: 3,
+  turns: [
+    { team: 1, category: 'Musik', outcome: 'right', winner: 1 },
+    { team: 0, category: 'Köln', outcome: 'right', winner: 0 },
+    { team: 1, category: 'Netz & Memes', outcome: 'stolen', winner: 0 },
+    { team: 0 },
+    { team: 1 },
+    { team: 0 },
+  ] as MatchTurn[],
+}
+const matchLead = computed(() => {
+  const [a, b] = match.scores
+  if (a === b)
+    return 'Gleichstand.'
+  const leader = a > b ? 0 : 1
+  const gap = Math.abs(a - b)
+  return `${match.names[leader]} führt mit ${gap} ${gap === 1 ? 'Punkt' : 'Punkten'}.`
+})
+const matchTerritory = computed(() => categoryOptions.map((option) => {
+  const turn = match.turns.find(t => t.category === option.label && t.outcome)
+  return { label: option.label, owner: turn?.winner ?? null, stolen: turn?.outcome === 'stolen' }
+}))
+const matchUpcoming = computed(() => match.turns.slice(match.current + 1).map(t => match.names[t.team]))
+const matchPoints = computed(() => ([0, 1] as const).map(team => match.turns.filter(t => t.winner === team)))
+const matchSteals = computed(() => ([0, 1] as const).map(team => match.turns.filter(t => t.winner === team && t.outcome === 'stolen').length))
+const matchRecent = computed(() => match.turns.slice(0, match.current).reverse().slice(0, 2))
+function turnLine(turn: MatchTurn) {
+  const winner = match.names[turn.winner as 0 | 1]
+  if (turn.outcome === 'stolen')
+    return `${winner} klaut ${turn.category}`
+  if (turn.outcome === 'right')
+    return `${winner} holt ${turn.category}`
+  return `${match.names[turn.team]} verpasst ${turn.category}`
+}
+function turnState(index: number) {
+  return index < match.current ? 'done' : index === match.current ? 'now' : 'next'
+}
+function turnResult(turn: MatchTurn) {
+  if (turn.outcome === 'right')
+    return 'richtig'
+  if (turn.outcome === 'stolen')
+    return `gestohlen von ${match.names[turn.winner as 0 | 1]}`
+  return 'falsch'
+}
 
 const paletteOptions: Palette[] = [
   {
@@ -587,6 +652,159 @@ function isSelectedSetupOption(value: number | string) {
               <p class="category-study-foot">{{ selectedCategory ? `${selectedCategory} gewählt` : 'Bereit für den ersten Pick.' }} <span>↗</span></p>
             </div>
 
+            <!-- Category panel studies: the left panel carries the match state. -->
+            <div v-else-if="activeScreen === 'categories'" class="study cb" :class="`cb--${activeVariant.id}`">
+              <aside class="cb-panel" aria-label="Spielstand">
+                <div class="cb-panel-top"><span>Runde {{ match.round }} / {{ match.rounds }}</span><span>Frage {{ match.current + 1 }} / {{ match.turns.length }}</span></div>
+
+                <div class="cb-turn">
+                  <span>Am Zug</span>
+                  <strong>{{ match.names[match.active] }}</strong>
+                </div>
+
+                <template v-if="activeVariant.id === 'panel-score'">
+                  <ol class="cb-score">
+                    <li v-for="(name, team) in match.names" :key="name" :class="{ 'cb-score--active': team === match.active }">
+                      <i class="cb-team-mark" :class="`cb-team-mark--${team}`" aria-hidden="true" />
+                      <span>{{ name }}</span>
+                      <b>{{ match.scores[team] }}</b>
+                    </li>
+                  </ol>
+                  <p class="cb-lead">{{ matchLead }}</p>
+                  <div class="cb-progress" aria-label="Fortschritt">
+                    <div v-for="r in match.rounds" :key="r" class="cb-progress-round">
+                      <div class="cb-progress-ticks">
+                        <i v-for="(turn, i) in match.turns.slice((r - 1) * match.perRound, r * match.perRound)" :key="i" :class="[`cb-tick--${turnState((r - 1) * match.perRound + i)}`, turn.winner != null ? `cb-tick--won-${turn.winner}` : '']" />
+                      </div>
+                      <small>R{{ r }}</small>
+                    </div>
+                  </div>
+                  <div class="cb-recap">
+                    <span>Zuletzt</span>
+                    <p><strong>{{ match.turns[match.current - 1]!.category }}</strong> · {{ match.names[match.turns[match.current - 1]!.team] }} lag falsch, {{ match.names[0] }} hat gestohlen.</p>
+                  </div>
+                  <p class="cb-next">Danach: {{ matchUpcoming.join(' · ') }}</p>
+                </template>
+
+                <template v-else-if="activeVariant.id === 'panel-tokens'">
+                  <ol class="cb-score cb-score--tokens">
+                    <li v-for="(name, team) in match.names" :key="name" :class="{ 'cb-score--active': team === match.active }">
+                      <i class="cb-team-mark" :class="`cb-team-mark--${team}`" aria-hidden="true" />
+                      <span>{{ name }}</span>
+                      <b>{{ match.scores[team] }}</b>
+                      <div class="cb-tokens">
+                        <em v-for="point in matchPoints[team]" :key="point.category" class="cb-token" :class="{ 'cb-token--stolen': point.outcome === 'stolen' }">
+                          <Icon :name="point.outcome === 'stolen' ? 'lucide:arrow-left-right' : 'lucide:check'" size="12" aria-hidden="true" />
+                          {{ point.category }}<small v-if="point.outcome === 'stolen'">geklaut</small>
+                        </em>
+                        <em v-if="!matchPoints[team]!.length" class="cb-token cb-token--empty">noch kein Punkt</em>
+                      </div>
+                    </li>
+                  </ol>
+                  <p class="cb-lead">{{ matchLead }}</p>
+                  <div class="cb-progress" aria-label="Fortschritt">
+                    <div v-for="r in match.rounds" :key="r" class="cb-progress-round">
+                      <div class="cb-progress-ticks">
+                        <i v-for="(turn, i) in match.turns.slice((r - 1) * match.perRound, r * match.perRound)" :key="i" :class="[`cb-tick--${turnState((r - 1) * match.perRound + i)}`, turn.winner != null ? `cb-tick--won-${turn.winner}` : '']" />
+                      </div>
+                      <small>R{{ r }}</small>
+                    </div>
+                  </div>
+                  <p class="cb-next">Danach: {{ matchUpcoming.join(' · ') }}</p>
+                </template>
+
+                <template v-else-if="activeVariant.id === 'panel-grid'">
+                  <div class="cb-tally cb-tally--names"><span>{{ match.names[0] }}</span><b>{{ match.scores[0] }} : {{ match.scores[1] }}</b><span>{{ match.names[1] }}</span></div>
+                  <div class="cb-matchgrid" aria-label="Spielverlauf">
+                    <template v-for="r in match.rounds" :key="r">
+                      <small class="cb-matchgrid-round">R{{ r }}</small>
+                      <div v-for="(turn, i) in match.turns.slice((r - 1) * match.perRound, r * match.perRound)" :key="i" class="cb-cell" :class="[`cb-cell--${turnState((r - 1) * match.perRound + i)}`, { 'cb-cell--stolen': turn.outcome === 'stolen' }]">
+                        <template v-if="turn.outcome">
+                          <span class="cb-cell-who"><i class="cb-team-mark" :class="`cb-team-mark--${turn.winner}`" aria-hidden="true" />{{ match.names[turn.winner as 0 | 1] }}</span>
+                          <strong>{{ turn.category }}</strong>
+                          <small><Icon :name="turn.outcome === 'stolen' ? 'lucide:arrow-left-right' : 'lucide:check'" size="11" aria-hidden="true" />{{ turn.outcome === 'stolen' ? 'geklaut' : 'richtig' }}</small>
+                        </template>
+                        <template v-else>
+                          <span class="cb-cell-who"><i class="cb-team-mark" :class="`cb-team-mark--${turn.team}`" aria-hidden="true" />{{ match.names[turn.team] }}</span>
+                          <strong>{{ turnState((r - 1) * match.perRound + i) === 'now' ? 'wählt jetzt' : 'kommt noch' }}</strong>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="cb-legend cb-legend--how"><span><Icon name="lucide:check" size="12" aria-hidden="true" />richtig</span><span><Icon name="lucide:arrow-left-right" size="12" aria-hidden="true" />geklaut</span></div>
+                </template>
+
+                <template v-else-if="activeVariant.id === 'panel-recent'">
+                  <ol class="cb-score">
+                    <li v-for="(name, team) in match.names" :key="name" :class="{ 'cb-score--active': team === match.active }">
+                      <i class="cb-team-mark" :class="`cb-team-mark--${team}`" aria-hidden="true" />
+                      <span>{{ name }}<small v-if="matchSteals[team]" class="cb-steals">{{ matchSteals[team] }}× geklaut</small></span>
+                      <b>{{ match.scores[team] }}</b>
+                    </li>
+                  </ol>
+                  <p class="cb-lead">{{ matchLead }}</p>
+                  <div class="cb-progress" aria-label="Fortschritt">
+                    <div v-for="r in match.rounds" :key="r" class="cb-progress-round">
+                      <div class="cb-progress-ticks">
+                        <i v-for="(turn, i) in match.turns.slice((r - 1) * match.perRound, r * match.perRound)" :key="i" :class="[`cb-tick--${turnState((r - 1) * match.perRound + i)}`, turn.winner != null ? `cb-tick--won-${turn.winner}` : '']" />
+                      </div>
+                      <small>R{{ r }}</small>
+                    </div>
+                  </div>
+                  <ol class="cb-recent" aria-label="Letzte Züge">
+                    <li v-for="(turn, i) in matchRecent" :key="i" :class="{ 'cb-recent--stolen': turn.outcome === 'stolen' }">
+                      <Icon :name="turn.outcome === 'stolen' ? 'lucide:arrow-left-right' : 'lucide:check'" size="15" aria-hidden="true" />
+                      <span>{{ turnLine(turn) }}</span>
+                      <small>{{ i === 0 ? 'zuletzt' : 'davor' }}</small>
+                    </li>
+                  </ol>
+                  <p class="cb-next">Danach: {{ matchUpcoming.join(' · ') }}</p>
+                </template>
+
+                <template v-else-if="activeVariant.id === 'panel-territory'">
+                  <div class="cb-tally"><b>{{ match.scores[0] }}</b><span>:</span><b>{{ match.scores[1] }}</b></div>
+                  <ul class="cb-territory">
+                    <li v-for="field in matchTerritory" :key="field.label" :class="{ 'cb-territory--free': field.owner === null }">
+                      <span>{{ field.label }}</span>
+                      <em v-if="field.owner !== null"><i class="cb-team-mark" :class="`cb-team-mark--${field.owner}`" aria-hidden="true" />{{ match.names[field.owner] }}<small v-if="field.stolen">gestohlen</small></em>
+                      <em v-else>offen</em>
+                    </li>
+                  </ul>
+                  <div class="cb-legend"><span v-for="(name, team) in match.names" :key="name"><i class="cb-team-mark" :class="`cb-team-mark--${team}`" aria-hidden="true" />{{ name }}</span></div>
+                </template>
+
+                <template v-else>
+                  <div class="cb-tally cb-tally--names"><span>{{ match.names[0] }}</span><b>{{ match.scores[0] }} : {{ match.scores[1] }}</b><span>{{ match.names[1] }}</span></div>
+                  <ol class="cb-timeline">
+                    <li v-for="(turn, i) in match.turns" :key="i" :class="`cb-timeline--${turnState(i)}`">
+                      <span class="cb-timeline-no">{{ String(i + 1).padStart(2, '0') }}</span>
+                      <i class="cb-team-mark" :class="`cb-team-mark--${turn.team}`" aria-hidden="true" />
+                      <span class="cb-timeline-copy">
+                        <strong>{{ match.names[turn.team] }}</strong>
+                        <small v-if="turn.outcome">{{ turn.category }} · {{ turnResult(turn) }}</small>
+                        <small v-else-if="turnState(i) === 'now'">wählt jetzt</small>
+                        <small v-else>Runde {{ Math.floor(i / match.perRound) + 1 }}</small>
+                      </span>
+                      <b v-if="turn.winner != null">+1 {{ match.names[turn.winner].split(' ')[0] }}</b>
+                    </li>
+                  </ol>
+                </template>
+              </aside>
+
+              <div class="cb-play">
+                <div class="cb-play-top"><span>Dein Territorium</span><span>Wähle jetzt</span></div>
+                <div class="cb-intro"><h2>Picke eine <em>Kategorie.</em></h2><p>Eine Frage. Ein Fokus. Ihr entscheidet.</p></div>
+                <div class="cb-grid" role="group" aria-label="Kategorien auswählen">
+                  <button v-for="field in matchTerritory" :key="field.label" type="button" class="cb-option" :class="{ 'cb-option--picked': selectedCategory === field.label }" @click="chooseCategory(field.label)">
+                    <span><strong>{{ field.label }}</strong><small>{{ categoryOptions.find(o => o.label === field.label)?.descriptor }}</small></span>
+                    <em v-if="activeVariant.id === 'panel-territory' && field.owner !== null" class="cb-owner"><i class="cb-team-mark" :class="`cb-team-mark--${field.owner}`" aria-hidden="true" />{{ match.names[field.owner] }}</em>
+                    <Icon v-else name="lucide:arrow-up-right" size="18" aria-hidden="true" />
+                  </button>
+                </div>
+                <p class="cb-foot">{{ selectedCategory ? `${selectedCategory} gewählt` : `${match.names[match.active]} wählt.` }} <span>↗</span></p>
+              </div>
+            </div>
+
             <!-- Coin toss studies: same content, four compositions. All fit one viewport. -->
             <div v-else-if="activeScreen === 'toss'" class="study tv" :class="[`tv--${activeVariant.id}`, `tv--${tossResult}`, { 'tv--landed': tossLanded }]">
               <div class="tv-top">
@@ -933,6 +1151,121 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .config-variant-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .config-variant-grid--four { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
 .tv-dock-row { margin-top: 1.2rem; }
+
+/* Category panel studies (B1-B4). Same palette as the live board, sized in
+   container units at the 650px stage height. */
+.cb { --c-ink: #081811; --c-forest: #0b4429; --c-cream: #fbf8ed; --c-accent: #caff4a; --c-leaf: #e7f7b6; --c-muted: #8fc7a2; --c-line: rgb(251 248 237 / 20%); --c-ink-line: rgb(8 24 17 / 22%); container-type: size; display: grid; grid-template-columns: minmax(0, .62fr) minmax(0, 1.38fr); height: 650px; min-height: 0; overflow: hidden; padding: 0; background: var(--c-ink); color: var(--c-cream); }
+.cb-panel { display: flex; flex-direction: column; min-height: 0; gap: 3.2cqh; overflow: hidden; background: var(--c-leaf); color: var(--c-ink); padding: 5cqh 2.6cqw; }
+.cb-panel-top, .cb-play-top { display: flex; justify-content: space-between; gap: 1rem; font-size: .56rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.cb-panel-top { color: rgb(8 24 17 / 66%); }
+.cb-turn span { display: block; color: rgb(8 24 17 / 62%); font-size: .58rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.cb-turn strong { display: block; margin-top: .9cqh; font-family: var(--font-display); font-size: min(4.6cqw, 10cqh); font-weight: 500; letter-spacing: -.035em; line-height: .88; }
+.cb-team-mark { display: inline-block; flex: none; width: .62rem; height: .62rem; border: 2px solid currentcolor; border-radius: 50%; }
+.cb-team-mark--0 { background: currentcolor; }
+
+/* B1: score ladder, progress ticks, turn order. */
+.cb-score { display: grid; gap: .2rem; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--c-ink-line); }
+.cb-score li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .7rem; border-bottom: 1px solid var(--c-ink-line); padding: 1.3cqh 0; color: rgb(8 24 17 / 58%); }
+.cb-score span { overflow: hidden; font-size: .82rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.cb-score b { font-family: var(--font-display); font-size: min(4cqw, 8.5cqh); font-weight: 500; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.cb-score li.cb-score--active { color: var(--c-ink); }
+.cb-lead { margin: 0; color: rgb(8 24 17 / 72%); font-size: .78rem; font-weight: 600; }
+.cb-progress { display: flex; gap: .9rem; }
+.cb-progress-round { display: grid; flex: 1; gap: .45rem; }
+.cb-progress-ticks { display: flex; gap: .3rem; }
+.cb-progress-ticks i { flex: 1; height: .5rem; border: 1.5px solid var(--c-ink); border-radius: 99px; }
+.cb-progress-round small { color: rgb(8 24 17 / 55%); font-size: .55rem; font-weight: 700; letter-spacing: .12em; }
+.cb-tick--next { opacity: .28; }
+.cb-tick--won-0 { background: var(--c-ink); }
+.cb-tick--won-1 { background: repeating-linear-gradient(-45deg, var(--c-ink) 0 2px, transparent 2px 5px); }
+.cb-tick--now { background: var(--c-accent); box-shadow: 0 0 0 3px rgb(202 255 74 / 45%); }
+.cb .cb-lead, .cb .cb-next { color: rgb(8 24 17 / 72%); }
+.cb .cb-recap p { color: var(--c-ink); }
+.cb-recap { margin-top: auto; border-radius: .7rem; background: rgb(8 24 17 / 7%); padding: 1.6cqh 1rem; }
+.cb-recap span { color: rgb(8 24 17 / 58%); font-size: .55rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+.cb-recap p { margin: .6cqh 0 0; font-size: .8rem; line-height: 1.4; }
+.cb-next { margin: 0; border-top: 1px solid var(--c-ink-line); padding-top: 1.4cqh; color: rgb(8 24 17 / 66%); font-size: .7rem; font-weight: 600; }
+
+/* B1a: points as tokens under each team: category and how it was won. */
+.cb-score--tokens li { grid-template-areas: 'mark name score' '. tokens tokens'; row-gap: .8cqh; }
+.cb-score--tokens li > i { grid-area: mark; }
+.cb-score--tokens li > span { grid-area: name; }
+.cb-score--tokens li > b { grid-area: score; }
+.cb-tokens { display: flex; grid-area: tokens; flex-wrap: wrap; gap: .35rem; }
+.cb-token { display: inline-flex; align-items: center; gap: .3rem; border: 1.5px solid currentcolor; border-radius: 99px; padding: .28rem .55rem; font-size: .62rem; font-style: normal; font-weight: 700; white-space: nowrap; }
+.cb-token small { margin-left: .15rem; font-size: .52rem; letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+.cb-token--stolen { border-color: var(--c-ink); background: var(--c-ink); color: var(--c-accent); }
+.cb-token--stolen small { opacity: 1; color: var(--c-leaf); }
+.cb--panel-tokens .cb-next { margin-top: auto; border-top: 1px solid var(--c-ink-line); padding-top: 1.4cqh; }
+.cb-token--empty { border-style: dashed; opacity: .55; font-weight: 600; }
+
+/* B1b: rounds as a grid, one cell per question. */
+.cb-matchgrid { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; gap: .45rem; }
+.cb-matchgrid-round { align-self: center; color: rgb(8 24 17 / 55%); font-size: .55rem; font-weight: 700; letter-spacing: .12em; }
+.cb-cell { display: grid; align-content: start; gap: .25rem; min-width: 0; border: 1.5px solid rgb(8 24 17 / 18%); border-radius: .6rem; padding: 1.2cqh .6rem; }
+.cb-cell-who { display: inline-flex; align-items: center; gap: .35rem; min-width: 0; color: rgb(8 24 17 / 66%); font-size: .62rem; font-weight: 700; white-space: nowrap; }
+.cb-cell strong { overflow: hidden; font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.cb-cell small { display: inline-flex; align-items: center; gap: .25rem; color: rgb(8 24 17 / 70%); font-size: .58rem; font-weight: 600; }
+.cb-cell--done { border-color: transparent; background: rgb(8 24 17 / 8%); }
+.cb-cell--stolen { background: var(--c-ink); color: var(--c-cream); }
+.cb-cell--stolen .cb-cell-who { color: var(--c-leaf); }
+.cb-cell--stolen small { color: var(--c-accent); }
+.cb-cell--now { border-color: var(--c-ink); background: var(--c-accent); }
+.cb-cell--next { border-style: dashed; opacity: .55; }
+.cb-legend--how { gap: 1rem; color: rgb(8 24 17 / 70%); text-transform: none; letter-spacing: 0; font-weight: 600; }
+
+/* B1c: steal counter on the score and the last two moves in plain words. */
+.cb-steals { display: inline-block; margin-left: .5rem; border-radius: 99px; background: var(--c-ink); color: var(--c-accent); padding: .15rem .45rem; font-size: .52rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; vertical-align: middle; }
+.cb-recent { display: grid; gap: .45rem; margin: auto 0 0; padding: 0; list-style: none; }
+.cb-recent li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .6rem; border-radius: .6rem; background: rgb(8 24 17 / 7%); padding: 1.3cqh .8rem; font-size: .78rem; font-weight: 600; }
+.cb-recent small { color: rgb(8 24 17 / 55%); font-size: .55rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.cb-recent li.cb-recent--stolen { background: var(--c-ink); color: var(--c-cream); }
+.cb-recent--stolen .iconify, .cb-recent--stolen small { color: var(--c-accent); }
+
+/* B2: the six categories as territory, conquered or open. */
+.cb-tally { display: flex; align-items: baseline; gap: .6rem; font-family: var(--font-display); font-size: min(4.4cqw, 9cqh); font-weight: 500; letter-spacing: -.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.cb-tally span { opacity: .4; }
+.cb-territory { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--c-ink-line); }
+.cb-territory li { display: flex; align-items: center; justify-content: space-between; gap: .8rem; border-bottom: 1px solid var(--c-ink-line); padding: 1.15cqh 0; font-size: .78rem; font-weight: 600; }
+.cb-territory em { display: inline-flex; align-items: center; gap: .4rem; font-size: .68rem; font-style: normal; font-weight: 700; white-space: nowrap; }
+.cb-territory small { border-radius: 99px; background: var(--c-ink); color: var(--c-accent); padding: .18rem .4rem; font-size: .5rem; letter-spacing: .1em; text-transform: uppercase; }
+.cb-territory--free { color: rgb(8 24 17 / 45%); }
+.cb-legend { display: flex; gap: 1.2rem; margin-top: auto; font-size: .62rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.cb-legend span { display: inline-flex; align-items: center; gap: .4rem; }
+
+/* B3: every turn of the match in one column. */
+.cb-tally--names { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: .6rem; font-size: min(3.2cqw, 7cqh); }
+.cb-tally--names span { overflow: hidden; opacity: .7; font-family: var(--font-ui); font-size: .62rem; font-weight: 700; letter-spacing: .08em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.cb-tally--names span:last-child { text-align: right; }
+.cb-timeline { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--c-ink-line); }
+.cb-timeline li { display: grid; grid-template-columns: 1.4rem auto minmax(0, 1fr) auto; align-items: center; gap: .6rem; border-bottom: 1px solid var(--c-ink-line); padding: 1cqh .5rem; }
+.cb-timeline-no { color: rgb(8 24 17 / 50%); font-size: .58rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cb-timeline-copy { display: grid; min-width: 0; gap: .1rem; }
+.cb-timeline-copy strong { overflow: hidden; font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.cb-timeline-copy small { color: rgb(8 24 17 / 62%); font-size: .62rem; line-height: 1.3; }
+.cb-timeline li > b { font-size: .6rem; font-weight: 700; white-space: nowrap; }
+.cb-timeline--now { border-radius: .5rem; background: var(--c-ink); color: var(--c-cream); }
+.cb-timeline--now .cb-timeline-no, .cb-timeline--now .cb-timeline-copy small { color: var(--c-accent); }
+.cb-timeline--next { opacity: .45; }
+
+/* Shared play side: mirrors the live category board. */
+.cb-play { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 5cqh 3.4cqw 3.4cqh; }
+.cb-play-top { color: var(--c-accent); }
+.cb-intro { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-top: 4cqh; }
+.cb-intro h2 { max-width: 9ch; margin: 0; color: var(--c-cream); font-family: var(--font-display); font-size: min(5.6cqw, 12.5cqh); font-weight: 500; letter-spacing: -.02em; line-height: .84; }
+.cb-intro h2 em { color: var(--c-leaf); font-style: normal; }
+.cb .cb-intro p { max-width: 12rem; margin: 0; color: var(--c-muted); font-size: .7rem; }
+.cb-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: .7rem; margin-top: auto; padding-top: 3cqh; }
+.cb-option { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .6rem; min-height: 15cqh; border: 1px solid rgb(251 248 237 / 12%); border-radius: .8rem; background: var(--c-forest); color: var(--c-cream); padding: .9rem 1rem; text-align: left; transition: transform 180ms ease, background 180ms ease, color 180ms ease; }
+.cb-option span { display: grid; gap: .3rem; }
+.cb-option strong { font-family: var(--font-display); font-size: min(2.2cqw, 4.6cqh); letter-spacing: -.015em; line-height: .9; }
+.cb-option small { color: var(--c-muted); font-size: .58rem; line-height: 1.3; }
+.cb-option > .iconify { color: var(--c-accent); }
+.cb-owner { display: inline-flex; align-items: center; gap: .35rem; align-self: start; border-radius: 99px; background: var(--c-leaf); color: var(--c-ink); padding: .3rem .55rem; font-size: .55rem; font-style: normal; font-weight: 700; letter-spacing: .06em; white-space: nowrap; text-transform: uppercase; }
+.cb-option:hover, .cb-option:focus-visible, .cb-option--picked { background: var(--c-accent); color: var(--c-ink); transform: translateY(-2px); }
+.cb-option:hover small, .cb-option:focus-visible small, .cb-option--picked small, .cb-option:hover > .iconify, .cb-option--picked > .iconify { color: rgb(8 24 17 / 72%); }
+.cb-foot { display: flex; justify-content: space-between; margin: 1.6cqh 0 0; border-top: 1px solid var(--c-line); padding-top: 1.4cqh; color: var(--c-muted); font-size: .64rem; }
+.cb-foot span { color: var(--c-accent); }
 
 /* Coin toss studies. Sized in container units so each layout is judged at a
    fixed 650px stage height, like the question studies. */

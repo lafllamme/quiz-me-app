@@ -182,18 +182,168 @@ button:disabled {
   line-height: .86;
 }
 
-.category-board-marker-art {
-  display: block;
-  width: min(100%, 22rem);
-  max-height: min(40vh, 30rem);
-  margin: auto auto 1.5rem;
-  object-fit: contain;
-}
+.category-board-marker-copy strong { max-width: none; overflow-wrap: anywhere; }
 
 .category-board-marker-foot {
+  margin-top: 1.2rem;
   border-top: 1px solid color-mix(in srgb, var(--category-ink) 28%, transparent);
   padding-top: .8rem;
   color: color-mix(in srgb, var(--category-ink) 70%, transparent);
+}
+
+/* Match status: score ladder, steals, progress ticks, the last two moves.
+   Team one is a filled dot, team two a ring, so the marks work without colour. */
+.category-board-team-mark {
+  display: inline-block;
+  flex: none;
+  width: .65rem;
+  height: .65rem;
+  border: 2px solid currentcolor;
+  border-radius: 50%;
+}
+
+.category-board-team-mark--0 { background: currentcolor; }
+
+.category-board-score {
+  display: grid;
+  margin: clamp(1.5rem, 4vh, 2.5rem) 0 0;
+  padding: 0;
+  border-top: 1px solid color-mix(in srgb, var(--category-ink) 22%, transparent);
+  list-style: none;
+}
+
+.category-board-score li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--category-ink) 22%, transparent);
+  padding: clamp(.6rem, 1.6vh, 1rem) 0;
+  color: color-mix(in srgb, var(--category-ink) 58%, transparent);
+}
+
+.category-board-score li.category-board-score--active { color: var(--category-ink); }
+
+.category-board-score span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.category-board-score small {
+  display: inline-block;
+  margin-left: .5rem;
+  border-radius: 99px;
+  background: var(--category-ink);
+  color: var(--category-accent);
+  padding: .18rem .5rem;
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.category-board-score b {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 3.6vw, 3.6rem);
+  font-weight: 500;
+  letter-spacing: -.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.category-board-lead {
+  margin: 1rem 0 0;
+  color: color-mix(in srgb, var(--category-ink) 72%, transparent);
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+.category-board-progress {
+  display: flex;
+  gap: .9rem;
+  margin-top: clamp(1rem, 2.5vh, 1.6rem);
+}
+
+.category-board-progress-round {
+  display: grid;
+  flex: 1;
+  gap: .45rem;
+}
+
+.category-board-progress-ticks {
+  display: flex;
+  gap: .3rem;
+}
+
+.category-board-progress-ticks i {
+  flex: 1;
+  height: .55rem;
+  border: 1.5px solid var(--category-ink);
+  border-radius: 99px;
+}
+
+.category-board-progress-round small {
+  color: color-mix(in srgb, var(--category-ink) 55%, transparent);
+  font-size: .56rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+
+.category-board-tick--next { opacity: .28; }
+.category-board-tick--done { opacity: .5; }
+.category-board-tick--won-0 { opacity: 1; background: var(--category-ink); }
+.category-board-tick--won-1 { opacity: 1; background: repeating-linear-gradient(-45deg, var(--category-ink) 0 2px, transparent 2px 5px); }
+
+.category-board-tick--now {
+  background: var(--category-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--category-accent) 45%, transparent);
+}
+
+.category-board-recent {
+  display: grid;
+  gap: .5rem;
+  margin: auto 0 0;
+  padding: clamp(1.5rem, 3vh, 2rem) 0 0;
+  list-style: none;
+}
+
+.category-board-recent li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .7rem;
+  border-radius: .7rem;
+  background: color-mix(in srgb, var(--category-ink) 7%, transparent);
+  padding: .8rem .9rem;
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+.category-board-recent small {
+  color: color-mix(in srgb, var(--category-ink) 55%, transparent);
+  font-size: .56rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.category-board-recent li.category-board-recent--stolen {
+  background: var(--category-ink);
+  color: var(--category-cream);
+}
+
+.category-board-recent--stolen .iconify,
+.category-board-recent--stolen small { color: var(--category-accent); }
+
+.category-board-recent-empty {
+  margin: auto 0 0;
+  padding-top: 1.5rem;
+  color: color-mix(in srgb, var(--category-ink) 62%, transparent);
+  font-size: .8rem;
+  line-height: 1.45;
 }
 
 .category-board-play {
@@ -1010,7 +1160,8 @@ button:disabled {
     min-height: 0;
   }
 
-  .category-board-marker { min-height: 32rem; }
+  .category-board-marker { min-height: 0; }
+  .category-board-recent { margin-top: 0; }
   .category-board-play { min-height: 0; padding: 1.5rem; }
 
   .category-board-intro {

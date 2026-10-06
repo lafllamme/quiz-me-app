@@ -7,6 +7,14 @@ import type { DifficultyMode } from '~/types/setup'
 export type GameScreen = 'menu' | 'toss' | 'category' | 'question' | 'tie' | 'final'
 export type StealMode = 'remaining' | '15' | '20'
 
+/** One resolved question: who picked, what, and who took the point how. */
+export interface TurnRecord {
+  team: 0 | 1
+  category: string
+  winner: 0 | 1 | null
+  outcome: 'right' | 'stolen' | 'missed'
+}
+
 export interface QuizConfig {
   names: [string, string]
   players: [string, string]
@@ -40,6 +48,8 @@ interface GameState {
   resolved: boolean
   winner: 0 | 1 | null
   result: string
+  /** One entry per resolved question, in play order. */
+  history: TurnRecord[]
 }
 
 const defaultConfig: QuizConfig = {
@@ -72,6 +82,7 @@ const emptyGame = (): GameState => ({
   resolved: false,
   winner: null,
   result: '',
+  history: [],
 })
 
 // One music track per screen; screens without an entry are silent. The question screen's
@@ -120,6 +131,9 @@ export function useQuizGame() {
       const savedGame = JSON.parse(localStorage.getItem('jungle-game') || 'null')
       if (savedGame?.used && savedGame?.scores) {
         Object.assign(game, savedGame)
+        // Saves from before the turn history existed start with an empty one.
+        if (!Array.isArray(savedGame.history))
+          game.history = []
         // Saves from before tiles existed only stored category labels.
         if (!Array.isArray(savedGame.tiles) && Array.isArray(savedGame.categories))
           game.tiles = savedGame.categories.map((category: string) => ({ category, visual: null }))
@@ -312,6 +326,14 @@ export function useQuizGame() {
       deck.markAnswered(game.currentQuestion.id)
       game.lastCategory = game.currentQuestion.category
       game.lastVisual = game.currentQuestion.media?.kind ?? null
+      // The picking team is fixed by turn order; game.active flips during a steal.
+      const team = ((game.first + game.turn) % 2) as 0 | 1
+      game.history.push({
+        team,
+        category: game.currentQuestion.category,
+        winner,
+        outcome: winner === null ? 'missed' : winner === team ? 'right' : 'stolen',
+      })
     }
     if (winner !== null)
       game.scores[winner]++
