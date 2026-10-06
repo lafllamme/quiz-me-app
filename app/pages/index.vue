@@ -3,6 +3,11 @@ import type { QuizConfig } from '~/composables/useQuizGame'
 
 const quiz = useQuizGame()
 const modal = ref<'rules' | 'settings' | 'new' | null>(null)
+const route = useRoute()
+
+const previewCategories = ['Köln', 'Musik', 'Film & Serie', 'Netz & Memes', 'Wissen', 'Nostalgie']
+const isCategoryPreview = computed(() => route.query.categoryPreview === '5' || route.query.categoryPreview === '6' || route.query.categoryPreview === '10')
+const visibleCategories = computed(() => isCategoryPreview.value ? previewCategories : quiz.game.categories)
 
 const winnerIndex = computed(() => quiz.game.scores[0] > quiz.game.scores[1] ? 0 : 1)
 const winnerName = computed(() => quiz.config.names[winnerIndex.value])
@@ -33,7 +38,7 @@ function toggleTimer() {
 
     <main :class="quiz.screen.value === 'menu' ? 'game-stage-wrap relative z-1' : 'page-wrap relative z-1'">
       <Transition name="stage" mode="out-in">
-        <GameSetup v-if="quiz.screen.value === 'menu'" :config="quiz.config" :has-saved-game="quiz.hasSavedGame.value" :question-count="quiz.questionCount.value" @start="submitSetup" @resume="quiz.resumeGame" @new-game="newGame" @rules="modal = 'rules'" @settings="modal = 'settings'" />
+        <GameSetup v-if="quiz.screen.value === 'menu'" :config="quiz.config" :has-saved-game="quiz.hasSavedGame.value" @start="submitSetup" @resume="quiz.resumeGame" @new-game="newGame" @rules="modal = 'rules'" @settings="modal = 'settings'" />
 
         <section v-else-if="quiz.screen.value === 'toss'" class="grid min-h-[calc(100vh-210px)] place-items-center py-14 text-center">
           <div>
@@ -43,18 +48,16 @@ function toggleTimer() {
           </div>
         </section>
 
-        <section v-else-if="quiz.screen.value === 'category' || quiz.screen.value === 'question' || quiz.screen.value === 'tie'" class="py-10">
-          <Scoreboard :names="quiz.config.names" :scores="quiz.game.scores" :active="quiz.game.active" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :turn="quiz.game.turn" :per-round="quiz.config.perRound" :tie="quiz.screen.value === 'tie'" />
-          <CategoryBoard v-if="quiz.screen.value === 'category'" :categories="quiz.game.categories" :active-name="quiz.config.names[quiz.game.active]" @choose="quiz.chooseCategory" />
-          <QuestionStage v-else-if="quiz.screen.value === 'question' && quiz.game.currentQuestion" :question="quiz.game.currentQuestion" :active-name="quiz.config.names[quiz.game.active]" :stolen="quiz.game.stolen" :revealed="quiz.game.revealed" :resolved="quiz.game.resolved" :result="quiz.game.result" :winner="quiz.game.winner" :selected-option="quiz.game.selectedOption" :time-expired="quiz.game.timeExpired" :time-remaining="quiz.timeRemaining.value" :time-limit="quiz.game.stolen && quiz.config.steal !== 'remaining' ? Number(quiz.config.steal) : quiz.config.seconds" :timer-running="quiz.timerRunning.value" :drink="quiz.config.drink" :winner-name="resolvedWinnerName" @select="quiz.selectOption" @reveal="quiz.revealAnswer" @toggle-timer="toggleTimer" @reset-timer="quiz.resetTimer" @next="quiz.nextQuestion" />
+        <section v-else-if="quiz.screen.value === 'category' || quiz.screen.value === 'question' || quiz.screen.value === 'tie'" :class="quiz.screen.value === 'category' ? 'category-screen-wrap' : 'py-10'">
+          <Scoreboard v-if="quiz.screen.value === 'tie'" :names="quiz.config.names" :scores="quiz.game.scores" :active="quiz.game.active" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :turn="quiz.game.turn" :per-round="quiz.config.perRound" :tie="true" />
+          <CategoryBoard v-if="quiz.screen.value === 'category'" :categories="visibleCategories" :active-name="quiz.config.names[quiz.game.active]" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :question-number="quiz.game.turn + 1" :question-count="quiz.questionCount.value" :preview-only="isCategoryPreview" @choose="quiz.chooseCategory" />
+          <QuestionStage v-else-if="quiz.screen.value === 'question' && quiz.game.currentQuestion" :question="quiz.game.currentQuestion" :names="quiz.config.names" :scores="quiz.game.scores" :active-name="quiz.config.names[quiz.game.active]" :round="quiz.roundNumber.value" :rounds="quiz.config.rounds" :turn="quiz.game.turn" :per-round="quiz.config.perRound" :stolen="quiz.game.stolen" :revealed="quiz.game.revealed" :resolved="quiz.game.resolved" :result="quiz.game.result" :winner="quiz.game.winner" :selected-option="quiz.game.selectedOption" :time-expired="quiz.game.timeExpired" :time-remaining="quiz.timeRemaining.value" :time-limit="quiz.game.stolen && quiz.config.steal !== 'remaining' ? Number(quiz.config.steal) : quiz.config.seconds" :timer-running="quiz.timerRunning.value" :drink="quiz.config.drink" :winner-name="resolvedWinnerName" @select="quiz.selectOption" @reveal="quiz.revealAnswer" @toggle-timer="toggleTimer" @reset-timer="quiz.resetTimer" @next="quiz.nextQuestion" />
           <TieBreaker v-else-if="quiz.screen.value === 'tie'" :names="quiz.config.names" :question="quiz.tieQuestion.value.question" :answer="quiz.tieQuestion.value.answer" @submit="quiz.submitTie" />
         </section>
 
         <FinalStage v-else-if="quiz.screen.value === 'final'" :winner-name="winnerName" :scores="quiz.game.scores" @rematch="quiz.startGame()" @menu="quiz.openMenu" />
       </Transition>
     </main>
-
-    <AppFooter v-if="quiz.screen.value !== 'menu'" />
 
     <AppModal v-if="modal === 'rules'" title="So wird gespielt" @close="modal = null">
       <p>Die Münze bestimmt das erste Team. Ihr wählt abwechselnd eine von vier Kategorien. Der Host liest die Frage vor und bewertet die Antwort.</p>

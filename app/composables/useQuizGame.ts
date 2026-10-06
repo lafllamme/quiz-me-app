@@ -1,5 +1,6 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { QUESTIONS, TIE_QUESTIONS, type QuizQuestion } from '~/data/questions'
+import type { DifficultyMode } from '~/types/setup'
 
 export type GameScreen = 'menu' | 'toss' | 'category' | 'question' | 'tie' | 'final'
 export type StealMode = 'remaining' | '15' | '20'
@@ -9,6 +10,7 @@ export interface QuizConfig {
   players: [string, string]
   rounds: number
   seconds: number
+  difficulty: DifficultyMode
   perRound: number
   steal: StealMode
   motion: boolean
@@ -37,6 +39,7 @@ const defaultConfig: QuizConfig = {
   players: ['', ''],
   rounds: 5,
   seconds: 45,
+  difficulty: 'mixed',
   perRound: 2,
   steal: '15',
   motion: true,
@@ -95,10 +98,10 @@ export function useQuizGame() {
       const savedGame = JSON.parse(localStorage.getItem('jungle-game') || 'null')
       if (savedGame?.used && savedGame?.scores) {
         Object.assign(game, savedGame)
-        screen.value = savedGame.screen === 'question' ? 'category' : (savedGame.screen || 'category')
+        // A refresh must always return to the setup screen. The saved game stays
+        // available behind the explicit “Spiel fortsetzen” action.
+        screen.value = 'menu'
         hasSavedGame.value = true
-        if (screen.value === 'category')
-          sound.playTrack('categorySelection', true)
       }
     }
     catch {
@@ -215,7 +218,11 @@ export function useQuizGame() {
     if (!candidates.length)
       return
 
-    const targetDifficulty = Math.min(3, 1 + Math.floor(game.turn / (config.perRound * 2)))
+    const targetDifficulty = config.difficulty === 'easy'
+      ? 1
+      : config.difficulty === 'hard'
+        ? 3
+        : Math.min(3, 1 + Math.floor(game.turn / (config.perRound * 2)))
     const nearest = candidates.filter(question => Math.abs(question.difficulty - targetDifficulty) === Math.min(...candidates.map(item => Math.abs(item.difficulty - targetDifficulty))))
     const question = nearest[Math.floor(Math.random() * nearest.length)] ?? candidates[0]
     if (!question)

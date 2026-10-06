@@ -1,23 +1,64 @@
 <script setup lang="ts">
-defineProps<{
+import territoryMarkerUrl from '~/assets/images/territory-marker.png'
+
+const props = defineProps<{
   categories: string[]
   activeName: string
+  round: number
+  rounds: number
+  questionNumber: number
+  questionCount: number
+  previewOnly?: boolean
 }>()
 
 const emit = defineEmits<{ choose: [category: string] }>()
+
+const categoryDescriptors: Record<string, string> = {
+  '2000er': 'Nostalgie, Netzkultur, große Hits',
+  Musik: 'Tracks, Stimmen und Ohrwürmer',
+  Filme: 'Kino, Kult und Plot-Twists',
+  Serien: 'Staffeln, Kultfiguren und Cliffhanger',
+  Memes: 'Internet, Running Gags und Chaos',
+  '2010er': 'Apps, Trends und digitale Meilensteine',
+  'WTF-Wissen': 'Fakten, die hängen bleiben',
+  Köln: 'Stadt, FC und deutsche Geschichte',
+  'Film & Serie': 'Kino, Streaming und Kultfiguren',
+  'Netz & Memes': 'Chat, Running Gags und Internetkultur',
+  Wissen: 'Körper, Alltag und unnütze Fakten',
+  Nostalgie: '2000er, 2010er und frühe Netzkultur',
+}
 </script>
 
 <template>
-  <section class="pt-9">
-    <p class="eyebrow">{{ activeName }} wählt</p>
-    <h2 class="display mt-6 text-[clamp(2.8rem,5vw,4.75rem)]">Pick your territory.</h2>
-    <div class="mt-9 grid gap-3 sm:grid-cols-2">
-      <button v-for="(category, index) in categories" :key="category" data-uisfx-hover="hover" class="category-card group min-h-36 bg-jungle p-6 text-left transition duration-200 hover:-translate-y-1 hover:bg-[#173724] focus-visible:outline-3 focus-visible:outline-gold focus-visible:outline-offset-3 md:min-h-40" @click="emit('choose', category)">
-        <span class="mb-6 block text-xs uppercase tracking-[0.18em] text-gold">0{{ index + 1 }} / Kategorie</span>
-        <strong class="font-display text-3xl uppercase tracking-[-0.02em] md:text-5xl">{{ category }}</strong>
-        <Icon name="lucide:arrow-up-right" size="20" class="float-right text-muted transition duration-200 group-hover:text-gold" aria-hidden="true" />
-      </button>
+  <section class="category-board" :class="{ 'category-board--preview': previewOnly }">
+    <aside class="category-board-marker" aria-label="Aktueller Spielzug">
+      <div class="category-board-marker-top"><span>Runde {{ round }} / {{ rounds }}</span><span>Jungle Quiz</span></div>
+      <div class="category-board-marker-copy">
+        <span>Ist dran</span>
+        <strong>{{ activeName }}</strong>
+      </div>
+      <img class="category-board-marker-art" :src="territoryMarkerUrl" alt="" aria-hidden="true">
+      <div class="category-board-marker-foot"><span>Frage {{ questionNumber }}</span><span>{{ questionCount }} Fragen</span></div>
+    </aside>
+
+    <div class="category-board-play">
+      <div class="category-board-play-top"><span>Dein Territorium</span><span>{{ previewOnly ? '6er-Layout · Vorschau' : 'Wähle jetzt' }}</span></div>
+      <div class="category-board-intro">
+        <h2>Picke eine <em>Kategorie.</em></h2>
+        <p>Eine Frage. Ein Fokus. Ihr entscheidet.</p>
+      </div>
+
+      <div class="category-board-grid" role="group" aria-label="Kategorien auswählen">
+        <button v-for="category in categories" :key="category" data-uisfx-hover="hover" data-uisfx-press="press" class="category-board-option" :class="{ 'category-board-option--preview': previewOnly }" :aria-disabled="previewOnly" @click="previewOnly ? undefined : emit('choose', category)">
+          <span class="category-board-option-copy">
+            <strong>{{ category }}</strong>
+            <small>{{ categoryDescriptors[category] ?? 'Eine neue Richtung für diese Runde' }}</small>
+          </span>
+          <Icon name="lucide:arrow-up-right" size="19" aria-hidden="true" />
+        </button>
+      </div>
+
+      <p class="category-board-foot">Bereit für den ersten Pick. <span>↗</span></p>
     </div>
-    <p class="mt-8 border-t border-line pt-5 text-sm text-muted">Eine offene Frage · +1 Punkt · keine Joker</p>
   </section>
 </template>

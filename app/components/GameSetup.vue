@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import type { QuizConfig } from '~/composables/useQuizGame'
-import type { SetupDraft } from '~/types/setup'
+import type { DifficultyMode, SetupDraft } from '~/types/setup'
 
 const props = defineProps<{
   config: QuizConfig
   hasSavedGame: boolean
-  questionCount: number
 }>()
 
 const emit = defineEmits<{
@@ -21,6 +20,7 @@ const draft = reactive<SetupDraft>({
   players: [...props.config.players] as [string, string],
   rounds: props.config.rounds,
   seconds: props.config.seconds,
+  difficulty: props.config.difficulty,
 })
 
 function payload(): Partial<QuizConfig> {
@@ -29,11 +29,20 @@ function payload(): Partial<QuizConfig> {
     players: draft.players,
     rounds: draft.rounds,
     seconds: draft.seconds,
+    difficulty: draft.difficulty,
   }
 }
 
+const hasDraftChanges = computed(() => draft.names[0] !== props.config.names[0]
+  || draft.names[1] !== props.config.names[1]
+  || draft.rounds !== props.config.rounds
+  || draft.seconds !== props.config.seconds
+  || draft.difficulty !== props.config.difficulty)
+
+const primaryActionLabel = computed(() => props.hasSavedGame && !hasDraftChanges.value ? 'Spiel fortsetzen' : 'Spiel starten')
+
 function start() {
-  if (props.hasSavedGame)
+  if (props.hasSavedGame && !hasDraftChanges.value)
     emit('resume')
   else
     emit('start', payload())
@@ -55,6 +64,10 @@ function updateSeconds(seconds: number) {
   draft.seconds = seconds
 }
 
+function updateDifficulty(difficulty: DifficultyMode) {
+  draft.difficulty = difficulty
+}
+
 function newGame() {
   emit('newGame', payload())
 }
@@ -66,15 +79,17 @@ function rules() {
 
 <template>
   <section class="game-setup stage-enter-active">
-    <GameSetupHero :rounds="draft.rounds" :seconds="draft.seconds" />
+    <GameSetupHero :rounds="draft.rounds" :seconds="draft.seconds" :difficulty="draft.difficulty" />
     <GameSetupPanel
       :draft="draft"
       :has-saved-game="hasSavedGame"
-      :question-count="questionCount"
+      :question-count="draft.rounds * config.perRound"
+      :primary-action-label="primaryActionLabel"
       @update:names="updateNames"
       @update:players="updatePlayers"
       @update:rounds="updateRounds"
       @update:seconds="updateSeconds"
+      @update:difficulty="updateDifficulty"
       @start="start"
       @new-game="newGame"
       @rules="rules"

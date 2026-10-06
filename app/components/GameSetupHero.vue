@@ -1,8 +1,13 @@
 <script setup lang="ts">
-defineProps<{
+import type { DifficultyMode } from '~/types/setup'
+
+const props = defineProps<{
   rounds: number
   seconds: number
+  difficulty: DifficultyMode
 }>()
+
+const difficultyLabel = computed(() => ({ easy: 'Leicht', mixed: 'Gemischt', hard: 'Schwer' })[props.difficulty])
 </script>
 
 <template>
@@ -10,17 +15,13 @@ defineProps<{
     <div class="game-setup-wordmark">JUNGLE<span>/</span>QUIZ</div>
     <div class="game-setup-copy-main">
       <h1>Wer<br><em>spielt?</em></h1>
-      <p>Zwei Teams. Vier Kategorien. Eine Chance zu stehlen.</p>
+      <p>Gib den Teams einen Namen. Den Rest regeln wir.</p>
     </div>
     <div class="game-setup-copy-bottom">
       <div class="game-setup-meta">
         <span>{{ rounds }} Runden</span>
         <span>{{ seconds }} Sek.</span>
-        <span>4 Kategorien</span>
-      </div>
-      <div class="game-setup-stamp" :aria-label="rounds + ' Runden, ' + seconds + ' Sekunden Antwortzeit'">
-        <strong>{{ rounds }}</strong>
-        <span>Runden<br><b>{{ seconds }} Sek.</b></span>
+        <span>{{ difficultyLabel }}</span>
       </div>
     </div>
   </div>

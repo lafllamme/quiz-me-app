@@ -31,9 +31,6 @@ const emit = defineEmits<{
         <button data-uisfx-hover="hover" data-uisfx="open" class="button-base border-0 px-2.5 py-2.5 text-muted hover:bg-white/6 hover:text-cream md:px-3.5" aria-label="Spielregeln" @click="emit('help')">
           <Icon name="lucide:circle-help" size="18" aria-hidden="true" />
         </button>
-        <button data-uisfx-hover="hover" data-uisfx="open" class="button-base border-0 px-2.5 py-2.5 text-muted hover:bg-white/6 hover:text-cream md:px-3.5" aria-label="Zum Menü" @click="emit('home')">
-          <Icon name="lucide:menu" size="18" aria-hidden="true" />
-        </button>
       </nav>
     </div>
   </header>

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { SetupDraft } from '~/types/setup'
+import type { DifficultyMode, SetupDraft } from '~/types/setup'
 
 const props = defineProps<{
   draft: SetupDraft
   hasSavedGame: boolean
   questionCount: number
+  primaryActionLabel: string
 }>()
 
 const emit = defineEmits<{
@@ -12,6 +13,7 @@ const emit = defineEmits<{
   'update:players': [players: [string, string]]
   'update:rounds': [rounds: number]
   'update:seconds': [seconds: number]
+  'update:difficulty': [difficulty: DifficultyMode]
   start: []
   newGame: []
   rules: []
@@ -23,20 +25,11 @@ function updateName(index: 0 | 1, event: Event) {
   emit('update:names', names)
 }
 
-function updatePlayers(index: 0 | 1, event: Event) {
-  const players = [...props.draft.players] as [string, string]
-  players[index] = (event.target as HTMLInputElement).value
-  emit('update:players', players)
-}
-
-function updateNumber(field: 'rounds' | 'seconds', event: Event) {
-  const value = Number((event.target as HTMLSelectElement).value)
-
-  if (field === 'rounds')
-    emit('update:rounds', value)
-  else
-    emit('update:seconds', value)
-}
+const difficultyOptions: { value: DifficultyMode; label: string }[] = [
+  { value: 'easy', label: 'Leicht' },
+  { value: 'mixed', label: 'Gemischt' },
+  { value: 'hard', label: 'Schwer' },
+]
 </script>
 
 <template>
@@ -50,17 +43,25 @@ function updateNumber(field: 'rounds' | 'seconds', event: Event) {
         <input id="team-two" :value="draft.names[1]" maxlength="28" autocomplete="off" @input="updateName(1, $event)">
       </label>
     </div>
-    <div class="game-setup-player-grid">
-      <label for="players-one"><span>Namen <small>· optional</small></span>
-        <input id="players-one" :value="draft.players[0]" placeholder="Mit Komma trennen" @input="updatePlayers(0, $event)">
-      </label>
-      <label for="players-two"><span>Namen <small>· optional</small></span>
-        <input id="players-two" :value="draft.players[1]" placeholder="Mit Komma trennen" @input="updatePlayers(1, $event)">
-      </label>
-    </div>
-    <div class="game-setup-config">
-      <label for="rounds">Runden<select id="rounds" :value="draft.rounds" @change="updateNumber('rounds', $event)"><option v-for="round in [4, 5, 6]" :key="round" :value="round">{{ round }}</option></select></label>
-      <label for="seconds">Antwortzeit<select id="seconds" :value="draft.seconds" @change="updateNumber('seconds', $event)"><option v-for="seconds in [30, 45, 60]" :key="seconds" :value="seconds">{{ seconds }} Sek.</option></select></label>
+    <div class="game-setup-config" aria-label="Spieleinstellungen">
+      <fieldset class="game-setup-choice">
+        <legend>Runden</legend>
+        <div class="game-setup-choice-options">
+          <button v-for="round in [3, 5, 7]" :key="round" type="button" :class="{ 'is-selected': draft.rounds === round }" :aria-pressed="draft.rounds === round" @click="emit('update:rounds', round)">{{ round }}</button>
+        </div>
+      </fieldset>
+      <fieldset class="game-setup-choice">
+        <legend>Zeit</legend>
+        <div class="game-setup-choice-options">
+          <button v-for="seconds in [30, 45, 60]" :key="seconds" type="button" :class="{ 'is-selected': draft.seconds === seconds }" :aria-pressed="draft.seconds === seconds" @click="emit('update:seconds', seconds)">{{ seconds }}</button>
+        </div>
+      </fieldset>
+      <fieldset class="game-setup-choice game-setup-choice--difficulty">
+        <legend>Schwierigkeit</legend>
+        <div class="game-setup-choice-options">
+          <button v-for="option in difficultyOptions" :key="option.value" type="button" :class="{ 'is-selected': draft.difficulty === option.value }" :aria-pressed="draft.difficulty === option.value" @click="emit('update:difficulty', option.value)">{{ option.label }}</button>
+        </div>
+      </fieldset>
     </div>
     <div class="game-setup-form-foot">
       <span>{{ questionCount }} Fragen · austauschbar</span>
@@ -70,7 +71,7 @@ function updateNumber(field: 'rounds' | 'seconds', event: Event) {
       </div>
     </div>
     <button type="submit" class="game-setup-action">
-      {{ hasSavedGame ? 'Spiel fortsetzen' : 'Spiel starten' }}
+      {{ primaryActionLabel }}
       <Icon name="lucide:arrow-up-right" size="17" aria-hidden="true" />
     </button>
   </form>

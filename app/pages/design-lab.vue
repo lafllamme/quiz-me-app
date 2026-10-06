@@ -40,6 +40,7 @@ const variants: Record<ScreenKey, Variant[]> = {
     { id: 'green-signal', label: 'Green signal', note: 'One green field / enter clean', code: 'G' },
     { id: 'quiet-room', label: 'Quiet room', note: 'Less copy / more breath', code: 'H' },
     { id: 'split-field', label: 'Split field', note: 'Light left / dark right', code: 'I' },
+    { id: 'control-rail', label: 'Control rail', note: 'Open setup / quiet settings', code: 'M' },
     { id: 'host-rail', label: 'Host rail', note: 'Setup as a control station', code: 'J' },
     { id: 'press-card', label: 'Press card', note: 'One sheet / one decision', code: 'K' },
     { id: 'low-slung', label: 'Low slung', note: 'Headline high / action low', code: 'L' },
@@ -56,11 +57,7 @@ const variants: Record<ScreenKey, Variant[]> = {
     { id: 'offset-islands', label: 'Versetzte Inseln', note: 'Mehr Raum / mehr Spannung', code: 'D' },
   ],
   question: [
-    { id: 'board', label: 'Question board', note: 'Options as a live board', code: 'A' },
-    { id: 'arena', label: 'Arena', note: 'Score at the edge / focus centre', code: 'B' },
-    { id: 'editorial', label: 'Editorial', note: 'Quiet confidence / clean read', code: 'C' },
-    { id: 'timer', label: 'Timer first', note: 'Urgency becomes the layout', code: 'D' },
-    { id: 'duel', label: 'Duel', note: 'Two teams / one answer', code: 'E' },
+    { id: 'live-question', label: 'Live Question', note: 'One stage / clear answer', code: 'Q' },
   ],
 }
 
@@ -150,7 +147,7 @@ const selectedCategory = ref('')
 const selectedAnswer = ref<number | null>(null)
 const timerPaused = ref(false)
 const setupNames = reactive({ one: 'TEAM ONE', two: 'TEAM TWO' })
-const selectedPalette = ref(0)
+const selectedPalette = ref(1)
 
 const activeVariant = computed<Variant>(() => variants[activeScreen.value][selectedVariants[activeScreen.value]]!)
 const activePalette = computed(() => paletteOptions[selectedPalette.value]!)
@@ -319,8 +316,21 @@ function chooseAnswer(index: number) {
             </div>
 
             <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="study study-split-field" :style="splitFieldPaletteStyle">
-              <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><h2>Who's<br><em>playing?</em></h2><p>Name the teams. We'll handle the rest.</p><div class="split-field-meta"><span>5 rounds</span><span>45 sec</span><span>4 territories</span></div></div>
-              <div class="split-field-form"><div class="split-field-head"><span>Team names</span><span>Ready when you are</span></div><label><span>Team one</span><input v-model="setupNames.one" aria-label="Name Team One"></label><label><span>Team two</span><input v-model="setupNames.two" aria-label="Name Team Two"></label><button class="study-action study-action--cream" @click="chooseScreen('categories')">Enter the jungle <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div>
+              <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><h2>Wer<br><em>spielt?</em></h2><p>Gib den Teams einen Namen. Den Rest regeln wir.</p><div class="split-field-meta"><span>7 Runden</span><span>45 Sek.</span><span>Schwer</span></div></div>
+              <div class="split-field-form"><div class="split-field-head"><span>Teamnamen</span><span>Bereit?</span></div><label><span>Team eins</span><input v-model="setupNames.one" aria-label="Name Team Eins"></label><label><span>Team zwei</span><input v-model="setupNames.two" aria-label="Name Team Zwei"></label><div class="split-field-badges" aria-label="Spielmodus: 7 Runden, 45 Sekunden, schwer"><div class="split-field-badge"><strong>7</strong><span>Runden</span></div><div class="split-field-badge"><strong>45</strong><span>Sek.</span></div><div class="split-field-badge"><strong>Schwer</strong><span>Modus</span></div></div><button class="study-action study-action--cream" @click="chooseScreen('categories')">Spiel starten <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div>
+            </div>
+
+            <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'control-rail'" class="study study-split-field study-control-rail" :style="splitFieldPaletteStyle">
+              <div class="split-field-copy"><div class="split-field-wordmark">JUNGLE <span>/</span> QUIZ</div><h2>Bereit<br><em>fürs Spiel?</em></h2><p>Runde wählen. Tempo setzen. Loslegen.</p><div class="split-field-meta"><span>2 Teams</span><span>4 Kategorien</span><span>1 Chance zu stehlen</span></div></div>
+              <div class="control-rail-form">
+                <div class="split-field-head"><span>Spiel-Setup</span><span>Bereit?</span></div>
+                <div class="control-rail-settings">
+                  <label><span>Runden</span><strong>5</strong></label>
+                  <label><span>Antwortzeit</span><strong>45 Sek.</strong></label>
+                  <label><span>Schwierigkeit</span><strong>Gemischt</strong></label>
+                </div>
+                <button class="study-action study-action--cream" @click="chooseScreen('categories')">Spiel starten <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button>
+              </div>
             </div>
 
             <div v-else-if="activeScreen === 'setup' && activeVariant.id === 'host-rail'" class="study study-host-rail">
@@ -416,11 +426,15 @@ function chooseAnswer(index: number) {
 
             <!-- Category studies -->
             <div v-else-if="activeScreen === 'categories' && activeVariant.id === 'soft-field'" class="study category-study category-study--soft-field">
-              <div class="category-study-top"><span>Runde 01 / 05</span><strong>TEAM ONE IST DRAN</strong><span>10 Fragen</span></div>
+              <div class="category-study-top category-study-top--soft-field">
+                <div class="category-status category-status--round"><span>Runde</span><strong>1</strong><small>Fünf Runden</small></div>
+                <strong>TEAM ONE IST DRAN</strong>
+                <div class="category-status category-status--question"><span>Frage</span><strong>Erste</strong><small>Zehn Fragen</small></div>
+              </div>
               <div class="category-study-intro"><h2>Picke eine <em>Kategorie.</em></h2><p>Eine Frage. Ein Fokus. Ihr entscheidet.</p></div>
               <div class="category-surface-grid" role="group" aria-label="Kategorien auswählen">
-                <button v-for="(option, index) in categoryOptions" :key="option.label" data-uisfx-hover="hover" data-uisfx-press="press" class="category-surface category-surface--soft" :class="{ 'category-surface--selected': selectedCategory === option.label }" @click="chooseCategory(option.label)">
-                  <span class="category-surface-index">0{{ index + 1 }}</span><span class="category-surface-copy"><strong>{{ option.label }}</strong><small>{{ option.descriptor }}</small></span><Icon name="lucide:arrow-up-right" size="19" aria-hidden="true" />
+                <button v-for="option in categoryOptions" :key="option.label" data-uisfx-hover="hover" data-uisfx-press="press" class="category-surface category-surface--soft" :class="{ 'category-surface--selected': selectedCategory === option.label }" @click="chooseCategory(option.label)">
+                  <span class="category-surface-copy"><strong>{{ option.label }}</strong><small>{{ option.descriptor }}</small></span><Icon name="lucide:arrow-up-right" size="19" aria-hidden="true" />
                 </button>
               </div>
               <p class="category-study-foot">{{ selectedCategory ? `${selectedCategory} gewählt` : 'Bereit für den ersten Pick.' }} <span>↗</span></p>
@@ -459,33 +473,19 @@ function chooseAnswer(index: number) {
             </div>
 
             <!-- Question studies -->
-            <div v-else-if="activeScreen === 'question' && activeVariant.id === 'board'" class="study study-question-board">
-              <div class="question-board-top"><span class="mini-kicker">WTF-WISSEN / Frage</span><span>Round 01 · Frag 02 / 10</span><b>TEAM TWO IST DRAN</b></div>
-              <div class="question-board-main"><h2>Wie viele Herzen hat ein <em>Oktopus?</em></h2><div class="board-answers"><button v-for="(answer, index) in ['Eins', 'Zwei', 'Drei', 'Vier']" :key="answer" :class="{ 'answer-chip--selected': selectedAnswer === index }" class="answer-chip" @click="chooseAnswer(index)"><span>{{ ['A', 'B', 'C', 'D'][index] }}</span>{{ answer }}</button></div></div>
-              <aside class="board-time"><small>Noch Zeit</small><strong>43</strong><span>Sekunden</span><i><b /></i><button @click="timerPaused = !timerPaused">{{ timerPaused ? 'Weiter' : 'Pause' }}</button></aside>
-            </div>
-
-            <div v-else-if="activeScreen === 'question' && activeVariant.id === 'arena'" class="study study-arena">
-              <div class="arena-score arena-score--one"><small>{{ setupNames.one }}</small><strong>1</strong><span>points</span></div>
-              <div class="arena-score arena-score--two"><small>{{ setupNames.two }}</small><strong>0</strong><span>points</span></div>
-              <div class="arena-centre"><div class="arena-status"><span class="live-pip" /> team two is answering</div><span class="mini-kicker">WTF-WISSEN / 02</span><h2>Wie viele Herzen<br>hat ein <em>Oktopus?</em></h2><div class="arena-actions"><button v-for="(answer, index) in ['Eins', 'Zwei', 'Drei', 'Vier']" :key="answer" :class="{ 'arena-answer--selected': selectedAnswer === index }" @click="chooseAnswer(index)"><span>{{ ['A', 'B', 'C', 'D'][index] }}</span>{{ answer }}</button></div></div>
-              <div class="arena-time"><strong>43</strong><span>sec left</span></div>
-            </div>
-
-            <div v-else-if="activeScreen === 'question' && activeVariant.id === 'editorial'" class="study study-editorial">
-              <div class="editorial-top"><span class="mini-kicker">Question 02 / 10</span><span>Category <strong>WTF-WISSEN</strong></span><span>Team two →</span></div>
-              <div class="editorial-grid"><div class="editorial-question"><span class="editorial-number">02</span><h2>Wie viele<br>Herzen hat<br>ein <em>Oktopus?</em></h2><p>Take a breath. Pick your answer.</p></div><div class="editorial-options"><button v-for="(answer, index) in ['Eins', 'Zwei', 'Drei', 'Vier']" :key="answer" :class="{ 'editorial-option--selected': selectedAnswer === index }" @click="chooseAnswer(index)"><span>{{ ['A', 'B', 'C', 'D'][index] }}</span><strong>{{ answer }}</strong><Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button></div></div>
-              <div class="editorial-bottom"><span>Team two is answering</span><span class="editorial-timer"><i :class="{ 'editorial-timer--paused': timerPaused }" /><b>43</b> seconds remaining</span></div>
-            </div>
-
-            <div v-else-if="activeScreen === 'question' && activeVariant.id === 'timer'" class="study study-timer">
-              <div class="timer-top"><span class="mini-kicker">Question / 02</span><span>WTF-WISSEN</span><span>Team two answers</span></div>
-              <div class="timer-layout"><div class="timer-question"><h2>Wie viele Herzen<br>hat ein <em>Oktopus?</em></h2><div class="timer-answer-grid"><button v-for="(answer, index) in ['Eins', 'Zwei', 'Drei', 'Vier']" :key="answer" :class="{ 'timer-answer--selected': selectedAnswer === index }" @click="chooseAnswer(index)"><span>{{ ['A', 'B', 'C', 'D'][index] }}</span>{{ answer }}</button></div></div><div class="timer-giant"><span>seconds</span><strong>43</strong><i><b /></i><button @click="timerPaused = !timerPaused">{{ timerPaused ? 'Resume' : 'Pause clock' }}</button></div></div>
-            </div>
-
-            <div v-else-if="activeScreen === 'question' && activeVariant.id === 'duel'" class="study study-duel">
-              <div class="duel-team duel-team--one"><span>TEAM ONE</span><strong>1</strong><small>waiting</small></div><div class="duel-round"><span class="mini-kicker">Round 01 / Question 02</span><div>VS</div><small>45 seconds</small></div><div class="duel-team duel-team--two"><span>TEAM TWO</span><strong>0</strong><small>in the hot seat</small></div>
-              <div class="duel-question"><span class="mini-kicker">WTF-WISSEN</span><h2>Wie viele Herzen<br>hat ein <em>Oktopus?</em></h2><div class="duel-options"><button v-for="(answer, index) in ['Eins', 'Zwei', 'Drei', 'Vier']" :key="answer" :class="{ 'duel-option--selected': selectedAnswer === index }" @click="chooseAnswer(index)"><span>{{ ['A', 'B', 'C', 'D'][index] }}</span>{{ answer }}</button></div></div>
+            <div v-else-if="activeScreen === 'question' && activeVariant.id === 'live-question'" class="study question-live-stage">
+              <div class="question-live-top">
+                <div class="question-live-context"><span>Frage</span><strong>Zweite / Zehn Fragen</strong></div>
+                <div class="question-live-active-team"><span>Ist dran</span><strong>TEAM TWO</strong><small>Antwort wählen</small></div>
+                <div class="question-live-context question-live-context--round"><span>Runde</span><strong>1 / 5</strong></div>
+              </div>
+              <div class="question-live-scoreline"><span>TEAM ONE <strong>1</strong></span><span class="question-live-scoreline--active">TEAM TWO <strong>0</strong></span></div>
+              <div class="question-live-main">
+                <div class="question-live-copy"><span class="question-live-category">WTF-WISSEN</span><h2>Wie viele Herzen hat ein <em>Oktopus?</em></h2></div>
+                <aside class="question-live-timer"><span class="question-live-timer-label">Noch Zeit</span><strong>43</strong><span class="question-live-timer-unit">Sekunden</span><i aria-hidden="true"><b style="transform: scaleX(.78)" /></i><div class="question-live-timer-actions"><button @click="timerPaused = !timerPaused">{{ timerPaused ? 'Weiter' : 'Pause' }}</button><button>Reset</button></div></aside>
+              </div>
+              <div class="question-live-answers" aria-label="Antwortmöglichkeiten"><button v-for="(answer, index) in ['Eins', 'Zwei', 'Drei', 'Vier']" :key="answer" class="question-live-option" :class="{ 'question-live-option--wrong': selectedAnswer === index }" @click="chooseAnswer(index)"><span class="question-live-option-letter">{{ ['A', 'B', 'C', 'D'][index] }}</span><span class="question-live-option-copy">{{ answer }}</span></button></div>
+              <div class="question-live-foot"><button class="question-live-action" @click="timerPaused = !timerPaused">Antwort zeigen <span>A</span></button><p class="question-live-hint">Wähle A, B, C oder D</p></div>
             </div>
           </div>
 
@@ -494,8 +494,8 @@ function chooseAnswer(index: number) {
             <span class="preview-footer-key">{{ activeVariant.code }} / {{ activeVariant.label.toUpperCase() }}</span>
           </div>
 
-          <section v-if="activeScreen === 'setup' && activeVariant.id === 'split-field'" class="palette-dock" aria-label="Farbpaletten für Split field">
-            <div class="palette-dock-head"><span>Color directions</span><span>Applied to I / Split field</span></div>
+          <section v-if="activeScreen === 'setup' && ['split-field', 'control-rail'].includes(activeVariant.id)" class="palette-dock" aria-label="Farbpaletten für Split field und Control rail">
+            <div class="palette-dock-head"><span>Color directions</span><span>Applied to setup study</span></div>
             <div class="palette-grid">
               <button v-for="palette in paletteOptions" :key="palette.id" class="palette-option" :class="{ 'palette-option--active': activePalette.id === palette.id }" :aria-pressed="activePalette.id === palette.id" @click="selectedPalette = paletteOptions.indexOf(palette)">
                 <span class="palette-swatches" aria-hidden="true"><i v-for="color in palette.swatches" :key="color" :style="{ backgroundColor: color }" /></span>
@@ -685,6 +685,11 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .split-field-form label { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: center; gap: .7rem; min-height: 74px; border-bottom: 1px solid var(--split-line); }
 .split-field-form label span { color: var(--split-accent); font-size: .62rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
 .split-field-form input { width: 100%; border-color: color-mix(in srgb, var(--split-cream) 42%, transparent); padding: .5rem 0; font-size: .95rem; font-weight: 600; }
+.split-field-badges { display: grid; grid-template-columns: .68fr .82fr 1.3fr; margin-top: 1rem; border-top: 1px solid var(--split-line); border-bottom: 1px solid var(--split-line); }
+.split-field-badge { display: flex; min-width: 0; min-height: 4.5rem; flex-direction: column; justify-content: center; gap: .18rem; padding: .7rem .75rem; }
+.split-field-badge + .split-field-badge { border-left: 1px solid var(--split-line); }
+.split-field-badge strong { overflow: hidden; color: var(--split-cream); font-family: var(--font-display); font-size: clamp(1.35rem, 2.35vw, 2.05rem); font-weight: 600; letter-spacing: -.025em; line-height: .95; text-overflow: ellipsis; white-space: nowrap; }
+.split-field-badge span { color: var(--split-accent); font-size: .52rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .split-field-form .study-action { width: 100%; margin-top: 1.4rem; }
 
 .study-host-rail { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr) minmax(250px, .7fr); gap: clamp(1.5rem, 4vw, 4rem); min-height: 665px; padding: 2rem clamp(1.5rem, 5vw, 4rem); background: var(--lab-jungle); }
@@ -737,6 +742,16 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .low-slung-foot { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; color: rgb(7 26 19 / 68%); font-size: .61rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 
 .study-split-field .study-action--cream { background: var(--split-cream); color: var(--split-ink); }
+
+.control-rail-form { align-self: center; margin: 2rem; color: var(--split-cream); }
+.control-rail-form label { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: center; gap: .7rem; min-height: 74px; border-bottom: 1px solid var(--split-line); }
+.control-rail-form label span { color: var(--split-accent); font-size: .62rem; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
+.control-rail-form input { width: 100%; border-color: color-mix(in srgb, var(--split-cream) 42%, transparent); padding: .5rem 0; font-size: .95rem; font-weight: 600; }
+.control-rail-settings { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; border-top: 1px solid var(--split-line); margin-top: 1rem; padding-top: .7rem; }
+.control-rail-settings label { display: flex; min-height: 4.3rem; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: .7rem; border-bottom: 1px solid var(--split-line); padding-bottom: .7rem; }
+.control-rail-settings label span { color: var(--split-muted); font-size: .58rem; }
+.control-rail-settings strong { color: var(--split-cream); font-size: .88rem; font-weight: 600; }
+.control-rail-form .study-action { width: 100%; margin-top: 1.4rem; }
 
 .palette-dock { margin-top: 1.6rem; border-top: 1px solid var(--lab-line); padding-top: 1rem; }
 .palette-dock-head { display: flex; justify-content: space-between; gap: 1rem; color: var(--lab-muted); font-size: .65rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
@@ -793,22 +808,32 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 
 /* Category studies */
 .category-study { padding: 2rem clamp(1.4rem, 4vw, 3rem); }
+.category-study--soft-field { --lab-ink: #081811; --lab-jungle: #081811; --lab-forest: #0b4429; --lab-cream: #fbf8ed; --lab-gold: #caff4a; --lab-leaf: #e7f7b6; --lab-muted: #8fc7a2; --lab-line: rgb(251 248 237 / 24%); background: var(--lab-ink); }
 .category-study-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; color: var(--lab-muted); font-size: .62rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
-.category-study-top strong { color: var(--lab-gold); font-size: .6rem; text-align: center; }
+.category-study-top > strong { color: var(--lab-gold); font-size: .6rem; text-align: center; }
 .category-study-top span:last-child { text-align: right; }
+.category-study-top--soft-field { align-items: start; }
+.category-status { display: grid; grid-template-columns: auto auto; align-items: end; column-gap: .55rem; row-gap: .18rem; }
+.category-status > span { grid-column: 1 / -1; color: var(--lab-muted); font-size: .58rem; letter-spacing: .18em; }
+.category-status strong { color: var(--lab-gold); font-family: var(--font-display); font-size: clamp(2.25rem, 4vw, 3.9rem); font-weight: 500; letter-spacing: -.05em; line-height: .72; }
+.category-status small { align-self: end; color: var(--lab-muted); font-size: .53rem; letter-spacing: .1em; line-height: 1; text-transform: uppercase; }
+.category-status--question strong { font-family: var(--font-ui); font-size: clamp(1.2rem, 2.1vw, 1.8rem); font-weight: 700; letter-spacing: .01em; line-height: 1; }
+.category-status--question { justify-items: end; text-align: right; }
 .category-study-intro { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-top: 4.1rem; }
 .category-study-intro h2 { max-width: 10ch; margin: 0; font-size: clamp(3rem, 6vw, 6rem); }
 .category-study-intro h2 em { color: var(--lab-leaf); font-style: normal; }
 .category-study-intro p { max-width: 14rem; margin: 0 0 .35rem; color: var(--lab-muted); font-size: .78rem; line-height: 1.45; }
 .category-surface-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-top: 3rem; }
+.category-study--soft-field .category-surface-grid { gap: 1rem; margin-top: 4.35rem; }
 .category-surface, .category-signal-card, .category-lane-row, .category-island { cursor: pointer; font: inherit; }
-.category-surface { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; min-height: 8.5rem; border: 0; border-radius: 1rem; background: var(--lab-forest); color: var(--lab-cream); padding: 1.2rem 1.25rem; text-align: left; transition: transform 180ms ease, background 180ms ease, color 180ms ease; }
+.category-surface { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1rem; min-height: 8.5rem; border: 0; border-radius: 1rem; background: var(--lab-forest); color: var(--lab-cream); padding: 1.2rem 1.25rem; text-align: left; transition: transform 180ms ease, background 180ms ease, color 180ms ease; }
 .category-surface:hover, .category-surface:focus-visible, .category-surface--selected { background: var(--lab-gold); color: var(--lab-ink); transform: translateY(-3px); }
 .category-surface:focus-visible, .category-signal-card:focus-visible, .category-lane-row:focus-visible, .category-island:focus-visible { outline: 3px solid var(--lab-leaf); outline-offset: 3px; }
-.category-surface-index, .category-signal-card-number, .category-lane-index { align-self: start; color: var(--lab-gold); font-family: var(--font-display); font-size: 1.25rem; }
-.category-surface--selected .category-surface-index, .category-surface:hover .category-surface-index, .category-surface:focus-visible .category-surface-index { color: var(--lab-ink); }
+.category-signal-card-number, .category-lane-index { align-self: start; color: var(--lab-gold); font-family: var(--font-display); font-size: 1.25rem; }
 .category-surface-copy, .category-signal-card-copy { display: flex; flex-direction: column; gap: .35rem; }
 .category-surface-copy strong, .category-signal-card-copy strong { font-family: var(--font-display); font-size: clamp(1.7rem, 3vw, 3rem); letter-spacing: -.04em; line-height: .9; }
+.category-study--soft-field .category-study-intro h2 { letter-spacing: -.02em; }
+.category-study--soft-field .category-surface-copy strong { letter-spacing: -.015em; }
 .category-surface-copy small, .category-signal-card-copy small { color: var(--lab-muted); font-size: .67rem; line-height: 1.35; }
 .category-surface--selected .category-surface-copy small, .category-surface:hover .category-surface-copy small, .category-surface:focus-visible .category-surface-copy small { color: rgb(7 26 19 / 72%); }
 .category-surface > .iconify { color: var(--lab-gold); }.category-surface:hover > .iconify, .category-surface:focus-visible > .iconify, .category-surface--selected > .iconify { color: var(--lab-ink); }
@@ -892,7 +917,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .monogram-team-list, .green-signal-form { margin-top: 2rem; }
   .monogram-footer, .green-signal-footer { flex-wrap: wrap; gap: .65rem 1rem; }
   .quiet-room-layout { display: block; min-height: 0; margin-top: 3rem; }.quiet-room-copy h2 { font-size: 4.6rem; }.quiet-room-form { margin-top: 2rem; }
-  .study-split-field { display: block; }.split-field-copy { display: block; min-height: 405px; padding: 1.5rem; }.split-field-copy .mini-kicker { margin-top: 3rem; }.split-field-copy h2 { font-size: 4.6rem; }.split-field-meta { margin-top: 2rem; }.split-field-form { margin: 0; border-width: 1px 0 0; padding: 1.5rem; }
+  .study-split-field { display: block; }.split-field-copy { display: block; min-height: 405px; padding: 1.5rem; }.split-field-copy .mini-kicker { margin-top: 3rem; }.split-field-copy h2 { font-size: 4.6rem; }.split-field-meta { margin-top: 2rem; }.split-field-form { margin: 0; border-width: 1px 0 0; padding: 1.5rem; }.split-field-badge { min-height: 4.1rem; padding-inline: .55rem; }.split-field-badge strong { font-size: 1.35rem; }.control-rail-form { margin: 0; padding: 1.5rem; }.control-rail-settings { gap: .6rem; }.control-rail-settings strong { font-size: .78rem; }
   .study-host-rail { display: block; padding: 1.5rem; }.host-rail-spine { flex-direction: row; justify-content: space-between; border-right: 0; border-bottom: 1px solid var(--lab-line); padding: 0 0 .8rem; }.host-rail-spine i { margin-top: 0; writing-mode: horizontal-tb; }.host-rail-copy { margin-top: 3rem; }.host-rail-copy h2 { margin-top: 2.8rem; font-size: 4.6rem; }.host-rail-stats { margin-top: 2rem; }.host-rail-form { margin-top: 2.5rem; }
   .study-press-card { padding: 1.5rem; }.press-card-layout { display: block; min-height: 0; margin-top: 2.8rem; }.press-card-mark { display: none; }.press-card-copy h2 { font-size: 4.6rem; }.press-card-form { margin-top: 2rem; }.press-card-foot { margin-top: 2rem; flex-wrap: wrap; }
   .low-slung-top { display: flex; flex-wrap: wrap; gap: .55rem 1rem; }.low-slung-top span:first-child { width: 100%; }.low-slung-copy { min-height: 310px; }.low-slung-copy h2 { font-size: 4.8rem; }.low-slung-bar { display: block; }.low-slung-inputs { grid-template-columns: 1fr; }.low-slung-bar .study-action { width: 100%; margin-top: 1rem; }.low-slung-foot { flex-wrap: wrap; }
@@ -901,7 +926,7 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
   .study-poster { display: block; padding: 1.4rem; }.poster-edge { display: none; }.poster-content { padding-top: 1.5rem; }.poster-content h2 { font-size: 4.2rem; }.poster-form { grid-template-columns: 1fr; margin: 1.5rem 0; }.poster-spec { flex-direction: row; border: 0; border-top: 1px solid rgb(7 26 19 / 32%); margin-top: 2rem; padding: 1rem 0 0; }
   .study-signal { min-height: 680px; grid-template-columns: 3.2rem 1fr; }.signal-main { padding: 2rem 1.2rem; }.signal-main h2 { margin-top: 4rem; font-size: 4.8rem; }.signal-fields { grid-template-columns: 1fr; gap: 1.1rem; }.signal-bottom { flex-wrap: wrap; padding: 1rem 1.2rem; gap: .9rem; }
   .study-ticket { padding: 1.4rem; }.ticket-main h2 { font-size: 4.3rem; }.ticket-inputs { grid-template-columns: 1fr; }.ticket-stub { flex-wrap: wrap; }
-  .category-study { min-height: 680px; padding: 1.5rem; }.category-study-top { grid-template-columns: 1fr auto; }.category-study-top span:last-child { display: none; }.category-study-top strong { text-align: right; }.category-study-intro { display: block; margin-top: 3.2rem; }.category-study-intro h2 { max-width: 9ch; font-size: 4rem; }.category-study-intro p { margin-top: 1.2rem; }.category-surface-grid, .category-signal-grid, .category-islands { grid-template-columns: 1fr; margin-top: 2.1rem; }.category-surface { min-height: 6.6rem; }.category-signal-card, .category-signal-card:nth-child(3), .category-signal-card:nth-child(4) { min-height: 7rem; grid-column: auto; flex-direction: row; align-items: flex-end; }.category-signal-card-copy strong { font-size: 2rem; }.category-lane { margin-top: 2.1rem; }.category-lane-row { grid-template-columns: 1.5rem 1fr auto; gap: .65rem; min-height: 4.4rem; }.category-lane-row small { display: none; }.category-lane-row strong { font-size: 2rem; }.category-island, .category-island:nth-child(2), .category-island:nth-child(3) { min-height: 7.2rem; transform: none; }.category-island:hover, .category-island:focus-visible, .category-island--selected { transform: translateY(-3px); }
+  .category-study { min-height: 680px; padding: 1.5rem; }.category-study-top { grid-template-columns: 1fr auto; }.category-study-top span:last-child { display: none; }.category-study-top > strong { text-align: right; }.category-study-top--soft-field { grid-template-columns: 1fr auto 1fr; gap: .5rem; }.category-study-top--soft-field > strong { align-self: end; text-align: center; }.category-status { column-gap: .35rem; }.category-status strong { font-size: 2.2rem; }.category-status small { display: none; }.category-status--question { justify-items: end; }.category-study-intro { display: block; margin-top: 3.2rem; }.category-study-intro h2 { max-width: 9ch; font-size: 4rem; }.category-study-intro p { margin-top: 1.2rem; }.category-surface-grid, .category-signal-grid, .category-islands { grid-template-columns: 1fr; margin-top: 2.1rem; }.category-study--soft-field .category-surface-grid { gap: .85rem; margin-top: 3rem; }.category-surface { min-height: 6.6rem; }.category-signal-card, .category-signal-card:nth-child(3), .category-signal-card:nth-child(4) { min-height: 7rem; grid-column: auto; flex-direction: row; align-items: flex-end; }.category-signal-card-copy strong { font-size: 2rem; }.category-lane { margin-top: 2.1rem; }.category-lane-row { grid-template-columns: 1.5rem 1fr auto; gap: .65rem; min-height: 4.4rem; }.category-lane-row small { display: none; }.category-lane-row strong { font-size: 2rem; }.category-island, .category-island:nth-child(2), .category-island:nth-child(3) { min-height: 7.2rem; transform: none; }.category-island:hover, .category-island:focus-visible, .category-island--selected { transform: translateY(-3px); }
   .question-board-top, .timer-top, .editorial-top { align-items: flex-start; flex-direction: column; gap: .4rem; }.question-board-top b { margin-top: .6rem; }.question-board-main { padding-top: 4rem; }.question-board-main h2 { font-size: 4rem; }.board-answers { grid-template-columns: 1fr; margin-top: 2rem; }.board-time { position: static; flex-direction: row; align-items: baseline; gap: .55rem; min-width: 0; margin-top: 2rem; border-left: 0; border-top: 1px solid var(--lab-gold); padding: .8rem 0 0; }.board-time strong { margin: 0; font-size: 4rem; }.board-time i { flex: 1; margin: 0 0 0 .5rem; }.board-time button { margin-left: .3rem; }.arena-score--one { left: 1.4rem; }.arena-score--two { right: 1.4rem; }.arena-centre { margin-top: 8.5rem; }.arena-centre h2 { font-size: 3.7rem; }.arena-actions { grid-template-columns: repeat(2, 1fr); margin-top: 2rem; }.editorial-grid { display: block; min-height: 0; }.editorial-question h2 { font-size: 4rem; }.editorial-options { margin-top: 2.5rem; }.editorial-bottom { margin-top: 2rem; flex-direction: column; }.timer-layout { display: block; min-height: 0; }.timer-question h2 { margin-top: 4rem; font-size: 3.8rem; }.timer-answer-grid { grid-template-columns: 1fr; margin-top: 2rem; }.timer-giant { display: flex; align-items: baseline; flex-wrap: wrap; gap: .8rem; margin-top: 3rem; border-left: 0; border-top: 1px solid var(--lab-coral); padding: 1rem 0 0; }.timer-giant strong { font-size: 6rem; }.timer-giant i { flex: 1; min-width: 100%; order: 3; }.timer-giant button { order: 4; }.study-duel { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto 1fr; gap: 1.2rem; padding: 1.5rem; }.duel-round { grid-column: 1 / -1; grid-row: 1; order: -1; }.duel-team { grid-row: 2; }.duel-team strong { font-size: 3rem; }.duel-question { grid-row: 3; }.duel-question h2 { font-size: 3.7rem; }.duel-options { grid-template-columns: repeat(2, 1fr); margin-top: 2rem; }.lab-footer { display: block; }.lab-footer p + p { margin-top: .7rem; }
 }
 
