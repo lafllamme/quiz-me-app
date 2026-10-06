@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps<{
   activeName: string
@@ -16,51 +16,47 @@ const emit = defineEmits<{ continue: [] }>()
 const landed = ref(false)
 const revealed = computed(() => props.ready && landed.value)
 
-const phase = ref(0)
-const phaseLabels = ['Münze in der Luft.', 'Noch ein Flip.', 'Der Start steht.']
-let phaseTimer: number | undefined
-
-onMounted(() => {
-  phaseTimer = window.setInterval(() => {
-    if (phase.value >= phaseLabels.length - 1) {
-      if (phaseTimer)
-        window.clearInterval(phaseTimer)
-      return
-    }
-    phase.value++
-  }, 760)
-})
-
-onBeforeUnmount(() => {
-  if (phaseTimer)
-    window.clearInterval(phaseTimer)
-})
+const teams = computed(() => [
+  { side: 'kopf' as const, label: 'Kopf', name: props.names[0] },
+  { side: 'zahl' as const, label: 'Zahl', name: props.names[1] },
+])
 </script>
 
 <template>
-  <section class="coin-toss-stage" aria-live="polite">
+  <section class="coin-toss-stage" :class="[`coin-toss-stage--${result}`, { 'coin-toss-stage--revealed': revealed }]">
     <div class="coin-toss-stage__inner">
       <div class="coin-toss-stage__meta">
         <span>Runde {{ round }} / {{ rounds }}</span>
-        <span>Jungle Quiz</span>
+        <span>Münzwurf</span>
       </div>
 
-      <div class="coin-toss-stage__center">
-        <p class="coin-toss-stage__eyebrow">Wer fängt an?</p>
+      <h1>Wer fängt an?</h1>
+
+      <!-- Versus axis: the teams flank the coin, the winner lights up on landing. -->
+      <div class="coin-toss-duel">
+        <div
+          v-for="team in teams"
+          :key="team.side"
+          class="coin-toss-team"
+          :class="[`coin-toss-team--${team.side}`, { 'coin-toss-team--won': revealed && result === team.side }]"
+        >
+          <span>{{ team.label }}</span>
+          <strong>{{ team.name }}</strong>
+          <small aria-hidden="true">beginnt</small>
+        </div>
         <ClientOnly>
-          <TossCoin :names="names" :result="result" @landed="landed = true" />
+          <TossCoin :names="names" :result="result" finish="bimetal" @landed="landed = true" />
         </ClientOnly>
-        <h1>Die Münze<br><em>entscheidet.</em></h1>
-        <p class="coin-toss-stage__hint"><strong>{{ revealed ? `${result === 'kopf' ? 'Kopf' : 'Zahl'} — ${activeName} beginnt.` : phaseLabels[phase] }}</strong></p>
-        <button class="coin-toss-stage__continue" :disabled="!revealed" type="button" @click="emit('continue')">
-          {{ revealed ? 'Weiter zu den Kategorien' : 'Münze wird geworfen …' }}
-          <Icon name="lucide:arrow-right" size="18" aria-hidden="true" />
-        </button>
       </div>
 
       <div class="coin-toss-stage__foot">
-        <span>Ein kurzer Start.</span>
-        <span>Bereit für die erste Frage.</span>
+        <p class="coin-toss-stage__status" aria-live="polite">
+          {{ revealed ? `${result === 'kopf' ? 'Kopf' : 'Zahl'}: ${activeName} beginnt.` : 'Die Münze fliegt …' }}
+        </p>
+        <button class="coin-toss-stage__continue" :disabled="!revealed" type="button" @click="emit('continue')">
+          Weiter zu den Kategorien
+          <Icon name="lucide:arrow-right" size="18" aria-hidden="true" />
+        </button>
       </div>
     </div>
   </section>

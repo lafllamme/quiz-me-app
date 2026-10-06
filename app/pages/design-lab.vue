@@ -2,8 +2,9 @@
 import { QUIZ_CATEGORIES } from '~/data/quiz-catalog'
 import { PaperGrainGradient } from '~/ui/paper-grain-gradient'
 import type { PaperGrainGradientProps } from '~/ui/paper-grain-gradient/types'
+import type { CoinFinish } from '~/lib/coin-face'
 
-type ScreenKey = 'setup' | 'categories' | 'question'
+type ScreenKey = 'setup' | 'toss' | 'categories' | 'question'
 
 type Variant = {
   id: string
@@ -37,6 +38,7 @@ type Palette = {
 
 const screenOptions: { id: ScreenKey; label: string; detail: string }[] = [
   { id: 'setup', label: 'Start', detail: 'Spiel eröffnen' },
+  { id: 'toss', label: 'Münzwurf', detail: 'Wer beginnt' },
   { id: 'categories', label: 'Kategorien', detail: 'Territorium wählen' },
   { id: 'question', label: 'Frage', detail: 'Antwort geben' },
 ]
@@ -51,6 +53,12 @@ const variants: Record<ScreenKey, Variant[]> = {
     { id: 'stepper-card', label: 'Stepper card', note: 'One quiet card / three steppers', code: 'L' },
     { id: 'two-blocks', label: 'Two blocks', note: 'Teams, then rules / segmented rows', code: 'M' },
     { id: 'split-duty', label: 'Split duty', note: 'Rules live left / teams own the right', code: 'N' },
+  ],
+  toss: [
+    { id: 'toss-split', label: 'Split stage', note: 'Copy left / the coin owns its own field', code: 'T1' },
+    { id: 'toss-versus', label: 'Versus axis', note: 'Teams flank the coin / the winner lights up', code: 'T2' },
+    { id: 'toss-hero', label: 'Hero coin', note: 'The coin is the headline / one bottom rail', code: 'T3' },
+    { id: 'toss-words', label: 'Kopf oder Zahl', note: 'Two giant words / the coin lands between', code: 'T4' },
   ],
   categories: [
     { id: 'soft-field', label: 'Territory grid', note: 'Sechs Kategorien / drei mal zwei', code: 'A' },
@@ -173,7 +181,33 @@ onBeforeUnmount(() => clearInterval(labTimerHandle))
 const sampleProgress = { question: 4, questions: 10, round: 2, rounds: 5, scores: [2, 1], active: 1 }
 
 const activeScreen = ref<ScreenKey>('setup')
-const selectedVariants = reactive<Record<ScreenKey, number>>({ setup: 0, categories: 0, question: 0 })
+const selectedVariants = reactive<Record<ScreenKey, number>>({ setup: 0, toss: 2, categories: 0, question: 0 })
+
+// Coin toss studies run the real 3D coin. Every change of layout, finish or
+// names throws a fresh coin so the whole sequence can be judged.
+const tossFinishes: { id: CoinFinish, label: string, note: string, swatches: string[] }[] = [
+  { id: 'bimetal', label: 'Bimetall', note: '2-Euro / silver ring, gold core', swatches: ['#c8cccb', '#d8b25c'] },
+  { id: 'bimetal-inverse', label: 'Bimetall invers', note: '1-Euro / gold ring, silver core', swatches: ['#d8b25c', '#c8cccb'] },
+  { id: 'gold', label: 'Gold strike', note: 'First coin / full detail', swatches: ['#dfba64', '#5c4414'] },
+  { id: 'enamel', label: 'Forest enamel', note: 'Dark enamel / cream name, gold rim', swatches: ['#0b4429', '#fbf8ed', '#c9a24c'] },
+]
+const tossNameSets = {
+  short: ['TEAM ONE', 'TEAM TWO'],
+  long: ['Die Kölner Klugscheißer', 'Quizzly Bears'],
+} as const satisfies Record<string, readonly [string, string]>
+const tossFinish = ref<CoinFinish>('bimetal')
+const tossNameSet = ref<keyof typeof tossNameSets>('short')
+const tossNames = computed<[string, string]>(() => [...tossNameSets[tossNameSet.value]])
+const tossResult = ref<'kopf' | 'zahl'>('kopf')
+const tossRun = ref(0)
+const tossLanded = ref(false)
+const tossWinner = computed(() => tossNames.value[tossResult.value === 'kopf' ? 0 : 1])
+
+function throwCoin(result: 'kopf' | 'zahl' = Math.random() < 0.5 ? 'kopf' : 'zahl') {
+  tossResult.value = result
+  tossLanded.value = false
+  tossRun.value++
+}
 const selectedCategory = ref('')
 const selectedAnswer = ref<number | null>(null)
 const timerPaused = ref(false)
@@ -190,6 +224,10 @@ const configVariants: { id: ConfigVariant; code: string; label: string; note: st
 ]
 
 const activeVariant = computed<Variant>(() => variants[activeScreen.value][selectedVariants[activeScreen.value]]!)
+watch([activeVariant, tossFinish, tossNameSet], () => {
+  if (activeScreen.value === 'toss')
+    throwCoin()
+})
 const activePalette = computed(() => paletteOptions[selectedPalette.value]!)
 const totalStudies = computed(() => Object.values(variants).reduce((total, screenVariants) => total + screenVariants.length, 0))
 const splitFieldPaletteStyle = computed<Record<string, string>>(() => ({
@@ -324,7 +362,7 @@ function isSelectedSetupOption(value: number | string) {
         <div class="lab-intro-copy">
           <p class="lab-kicker">Visual direction / {{ totalStudies }} studies / live prototype</p>
           <h1>Make the quiz<br><em>feel like a room.</em></h1>
-          <p class="lab-lede">Drei Screens. {{ totalStudies }} Designstudien. Die Startseite bleibt bei I: klar, geteilt, bereit zum Spielen.</p>
+          <p class="lab-lede">Vier Screens. {{ totalStudies }} Designstudien. Die Startseite bleibt bei I: klar, geteilt, bereit zum Spielen.</p>
         </div>
         <div class="lab-intro-stamp" :aria-label="`${totalStudies} Varianten im Test`">
           <span class="stamp-number">{{ totalStudies }}</span>
@@ -548,6 +586,68 @@ function isSelectedSetupOption(value: number | string) {
               <p class="category-study-foot">{{ selectedCategory ? `${selectedCategory} gewählt` : 'Bereit für den ersten Pick.' }} <span>↗</span></p>
             </div>
 
+            <!-- Coin toss studies: same content, four compositions. All fit one viewport. -->
+            <div v-else-if="activeScreen === 'toss'" class="study tv" :class="[`tv--${activeVariant.id}`, `tv--${tossResult}`, { 'tv--landed': tossLanded }]">
+              <div class="tv-top">
+                <span class="tv-brand">JUNGLE <i>/</i> QUIZ</span>
+                <span>Runde 1 / 5</span>
+              </div>
+
+              <template v-if="activeVariant.id === 'toss-split'">
+                <div class="tv-copy">
+                  <h2>Die Münze<br><em>entscheidet.</em></h2>
+                  <p class="tv-status">{{ tossLanded ? `${tossResult === 'kopf' ? 'Kopf' : 'Zahl'}: ${tossWinner} beginnt.` : 'Die Münze fliegt …' }}</p>
+                  <button type="button" class="tv-action" :disabled="!tossLanded">Weiter zu den Kategorien <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
+                </div>
+                <div class="tv-field">
+                  <ClientOnly><TossCoin :key="tossRun" :names="tossNames" :result="tossResult" :finish="tossFinish" @landed="tossLanded = true" /></ClientOnly>
+                  <dl class="tv-legend">
+                    <div :class="{ 'tv-legend--won': tossLanded && tossResult === 'kopf' }"><dt>Kopf</dt><dd>{{ tossNames[0] }}</dd></div>
+                    <div :class="{ 'tv-legend--won': tossLanded && tossResult === 'zahl' }"><dt>Zahl</dt><dd>{{ tossNames[1] }}</dd></div>
+                  </dl>
+                </div>
+              </template>
+
+              <template v-else-if="activeVariant.id === 'toss-versus'">
+                <h2 class="tv-question">Wer fängt an?</h2>
+                <div class="tv-duel">
+                  <div class="tv-team tv-team--kopf"><span>Kopf</span><strong>{{ tossNames[0] }}</strong><small>beginnt</small></div>
+                  <ClientOnly><TossCoin :key="tossRun" :names="tossNames" :result="tossResult" :finish="tossFinish" @landed="tossLanded = true" /></ClientOnly>
+                  <div class="tv-team tv-team--zahl"><span>Zahl</span><strong>{{ tossNames[1] }}</strong><small>beginnt</small></div>
+                </div>
+                <div class="tv-foot">
+                  <p class="tv-status">{{ tossLanded ? `${tossWinner} beginnt.` : 'Die Münze fliegt …' }}</p>
+                  <button type="button" class="tv-action" :disabled="!tossLanded">Weiter zu den Kategorien <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
+                </div>
+              </template>
+
+              <template v-else-if="activeVariant.id === 'toss-hero'">
+                <div class="tv-stage">
+                  <ClientOnly><TossCoin :key="tossRun" :names="tossNames" :result="tossResult" :finish="tossFinish" @landed="tossLanded = true" /></ClientOnly>
+                </div>
+                <div class="tv-rail">
+                  <dl class="tv-legend tv-legend--inline">
+                    <div :class="{ 'tv-legend--won': tossLanded && tossResult === 'kopf' }"><dt>Kopf</dt><dd>{{ tossNames[0] }}</dd></div>
+                    <div :class="{ 'tv-legend--won': tossLanded && tossResult === 'zahl' }"><dt>Zahl</dt><dd>{{ tossNames[1] }}</dd></div>
+                  </dl>
+                  <p class="tv-verdict">{{ tossLanded ? `${tossWinner} beginnt.` : 'Die Münze fliegt …' }}</p>
+                  <button type="button" class="tv-action" :disabled="!tossLanded">Weiter <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
+                </div>
+              </template>
+
+              <template v-else>
+                <div class="tv-words">
+                  <div class="tv-word tv-word--kopf"><strong>Kopf</strong><span>{{ tossNames[0] }}</span></div>
+                  <ClientOnly><TossCoin :key="tossRun" :names="tossNames" :result="tossResult" :finish="tossFinish" @landed="tossLanded = true" /></ClientOnly>
+                  <div class="tv-word tv-word--zahl"><strong>Zahl</strong><span>{{ tossNames[1] }}</span></div>
+                </div>
+                <div class="tv-foot tv-foot--split">
+                  <p class="tv-status">{{ tossLanded ? `${tossWinner} beginnt.` : 'Die Münze fliegt …' }}</p>
+                  <button type="button" class="tv-action" :disabled="!tossLanded">Weiter zu den Kategorien <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
+                </div>
+              </template>
+            </div>
+
             <!-- Question studies: one DOM, five layouts. Each fits its frame without scrolling. -->
             <div v-else-if="activeScreen === 'question'" class="study qv" :class="[`qv--${activeVariant.id}`, { 'qv--warning': labSeconds <= 10 }]" :style="{ '--q-progress': labTimerProgress }">
               <div class="qv-grid">
@@ -596,6 +696,27 @@ function isSelectedSetupOption(value: number | string) {
             <span><b class="preview-dot preview-dot--gold" /> Click the specimen to feel the flow</span>
             <span class="preview-footer-key">{{ activeVariant.code }} / {{ activeVariant.label.toUpperCase() }}</span>
           </div>
+
+          <section v-if="activeScreen === 'toss'" class="config-variant-dock" aria-label="Münze testen">
+            <div class="config-variant-dock-head"><span>Coin finish</span><span>Lesbarkeit testen</span></div>
+            <div class="config-variant-grid config-variant-grid--four">
+              <button v-for="finish in tossFinishes" :key="finish.id" type="button" class="config-variant-option grain-option" :class="{ 'config-variant-option--active': tossFinish === finish.id }" :aria-pressed="tossFinish === finish.id" @click="tossFinish = finish.id">
+                <span class="grain-swatch" aria-hidden="true"><i v-for="color in finish.swatches" :key="color" :style="{ background: color }" /></span>
+                <span class="config-variant-copy"><strong>{{ finish.label }}</strong><small>{{ finish.note }}</small></span>
+              </button>
+            </div>
+            <div class="config-variant-dock-head tv-dock-row"><span>Teamnamen &amp; Wurf</span><span>Kurz, lang, nochmal</span></div>
+            <div class="config-variant-grid config-variant-grid--four">
+              <button v-for="set in (['short', 'long'] as const)" :key="set" type="button" class="config-variant-option" :class="{ 'config-variant-option--active': tossNameSet === set }" :aria-pressed="tossNameSet === set" @click="tossNameSet = set">
+                <span class="config-variant-code">{{ set === 'short' ? 'S' : 'XL' }}</span>
+                <span class="config-variant-copy"><strong>{{ set === 'short' ? 'Kurze Namen' : 'Lange Namen' }}</strong><small>{{ tossNameSets[set].join(' · ') }}</small></span>
+              </button>
+              <button v-for="side in (['kopf', 'zahl'] as const)" :key="side" type="button" class="config-variant-option" @click="throwCoin(side)">
+                <span class="config-variant-code"><Icon name="lucide:rotate-ccw" size="15" aria-hidden="true" /></span>
+                <span class="config-variant-copy"><strong>Nochmal werfen</strong><small>Landet auf {{ side === 'kopf' ? 'Kopf' : 'Zahl' }}</small></span>
+              </button>
+            </div>
+          </section>
 
           <section v-if="activeScreen === 'question'" class="config-variant-dock" aria-label="Fragelänge testen">
             <div class="config-variant-dock-head"><span>Question length</span><span>Skalierung testen</span></div>
@@ -702,7 +823,7 @@ function isSelectedSetupOption(value: number | string) {
 .stamp-number { font-family: var(--font-display); font-size: 2.8rem; line-height: .8; }
 .stamp-copy { font-size: .62rem; font-weight: 700; letter-spacing: .15em; line-height: 1.25; text-transform: uppercase; }
 
-.screen-switcher { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--lab-line); border-bottom: 1px solid var(--lab-line); }
+.screen-switcher { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--lab-line); border-bottom: 1px solid var(--lab-line); }
 .screen-tab { display: flex; align-items: center; gap: 1.1rem; min-height: 85px; border: 0; border-right: 1px solid var(--lab-line); background: transparent; color: var(--lab-muted); padding: 1rem 1.3rem; text-align: left; transition: background 180ms ease, color 180ms ease; }
 .screen-tab:last-child { border-right: 0; }
 .screen-tab:hover, .screen-tab--active { background: var(--lab-jungle); color: var(--lab-cream); }
@@ -809,6 +930,79 @@ button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid 
 .config-variant-dock-head span:first-child { color: var(--lab-gold); }
 .config-variant-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .6rem; margin-top: .8rem; }
 .config-variant-grid--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.config-variant-grid--four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tv-dock-row { margin-top: 1.2rem; }
+
+/* Coin toss studies. Sized in container units so each layout is judged at a
+   fixed 650px stage height, like the question studies. */
+.tv { --t-ink: #081811; --t-forest: #0b4429; --t-cream: #fbf8ed; --t-accent: #caff4a; --t-leaf: #e7f7b6; --t-muted: #8fc7a2; --t-line: rgb(251 248 237 / 18%); container-type: size; display: grid; height: 650px; min-height: 0; overflow: hidden; padding: 0; background: var(--t-ink); color: var(--t-cream); }
+.tv h2 { color: var(--t-cream); }
+.tv h2 em { color: var(--t-leaf); }
+.tv-top { display: flex; justify-content: space-between; align-items: center; padding: 4.4cqh 4cqw 0; color: var(--t-accent); font-size: .62rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; }
+.tv-brand { color: var(--t-cream); font-family: var(--font-display); font-size: 1rem; font-weight: 600; letter-spacing: -.03em; text-transform: none; }
+.tv-brand i { color: var(--lab-gold); font-style: normal; }
+.tv .tv-status { margin: 0; color: var(--t-muted); font-size: .92rem; font-weight: 600; transition: color 220ms ease-out; }
+.tv--landed .tv-status { color: var(--t-accent); }
+.tv-action { display: inline-flex; align-items: center; justify-content: space-between; gap: 1rem; min-width: 14rem; min-height: 46px; border: 1px solid var(--t-cream); border-radius: .65rem; background: var(--t-cream); color: var(--t-ink); padding: .75rem 1rem; font-size: .7rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; transition: opacity 260ms ease-out, background 180ms ease, border-color 180ms ease, transform 180ms ease; }
+.tv-action:hover:not(:disabled) { border-color: var(--t-accent); background: var(--t-accent); transform: translateY(-2px); }
+.tv-action:disabled { opacity: .3; cursor: wait; }
+.tv-legend { display: grid; gap: .5rem; margin: 0; }
+.tv-legend div { display: flex; align-items: baseline; gap: .9rem; color: var(--t-muted); transition: color 260ms ease-out, opacity 260ms ease-out; }
+.tv-legend dt { width: 3rem; font-size: .6rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.tv-legend dd { margin: 0; color: var(--t-cream); font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; letter-spacing: -.02em; }
+.tv--landed .tv-legend div:not(.tv-legend--won) { opacity: .38; }
+.tv-legend--won, .tv-legend--won dd { color: var(--t-accent); }
+
+/* T1: copy column left, the coin gets its own forest field on the right. */
+.tv--toss-split { grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+.tv--toss-split .tv-top { grid-column: 1; }
+.tv--toss-split .tv-copy { grid-column: 1; grid-row: 2; display: grid; align-content: center; justify-items: start; gap: 2.6cqh; padding: 0 4cqw 6cqh; }
+.tv--toss-split .tv-copy h2 { margin: 0 0 1cqh; font-size: min(8.4cqw, 19cqh); line-height: .84; letter-spacing: -.045em; }
+.tv--toss-split .tv-field { grid-column: 2; grid-row: 1 / -1; display: grid; place-items: center; align-content: center; gap: 4cqh; background: var(--t-forest); padding: 6cqh 3cqw; }
+.tv--toss-split .toss-coin { width: min(40cqh, 26cqw); }
+.tv--toss-split .tv-legend { width: min(100%, 22rem); border-top: 1px solid var(--t-line); padding-top: 2cqh; }
+
+/* T2: versus world from the setup screen. Teams flank the coin. */
+.tv--toss-versus { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.tv--toss-versus .tv-question { margin: 3cqh 0 0; text-align: center; font-size: min(4.6cqw, 9cqh); letter-spacing: -.04em; }
+.tv-duel { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 3cqw; padding: 0 4cqw; }
+.tv-duel .toss-coin { width: min(38cqh, 24cqw); }
+.tv-team { display: grid; gap: 1.2cqh; transition: opacity 320ms ease-out, color 320ms ease-out; }
+.tv-team--kopf { justify-items: end; text-align: right; }
+.tv-team span { color: var(--t-muted); font-size: .62rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+.tv-team strong { font-family: var(--font-display); font-size: min(4.4cqw, 10cqh); font-weight: 500; letter-spacing: -.035em; line-height: .9; overflow-wrap: anywhere; }
+.tv-team small { width: max-content; border-radius: 99px; background: var(--t-accent); color: var(--t-ink); padding: .35rem .65rem; font-size: .6rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: 0; transform: translateY(6px); transition: opacity 260ms ease-out, transform 260ms ease-out; }
+.tv--landed.tv--kopf .tv-team--zahl, .tv--landed.tv--zahl .tv-team--kopf { opacity: .3; }
+.tv--landed.tv--kopf .tv-team--kopf, .tv--landed.tv--zahl .tv-team--zahl { color: var(--t-accent); }
+.tv--landed.tv--kopf .tv-team--kopf small, .tv--landed.tv--zahl .tv-team--zahl small { opacity: 1; transform: none; }
+.tv-foot { display: flex; flex-direction: column; align-items: center; gap: 2cqh; padding: 0 4cqw 5cqh; }
+
+/* T3: the coin is the headline. Everything else sits in one bottom rail. */
+.tv--toss-hero { grid-template-rows: auto minmax(0, 1fr) auto; }
+.tv-stage { display: grid; place-items: end center; padding-bottom: 6cqh; }
+.tv-stage .toss-coin { width: min(44cqh, 34cqw); }
+.tv-rail { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 2rem; margin: 0 4cqw; border-top: 1px solid var(--t-line); padding: 3cqh 0 4.4cqh; }
+.tv-rail .tv-action { justify-self: end; min-width: 9rem; }
+.tv-legend--inline { gap: .25rem; }
+.tv-legend--inline dd { font-size: .95rem; }
+.tv .tv-verdict { margin: 0; color: var(--t-muted); font-family: var(--font-display); font-size: min(3.6cqw, 7cqh); font-weight: 500; letter-spacing: -.035em; text-align: center; transition: color 260ms ease-out; }
+.tv--landed .tv-verdict { color: var(--t-accent); }
+
+/* T4: KOPF and ZAHL as the typography. The coin lands between the words. */
+.tv--toss-words { grid-template-rows: auto minmax(0, 1fr) auto; }
+.tv-words { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 3.5cqw; padding: 0 3cqw; }
+.tv-words .toss-coin { width: min(34cqh, 21cqw); }
+.tv-word { display: grid; gap: 1.6cqh; transition: opacity 320ms ease-out; }
+.tv-word--kopf { justify-items: end; text-align: right; }
+.tv-word strong { font-family: var(--font-display); font-size: min(13cqw, 27cqh); font-weight: 600; letter-spacing: -.04em; line-height: .78; transition: color 320ms ease-out; }
+.tv-word span { color: var(--t-muted); font-size: .75rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.tv--landed.tv--kopf .tv-word--kopf strong, .tv--landed.tv--zahl .tv-word--zahl strong { color: var(--t-accent); }
+.tv--landed.tv--kopf .tv-word--zahl, .tv--landed.tv--zahl .tv-word--kopf { opacity: .22; }
+.tv-foot--split { flex-direction: row; justify-content: space-between; margin: 0 4cqw; border-top: 1px solid var(--t-line); padding: 3cqh 0 4.4cqh; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tv *, .tv { transition: none !important; }
+}
 .config-variant-option { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: .65rem; min-height: 74px; border: 1px solid var(--lab-line); background: transparent; color: var(--lab-muted); cursor: pointer; padding: .75rem; text-align: left; transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease; }
 .config-variant-option:hover, .config-variant-option--active { border-color: var(--lab-gold); background: var(--lab-jungle); color: var(--lab-cream); transform: translateY(-2px); }
 .config-variant-code { display: grid; width: 1.35rem; height: 1.35rem; place-items: center; border: 1px solid currentcolor; color: var(--lab-gold); font-family: var(--font-display); font-size: .68rem; }

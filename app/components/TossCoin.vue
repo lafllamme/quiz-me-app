@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import type { CoinFaceSpec } from '~/lib/coin-face'
+import type { CoinFaceSpec, CoinFinish } from '~/lib/coin-face'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { loadCoinRuntime, paintCoinEdge, paintCoinFace } from '~/lib/coin-face'
+import { coinEdgeMetal, loadCoinRuntime, paintCoinEdge, paintCoinFace } from '~/lib/coin-face'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   names: [string, string]
   result: 'kopf' | 'zahl'
-}>()
+  finish?: CoinFinish
+}>(), { finish: 'gold' })
 
 const emit = defineEmits<{ landed: [] }>()
 
@@ -45,8 +46,8 @@ async function mountCoin() {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.outputColorSpace = THREE.SRGBColorSpace
-  renderer.toneMapping = THREE.ACESFilmicToneMapping
-  renderer.toneMappingExposure = 1.05
+  renderer.toneMapping = THREE.NeutralToneMapping
+  renderer.toneMappingExposure = 1
   el.appendChild(renderer.domElement)
 
   const scene = new THREE.Scene()
@@ -73,21 +74,22 @@ async function mountCoin() {
   }
 
   const faceMaterial = (spec: CoinFaceSpec, rotation: number) => {
-    const map = texture(paintCoinFace(spec, 'color'), true)
-    const bumpMap = texture(paintCoinFace(spec, 'height'), false)
-    for (const t of [map, bumpMap]) {
+    const map = texture(paintCoinFace(spec, 'color', props.finish), true)
+    const bumpMap = texture(paintCoinFace(spec, 'height', props.finish), false)
+    const metalnessMap = texture(paintCoinFace(spec, 'metal', props.finish), false)
+    for (const t of [map, bumpMap, metalnessMap]) {
       t.rotation = rotation
       t.repeat.set(-1, -1)
     }
-    return new THREE.MeshStandardMaterial({ map, bumpMap, bumpScale: 2.2, metalness: 0.9, roughness: 0.34 })
+    return new THREE.MeshStandardMaterial({ map, bumpMap, metalnessMap, bumpScale: 2.2, metalness: 0.9, roughness: 0.34 })
   }
 
-  const edgeMap = texture(paintCoinEdge('color'), true)
+  const edgeMap = texture(paintCoinEdge('color', coinEdgeMetal(props.finish)), true)
   const edgeBump = texture(paintCoinEdge('height'), false)
   const materials = [
     new THREE.MeshStandardMaterial({ map: edgeMap, bumpMap: edgeBump, bumpScale: 1.5, metalness: 0.95, roughness: 0.3 }),
-    faceMaterial({ team: props.names[0], side: 'Kopf', caption: 'TEAM 1 · BEGINNT BEI KOPF' }, -Math.PI / 2),
-    faceMaterial({ team: props.names[1], side: 'Zahl', caption: 'TEAM 2 · BEGINNT BEI ZAHL' }, Math.PI / 2),
+    faceMaterial({ team: props.names[0], side: 'Kopf', caption: 'TEAM 1 · BEGINNT BEI KOPF', numeral: '1' }, -Math.PI / 2),
+    faceMaterial({ team: props.names[1], side: 'Zahl', caption: 'TEAM 2 · BEGINNT BEI ZAHL', numeral: '2' }, Math.PI / 2),
   ]
 
   // Cylinder groups: 0 = side, 1 = top cap (+Y, Kopf), 2 = bottom cap (-Y, Zahl).

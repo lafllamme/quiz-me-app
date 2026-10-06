@@ -19,7 +19,7 @@ test.describe('Jungle Quiz flow', () => {
     const startButton = page.locator('.game-setup-action')
     await expect(startButton).toBeVisible()
     await startButton.click()
-    await expect(page.getByText('Die Münze')).toBeVisible({ timeout: 3_000 })
+    await expect(page.getByRole('heading', { name: 'Wer fängt an?' })).toBeVisible({ timeout: 3_000 })
     await page.getByRole('button', { name: /Weiter zu den Kategorien/i }).click()
 
     const categoryOptions = page.locator('.category-board-option')

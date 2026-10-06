@@ -1699,42 +1699,94 @@ button:disabled {
   display: grid;
   width: min(100%, 100rem);
   min-height: 100svh;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   margin: 0 auto;
-  padding: clamp(7rem, 11vw, 9rem) var(--page-gutter) clamp(1.75rem, 4vw, 3.5rem);
+  padding: clamp(6.5rem, 10vw, 8.5rem) var(--page-gutter) clamp(1.5rem, 3.5vw, 3rem);
 }
 
-.coin-toss-stage__meta,
-.coin-toss-stage__foot {
+.coin-toss-stage__meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  color: var(--toss-muted);
+  color: var(--toss-accent);
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
-.coin-toss-stage__meta span:first-child,
-.coin-toss-stage__meta span:last-child { color: var(--toss-accent); }
-
-.coin-toss-stage__center {
+/* Versus axis: Kopf team | coin | Zahl team. The coin layout box is only the
+   coin; its canvas grows upwards for the flight without pushing anything. */
+.coin-toss-duel {
   display: grid;
-  align-content: center;
-  justify-items: center;
-  padding: 3rem 0;
-  text-align: center;
+  grid-template-areas: 'kopf coin zahl';
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 4rem);
+  padding: clamp(1rem, 3vh, 2.5rem) 0;
 }
 
-.coin-toss-stage__eyebrow {
-  margin: 0 0 1.8rem;
-  color: var(--toss-accent);
-  font-size: 0.7rem;
+.coin-toss-duel .toss-coin {
+  grid-area: coin;
+  width: clamp(13rem, min(24vw, 36svh), 22rem);
+}
+
+.coin-toss-team {
+  display: grid;
+  gap: 0.8rem;
+  min-width: 0;
+  transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1), color 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.coin-toss-team--kopf {
+  grid-area: kopf;
+  justify-items: end;
+  text-align: right;
+}
+
+.coin-toss-team--zahl { grid-area: zahl; }
+
+.coin-toss-team span {
+  color: var(--toss-muted);
+  font-size: 0.66rem;
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
+}
+
+.coin-toss-team strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4.2vw, 4.4rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.92;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.coin-toss-team small {
+  width: max-content;
+  border-radius: 99px;
+  background: var(--toss-accent);
+  color: var(--toss-ink);
+  padding: 0.38rem 0.7rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 260ms cubic-bezier(0.22, 1, 0.36, 1), transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.coin-toss-stage--revealed .coin-toss-team:not(.coin-toss-team--won) { opacity: 0.3; }
+.coin-toss-team--won { color: var(--toss-accent); }
+
+.coin-toss-team--won small {
+  opacity: 1;
+  transform: none;
 }
 
 .toss-coin {
@@ -1817,30 +1869,31 @@ button:disabled {
 }
 
 .coin-toss-stage h1 {
-  margin: clamp(2rem, 4vw, 3.8rem) 0 0;
+  margin: clamp(1.25rem, 3.5vh, 2.5rem) 0 0;
   color: var(--toss-cream);
   font-family: var(--font-display);
-  font-size: clamp(3.8rem, 8.7vw, 8.8rem);
+  font-size: clamp(2.6rem, min(5.4vw, 9svh), 5.4rem);
   font-weight: 500;
-  letter-spacing: -0.055em;
-  line-height: 0.82;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  text-align: center;
 }
 
-.coin-toss-stage h1 em {
-  color: var(--toss-leaf);
-  font-style: normal;
+.coin-toss-stage__foot {
+  display: grid;
+  justify-items: center;
+  gap: 1.1rem;
 }
 
-.coin-toss-stage__hint {
-  margin: 1.6rem 0 0;
+.coin-toss-stage__status {
+  margin: 0;
   color: var(--toss-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: color 260ms ease-out;
 }
 
-.coin-toss-stage__hint strong {
-  color: var(--toss-accent);
-  font-weight: 600;
-}
+.coin-toss-stage--revealed .coin-toss-stage__status { color: var(--toss-accent); }
 
 .coin-toss-stage__continue {
   display: inline-flex;
@@ -1849,7 +1902,6 @@ button:disabled {
   justify-content: space-between;
   gap: 1rem;
   min-height: 3.25rem;
-  margin-top: 2rem;
   border: 1px solid var(--toss-cream);
   border-radius: 0.65rem;
   background: var(--toss-cream);
@@ -1859,7 +1911,7 @@ button:disabled {
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, opacity 180ms ease, transform 180ms ease;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, opacity 260ms ease-out, transform 180ms ease;
 }
 
 .coin-toss-stage__continue:hover:not(:disabled),
@@ -1872,12 +1924,7 @@ button:disabled {
 
 .coin-toss-stage__continue:disabled {
   cursor: wait;
-  opacity: 0.35;
-}
-
-.coin-toss-stage__foot {
-  border-top: 1px solid rgb(251 248 237 / 18%);
-  padding-top: 0.9rem;
+  opacity: 0.3;
 }
 
 .game-screen-shell[data-screen='final'],
@@ -1918,17 +1965,35 @@ button:disabled {
 
 @media (max-width: 809px) {
   .coin-toss-stage__inner {
-    padding-top: 6.75rem;
+    padding-top: 6.25rem;
   }
 
   .coin-toss-stage h1 {
-    font-size: clamp(3.5rem, 17vw, 6.2rem);
+    font-size: clamp(2.4rem, 12vw, 3.4rem);
   }
 
-  .coin-toss-stage__meta,
-  .coin-toss-stage__foot {
+  .coin-toss-stage__meta {
     font-size: 0.54rem;
   }
+
+  /* Coin on top, the two teams side by side underneath. */
+  .coin-toss-duel {
+    grid-template-areas: 'coin coin' 'kopf zahl';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    justify-items: center;
+    row-gap: 1.75rem;
+    column-gap: 1rem;
+  }
+
+  .coin-toss-duel .toss-coin { width: min(58vw, 32svh); }
+
+  .coin-toss-team,
+  .coin-toss-team--kopf {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .coin-toss-team strong { font-size: clamp(1.4rem, 7vw, 2rem); }
 
   .coin-toss-stage__continue {
     width: min(100%, 19rem);
@@ -1950,6 +2015,8 @@ button:disabled {
   .stage-enter-active,
   .stage-leave-active,
   .coin-toss-token,
+  .coin-toss-team,
+  .coin-toss-team small,
   .brand-logo--button {
     animation: none;
     transition: none;
