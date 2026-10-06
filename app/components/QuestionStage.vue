@@ -61,6 +61,7 @@ function optionClass(index: number) {
             :key="option"
             class="answer-option"
             :class="optionClass(index)"
+            data-uisfx-hover="hover"
             :disabled="resolved || revealed"
             :aria-label="`Antwort ${letters[index]}: ${option}`"
             @click="emit('select', index)"
@@ -79,8 +80,8 @@ function optionClass(index: number) {
         <div class="timer-unit">Sekunden</div>
         <div class="timer-track" aria-hidden="true"><span :style="{ transform: 'scaleX(' + Math.max(0, Math.min(1, timeRemaining / timeLimit)) + ')' }" /></div>
         <div v-if="!timeExpired" class="mt-5 flex flex-wrap gap-2">
-          <button class="timer-control" @click="emit('toggleTimer')">{{ timerRunning ? 'Pause' : 'Weiter' }}</button>
-          <button class="timer-control" @click="emit('resetTimer')">Reset</button>
+          <button data-uisfx-hover="hover" data-uisfx-press="press" class="timer-control" @click="emit('toggleTimer')">{{ timerRunning ? 'Pause' : 'Weiter' }}</button>
+          <button data-uisfx-hover="hover" data-uisfx-press="press" class="timer-control" @click="emit('resetTimer')">Reset</button>
         </div>
       </aside>
     </div>
@@ -95,8 +96,8 @@ function optionClass(index: number) {
     </div>
 
     <div class="mt-7 flex flex-wrap items-center justify-between gap-3">
-      <button v-if="!resolved && !revealed && !timeExpired" class="text-action" @click="emit('reveal')">Antwort zeigen <span>A</span></button>
-      <button v-if="resolved" class="button-primary" @click="emit('next')">Weiter <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
+      <button v-if="!resolved && !revealed && !timeExpired" data-uisfx-hover="hover" data-uisfx-press="press" class="text-action" @click="emit('reveal')">Antwort zeigen <span>A</span></button>
+      <button v-if="resolved" data-uisfx-hover="hover" data-uisfx-press="press" class="button-primary" @click="emit('next')">Weiter <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
       <p v-if="timeExpired && !resolved" class="timeout-notice" role="status">Zeit abgelaufen — jetzt Antwort wählen.</p>
       <p v-else class="ml-auto text-right text-xs uppercase tracking-[0.12em] text-muted">{{ resolved ? 'Punktestand aktualisiert' : 'Wähle A, B, C oder D' }}</p>
     </div>

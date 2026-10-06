@@ -90,7 +90,7 @@ const activeSystem = computed(() => systems.find(system => system.id === activeI
         <aside class="lg:sticky lg:top-6 lg:self-start">
           <p class="eyebrow mb-4">Choose a system</p>
           <div class="space-y-1">
-            <button v-for="(system, index) in systems" :key="system.id" class="flex w-full items-start gap-3 border-0 border-b border-white/10 bg-transparent px-0 py-4 text-left transition hover:text-gold" :class="activeId === system.id ? 'text-cream' : 'text-muted'" @click="activeId = system.id">
+            <button v-for="(system, index) in systems" :key="system.id" data-uisfx-hover="hover" data-uisfx="select" class="flex w-full items-start gap-3 border-0 border-b border-white/10 bg-transparent px-0 py-4 text-left transition hover:text-gold" :class="activeId === system.id ? 'text-cream' : 'text-muted'" @click="activeId = system.id">
               <span class="font-sans text-xs text-gold">0{{ index + 1 }}</span>
               <span>
                 <strong class="block font-600">{{ system.name }}</strong>
@@ -122,7 +122,7 @@ const activeSystem = computed(() => systems.find(system => system.id === activeI
                   <span class="type-ui-label">Antwortzeit</span>
                   <span class="type-timer">15</span>
                 </div>
-                <button class="type-cta">Spiel starten <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button>
+                <button data-uisfx-hover="hover" data-uisfx-press="press" class="type-cta">Spiel starten <Icon name="lucide:arrow-up-right" size="16" aria-hidden="true" /></button>
               </div>
             </div>
             <div class="grid gap-6 border-t border-current/15 pt-6 sm:grid-cols-3">
@@ -153,7 +153,7 @@ const activeSystem = computed(() => systems.find(system => system.id === activeI
           <p class="max-w-[28ch] text-sm leading-relaxed text-muted">Klick auf einen Streifen, um das große Specimen oben zu wechseln.</p>
         </div>
         <div class="mt-8 grid gap-2 lg:grid-cols-4">
-          <button v-for="(system, index) in systems" :key="system.id" class="type-compare" :class="activeId === system.id ? 'type-compare--active' : ''" :style="system.vars" @click="activeId = system.id">
+          <button v-for="(system, index) in systems" :key="system.id" data-uisfx-hover="hover" data-uisfx="select" class="type-compare" :class="activeId === system.id ? 'type-compare--active' : ''" :style="system.vars" @click="activeId = system.id">
             <span class="type-compare-meta">0{{ index + 1 }} / {{ system.name }}</span>
             <strong class="type-compare-word">Jungle fever</strong>
             <span class="type-compare-ui">{{ system.uiFont }}</span>

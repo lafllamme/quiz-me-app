@@ -22,7 +22,8 @@ const trackSources: Record<TrackName, string> = {
 }
 
 export function useSound() {
-  const enabled = ref(true)
+  const enabled = useState<boolean>('jungle-sound-enabled', () => true)
+  const uiSfx = useUiSfx()
   let context: AudioContext | null = null
   const tracks = new Map<TrackName, HTMLAudioElement>()
 
@@ -121,6 +122,7 @@ export function useSound() {
 
   function toggle() {
     enabled.value = !enabled.value
+    uiSfx.setEnabled(enabled.value)
     if (enabled.value)
       play('menu')
     else

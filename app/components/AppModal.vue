@@ -24,7 +24,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
       <section class="max-h-[90vh] w-full max-w-2xl overflow-auto border border-line bg-jungle p-7 shadow-[0_24px_70px_rgba(0,0,0,0.35)] md:p-9" role="dialog" aria-modal="true" :aria-label="title">
         <div class="flex items-start justify-between gap-5">
           <h2 class="display text-4xl md:text-5xl">{{ title }}</h2>
-          <button ref="closeButton" class="button-base border-0 p-2 text-muted hover:bg-white/6 hover:text-cream" aria-label="Dialog schließen" @click="emit('close')"><Icon name="lucide:x" size="20" aria-hidden="true" /></button>
+          <button ref="closeButton" data-uisfx-hover="hover" data-uisfx="close" class="button-base border-0 p-2 text-muted hover:bg-white/6 hover:text-cream" aria-label="Dialog schließen" @click="emit('close')"><Icon name="lucide:x" size="20" aria-hidden="true" /></button>
         </div>
         <div class="mt-7 text-[15px] leading-relaxed text-muted">
           <slot />

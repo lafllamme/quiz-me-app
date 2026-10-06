@@ -48,12 +48,12 @@ function start() {
       </h1>
       <p class="mt-8 max-w-[34rem] text-lg leading-relaxed text-muted">Zwei Teams. Vier Kategorien. Eine Chance zum Steal.</p>
       <div class="mt-8 flex flex-wrap gap-3">
-        <button class="button-primary" @click="start">
+        <button data-uisfx-hover="hover" class="button-primary" @click="start">
           <Icon name="lucide:play" size="17" aria-hidden="true" />
           {{ hasSavedGame ? 'Spiel fortsetzen' : 'Spiel starten' }}
         </button>
-        <button class="button-quiet" @click="emit('newGame', payload)">{{ hasSavedGame ? 'Neues Spiel' : 'Schnellstart' }}</button>
-        <button class="button-quiet" @click="emit('rules')">
+        <button data-uisfx-hover="hover" class="button-quiet" @click="emit('newGame', payload)">{{ hasSavedGame ? 'Neues Spiel' : 'Schnellstart' }}</button>
+        <button data-uisfx-hover="hover" data-uisfx="open" class="button-quiet" @click="emit('rules')">
           <Icon name="lucide:circle-help" size="17" aria-hidden="true" />
           Regeln
         </button>
@@ -92,7 +92,7 @@ function start() {
       </div>
       <div class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
         <span class="text-xs text-muted">{{ questionCount }} Beispiel-Fragen · Inhalt austauschbar</span>
-        <button type="button" class="button-quiet px-3 py-2.5 text-xs" @click="emit('settings')">Weitere Einstellungen</button>
+        <button type="button" data-uisfx-hover="hover" data-uisfx="open" class="button-quiet px-3 py-2.5 text-xs" @click="emit('settings')">Weitere Einstellungen</button>
       </div>
     </form>
   </section>
