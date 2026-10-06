@@ -427,7 +427,7 @@ button:disabled {
 .game-setup-form {
   align-self: center;
   width: calc(100% - 4rem);
-  max-width: 36rem;
+  max-width: 39rem;
   margin: 2rem auto;
   border: 1px solid var(--setup-line);
   padding: 1.25rem;
@@ -449,13 +449,23 @@ button:disabled {
 
 .game-setup-team-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
+  gap: 0;
   margin-top: 1.25rem;
 }
 
+.game-setup-player-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
 .game-setup-form label {
-  display: block;
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 4.6rem;
+  border-bottom: 1px solid var(--setup-line);
   color: var(--setup-accent);
   font-size: 0.63rem;
   font-weight: 700;
@@ -464,7 +474,7 @@ button:disabled {
 }
 
 .game-setup-form label + label {
-  margin-top: 1.15rem;
+  margin-top: 0;
 }
 
 .game-setup-form label small {
@@ -472,6 +482,7 @@ button:disabled {
   font-size: 0.58rem;
   font-weight: 500;
   letter-spacing: 0.03em;
+  white-space: nowrap;
   text-transform: none;
 }
 
@@ -486,6 +497,13 @@ button:disabled {
   color: var(--setup-cream);
   outline: none;
   padding: 0.65rem 0;
+}
+
+.game-setup-form label > input {
+  min-width: 0;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .game-setup-form textarea {
@@ -514,8 +532,8 @@ button:disabled {
 }
 
 .game-setup-config label {
-  display: grid;
-  gap: 0.35rem;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  min-height: 4.1rem;
 }
 
 .game-setup-form select {
@@ -630,7 +648,7 @@ button:disabled {
 }
 
 @media (max-width: 560px) {
-  .game-setup-team-grid,
+  .game-setup-player-grid,
   .game-setup-config {
     grid-template-columns: 1fr;
   }

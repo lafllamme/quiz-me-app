@@ -25,7 +25,7 @@ function updateName(index: 0 | 1, event: Event) {
 
 function updatePlayers(index: 0 | 1, event: Event) {
   const players = [...props.draft.players] as [string, string]
-  players[index] = (event.target as HTMLTextAreaElement).value
+  players[index] = (event.target as HTMLInputElement).value
   emit('update:players', players)
 }
 
@@ -43,18 +43,20 @@ function updateNumber(field: 'rounds' | 'seconds', event: Event) {
   <form class="game-setup-form" @submit.prevent="emit('start')">
     <div class="game-setup-form-head"><span>Teamnamen</span><span>Bereit?</span></div>
     <div class="game-setup-team-grid">
-      <div>
-        <label for="team-one">Team eins</label>
+      <label for="team-one"><span>Team eins</span>
         <input id="team-one" :value="draft.names[0]" maxlength="28" autocomplete="off" @input="updateName(0, $event)">
-        <label for="players-one">Namen <small>· optional</small></label>
-        <textarea id="players-one" :value="draft.players[0]" placeholder="Mit Komma trennen" @input="updatePlayers(0, $event)" />
-      </div>
-      <div>
-        <label for="team-two">Team zwei</label>
+      </label>
+      <label for="team-two"><span>Team zwei</span>
         <input id="team-two" :value="draft.names[1]" maxlength="28" autocomplete="off" @input="updateName(1, $event)">
-        <label for="players-two">Namen <small>· optional</small></label>
-        <textarea id="players-two" :value="draft.players[1]" placeholder="Mit Komma trennen" @input="updatePlayers(1, $event)" />
-      </div>
+      </label>
+    </div>
+    <div class="game-setup-player-grid">
+      <label for="players-one"><span>Namen <small>· optional</small></span>
+        <input id="players-one" :value="draft.players[0]" placeholder="Mit Komma trennen" @input="updatePlayers(0, $event)">
+      </label>
+      <label for="players-two"><span>Namen <small>· optional</small></span>
+        <input id="players-two" :value="draft.players[1]" placeholder="Mit Komma trennen" @input="updatePlayers(1, $event)">
+      </label>
     </div>
     <div class="game-setup-config">
       <label for="rounds">Runden<select id="rounds" :value="draft.rounds" @change="updateNumber('rounds', $event)"><option v-for="round in [4, 5, 6]" :key="round" :value="round">{{ round }}</option></select></label>
