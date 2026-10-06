@@ -7,8 +7,10 @@ export type CoinFaceSpec = {
   side: string
   caption: string
   numeral: string
-  portrait?: CanvasImageSource
+  portrait?: CoinPortrait
 }
+
+export type CoinPortrait = { relief: CanvasImageSource, frost: CanvasImageSource }
 
 // Bimetal follows the 2-euro coin: silver ring, gold core, a big numeral as
 // the image. Gold and enamel are single-metal struck coins.
@@ -39,18 +41,23 @@ const FACE_SIZE = 1024
 const DISPLAY_FONT = '"Clash Display", sans-serif'
 const UI_FONT = '"General Sans", sans-serif'
 
-// Relief height map of the Kopf portrait: grey levels are height, alpha is the
-// silhouette. Generated offline from a cut-out profile photo.
-const PORTRAIT_URL = '/coin/kopf-relief.png'
-let portraitPromise: Promise<HTMLImageElement> | undefined
+// Kopf portrait, generated offline by scripts/coin-portrait from a cut-out
+// profile photo. Relief: grey = height, alpha = silhouette. Frost: grey =
+// hair texture, alpha = hair coverage, so hair reads darker than the scalp.
+let portraitPromise: Promise<CoinPortrait> | undefined
 
-export function loadCoinPortrait() {
-  portraitPromise ??= new Promise((resolve, reject) => {
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image()
     img.onload = () => resolve(img)
     img.onerror = reject
-    img.src = PORTRAIT_URL
+    img.src = src
   })
+}
+
+export function loadCoinPortrait() {
+  portraitPromise ??= Promise.all([loadImage('/coin/kopf-relief.png'), loadImage('/coin/kopf-frost.png')])
+    .then(([relief, frost]) => ({ relief, frost }))
   return portraitPromise
 }
 
@@ -305,9 +312,9 @@ function paintBimetalFace(spec: CoinFaceSpec, mode: PaintMode, inverse: boolean)
 // Portrait layout of the Kopf side, like the national side of a euro coin:
 // profile facing left, truncated at the neck, the name in the free space
 // behind the head.
-const PORTRAIT_BOX = { x: -352, y: -318, size: 600 }
+const PORTRAIT_BOX = { x: -368, y: -330, size: 690 }
 
-function paintPortrait(ctx: CanvasRenderingContext2D, mode: PaintMode, img: CanvasImageSource, core: { light: string, mid: string, dark: string, shade: string }, c: number) {
+function paintPortrait(ctx: CanvasRenderingContext2D, mode: PaintMode, { relief: img, frost }: CoinPortrait, core: { light: string, mid: string, dark: string, shade: string }, c: number) {
   const x = c + PORTRAIT_BOX.x
   const y = c + PORTRAIT_BOX.y
   const { size } = PORTRAIT_BOX
@@ -332,6 +339,7 @@ function paintPortrait(ctx: CanvasRenderingContext2D, mode: PaintMode, img: Canv
   g.addColorStop(1, core.mid)
   l.fillStyle = g
   l.fillRect(0, 0, FACE_SIZE, FACE_SIZE)
+  l.drawImage(frost, x, y, size, size)
   l.globalCompositeOperation = 'destination-in'
   l.drawImage(img, x, y, size, size)
 
@@ -346,8 +354,8 @@ function paintPortrait(ctx: CanvasRenderingContext2D, mode: PaintMode, img: Canv
 
 function portraitName(ctx: CanvasRenderingContext2D, raw: string, c: number) {
   const name = raw.trim().toUpperCase() || 'TEAM'
-  const cx = c + 252
-  const maxWidth = 150
+  const cx = c + 262
+  const maxWidth = 136
   const lines = name.includes(' ') ? splitInTwo(name) : [name]
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
