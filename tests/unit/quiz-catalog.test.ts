@@ -25,7 +25,7 @@ describe('quiz catalog', () => {
   })
 
   it('does not ask the same question twice', () => {
-    const texts = QUESTIONS.map(question => question.question.trim().toLowerCase())
+    const texts = QUESTIONS.map(question => `${question.question.trim().toLowerCase()}|${question.answer.toLowerCase()}`)
     expect(new Set(texts).size).toBe(texts.length)
   })
 })

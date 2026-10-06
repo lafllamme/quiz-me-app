@@ -41,9 +41,16 @@ const timerProgress = computed(() => Math.max(0, Math.min(1, props.timeRemaining
 const seconds = computed(() => Math.ceil(props.timeRemaining))
 const isOpen = computed(() => !props.resolved && !props.revealed)
 const timerWarning = computed(() => isOpen.value && seconds.value <= 10)
+const media = computed(() => props.question.media)
+const isSwatch = computed(() => media.value?.kind === 'swatch')
+const displayMedia = computed(() => media.value?.kind === 'swatch' ? undefined : media.value)
+const answerLabel = computed(() => media.value?.kind === 'swatch' ? media.value.reveal : props.question.answer)
 
 // Long questions step down in size so the whole stage fits one screen without scrolling.
 const questionSize = computed(() => {
+  // Picture questions give the space to the image, so the text takes the smallest step.
+  if (displayMedia.value)
+    return 'xl'
   const length = props.question.question.length
   if (length <= 40)
     return 's'
@@ -92,6 +99,7 @@ function optionClass(index: number) {
       <div class="question-live-copy">
         <span class="question-live-category">{{ question.category }}</span>
         <h2 :class="`question-live-question--${questionSize}`">{{ question.question }}</h2>
+        <QuestionMediaPanel v-if="displayMedia" :key="question.id" :media="displayMedia" />
       </div>
 
       <aside class="question-live-timer" :class="{ 'question-live-timer--warning': timerWarning, 'question-live-timer--done': !isOpen }" aria-label="Antwortzeit">
@@ -105,7 +113,7 @@ function optionClass(index: number) {
       </aside>
     </div>
 
-    <div class="question-live-answers" aria-label="Antwortmöglichkeiten">
+    <div class="question-live-answers" :class="{ 'question-live-answers--swatch': isSwatch }" aria-label="Antwortmöglichkeiten">
       <button
         v-for="(option, index) in question.options"
         :key="option"
@@ -114,11 +122,12 @@ function optionClass(index: number) {
         data-uisfx-hover="hover"
         :disabled="!isOpen || wrongOptions.includes(index)"
         :aria-keyshortcuts="`${index + 1} ${letters[index]}`"
-        :aria-label="`Antwort ${letters[index]}: ${option}`"
+        :aria-label="isSwatch ? `Antwort ${letters[index]}: Farbe ${letters[index]}` : `Antwort ${letters[index]}: ${option}`"
         @click="emit('select', index)"
       >
         <span class="question-live-option-letter">{{ letters[index] }}</span>
-        <span class="question-live-option-copy">{{ option }}</span>
+        <span v-if="isSwatch" class="question-live-option-swatch" :style="{ background: option }" />
+        <span v-else class="question-live-option-copy">{{ option }}</span>
         <Icon v-if="!isOpen && index === question.correctIndex" name="lucide:check" size="22" aria-hidden="true" />
         <Icon v-else-if="wrongOptions.includes(index)" name="lucide:x" size="22" aria-hidden="true" />
       </button>
@@ -127,7 +136,7 @@ function optionClass(index: number) {
     <div class="question-live-foot">
       <div v-if="!isOpen" class="question-live-reveal">
         <span>{{ resolved && winner !== null ? 'Richtig' : 'Antwort' }}</span>
-        <strong>{{ question.answer }}</strong>
+        <strong>{{ answerLabel }}</strong>
         <p>{{ result }}<template v-if="drink && resolved"> · {{ winner === null ? 'Beide Teams: 1 Schluck' : `${winnerName}: 1 Schluck` }} (optional)</template></p>
       </div>
       <button v-else data-uisfx-hover="hover" data-uisfx-press="press" class="question-live-action" @click="emit('reveal')">Antwort zeigen <kbd>Z</kbd></button>
@@ -138,3 +147,24 @@ function optionClass(index: number) {
     </div>
   </section>
 </template>
+
+<style scoped>
+/* Colour-guess answers: the swatch is the option, so it fills the whole label area. */
+.question-live-option-swatch {
+  display: block;
+  align-self: stretch;
+  min-height: 2.6rem;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 0 0 1px rgb(251 248 237 / 18%);
+}
+
+/* After the reveal the wrong colours stay visible for comparison, just quieter. */
+.question-live-answers--swatch .question-live-option--muted {
+  opacity: 1;
+}
+
+.question-live-option--wrong .question-live-option-swatch,
+.question-live-option--muted .question-live-option-swatch {
+  opacity: 0.6;
+}
+</style>

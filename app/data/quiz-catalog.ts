@@ -5,7 +5,12 @@ import { knowledgeQuestions } from './catalog/knowledge'
 import { musicQuestions } from './catalog/music'
 import { nostalgiaQuestions } from './catalog/nostalgia'
 import { screenQuestions } from './catalog/screen'
+import { doodleQuestions } from './catalog/visual-doodle'
+import { emojiQuestions } from './catalog/visual-emoji'
+import { swatchQuestions } from './catalog/visual-swatch'
+import { trendQuestions } from './catalog/visual-trend'
 import type {
+  QuestionMedia,
   QuizCategory,
   QuizCategoryId,
   QuizQuestion,
@@ -17,8 +22,10 @@ export type {
   QuizCategory,
   QuizCategoryId,
   QuizQuestion,
+  QuestionMedia,
   QuestionTag,
   TieQuestion,
+  VisualKind,
 } from './quiz-catalog.types'
 
 export const QUIZ_CATEGORIES: readonly QuizCategory[] = [
@@ -37,6 +44,10 @@ const seeds: readonly QuestionSeed[] = [
   ...internetQuestions,
   ...knowledgeQuestions,
   ...nostalgiaQuestions,
+  ...emojiQuestions,
+  ...doodleQuestions,
+  ...trendQuestions,
+  ...swatchQuestions,
 ]
 
 function buildQuestion(seed: QuestionSeed): QuizQuestion {
@@ -75,6 +86,21 @@ export const CATALOG_STATS = Object.fromEntries(QUIZ_CATEGORIES.map(category => 
 /** Minimum questions per category and difficulty, so several game nights stay repeat-free. */
 export const MIN_QUESTIONS_PER_DIFFICULTY = 20
 
+const HEX_COLOUR = /^#[0-9A-F]{6}$/i
+
+function isValidMedia(media: QuestionMedia, options: readonly string[]) {
+  switch (media.kind) {
+    case 'emoji':
+      return media.symbols.trim().length > 0
+    case 'doodle':
+      return media.paths.length > 0 && /^[\d.\s-]+$/.test(media.viewBox)
+    case 'trend':
+      return media.values.length >= 12 && media.values.every(value => value >= 0 && value <= 100)
+    case 'swatch':
+      return media.reveal.length > 0 && options.every(option => HEX_COLOUR.test(option))
+  }
+}
+
 function validateCatalog() {
   const ids = new Set<string>()
   const texts = new Set<string>()
@@ -84,7 +110,8 @@ function validateCatalog() {
       throw new Error(`Duplicate quiz question id: ${question.id}`)
     ids.add(question.id)
 
-    const text = question.question.trim().toLowerCase()
+    // Picture questions share prompts like „Welcher Film ist das?“, so the answer is part of the key.
+    const text = `${question.question.trim().toLowerCase()}|${question.answer.toLowerCase()}`
     if (texts.has(text))
       throw new Error(`Duplicate quiz question text: ${question.id}`)
     texts.add(text)
@@ -94,6 +121,9 @@ function validateCatalog() {
 
     if (new Set(question.options).size !== question.options.length)
       throw new Error(`Duplicate answer options for quiz question: ${question.id}`)
+
+    if (question.media && !isValidMedia(question.media, question.options))
+      throw new Error(`Invalid media for quiz question: ${question.id}`)
   }
 
   for (const category of QUIZ_CATEGORIES) {

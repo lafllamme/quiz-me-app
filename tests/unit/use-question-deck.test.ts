@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { DIFFICULTY_WEIGHTS, QUESTION_HISTORY_KEY, arrangeOptions, chooseCorrectPosition, useQuestionDeck } from '~/composables/useQuestionDeck'
-import { QUESTIONS } from '~/data/quiz-catalog'
+import { BOARD_SIZE, DIFFICULTY_WEIGHTS, MAX_VISUAL_TILES, QUESTION_HISTORY_KEY, arrangeOptions, chooseCorrectPosition, useQuestionDeck } from '~/composables/useQuestionDeck'
+import { QUESTIONS, QUIZ_CATEGORIES } from '~/data/quiz-catalog'
 
 describe('useQuestionDeck', () => {
   beforeEach(() => {
@@ -109,5 +109,51 @@ describe('useQuestionDeck', () => {
 
     expect(presented.options[presented.correctIndex]).toBe(question.answer)
     expect(question.options).toEqual(original)
+  })
+
+  it('keeps plain tiles to text questions and visual tiles to their format', () => {
+    const deck = useQuestionDeck()
+    deck.hydrate()
+
+    for (let index = 0; index < 20; index++)
+      expect(deck.pickQuestion('Film & Serie', 'mixed')?.media).toBeUndefined()
+
+    const [kind] = deck.getVisualKinds('Film & Serie')
+    expect(kind).toBeDefined()
+    expect(deck.pickQuestion('Film & Serie', 'mixed', [], kind!)?.media?.kind).toBe(kind)
+  })
+
+  it('always fills the board to six tiles while the last category rests', () => {
+    const deck = useQuestionDeck()
+    deck.hydrate()
+
+    for (let round = 0; round < 50; round++) {
+      const tiles = deck.planBoard([], 'Musik', 'trend')
+      const kinds = tiles.map(tile => tile.visual).filter(Boolean)
+
+      expect(tiles).toHaveLength(BOARD_SIZE)
+      expect(tiles.map(tile => tile.category)).not.toContain('Musik')
+      expect(kinds).not.toContain('trend')
+      expect(kinds.length).toBeLessThanOrEqual(MAX_VISUAL_TILES)
+      expect(kinds.length).toBeGreaterThan(0)
+      expect(new Set(kinds).size).toBe(kinds.length)
+      expect(new Set(tiles.map(tile => `${tile.category}-${tile.visual}`)).size).toBe(BOARD_SIZE)
+      for (const tile of tiles) {
+        if (tile.visual)
+          expect(deck.getVisualKinds(tile.category)).toContain(tile.visual)
+      }
+    }
+  })
+
+  it('shows six plain categories when nothing rests and no visual tile is rolled', () => {
+    const deck = useQuestionDeck()
+    deck.hydrate()
+
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    const tiles = deck.planBoard()
+
+    expect(tiles).toHaveLength(BOARD_SIZE)
+    expect(tiles.every(tile => tile.visual === null)).toBe(true)
+    expect(new Set(tiles.map(tile => tile.category))).toEqual(new Set(QUIZ_CATEGORIES.map(category => category.label)))
   })
 })

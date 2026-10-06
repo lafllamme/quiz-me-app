@@ -1,6 +1,6 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
-import { TIE_QUESTIONS, type QuizQuestion } from '~/data/quiz-catalog'
-import { useQuestionDeck } from '~/composables/useQuestionDeck'
+import { TIE_QUESTIONS, type QuizQuestion, type VisualKind } from '~/data/quiz-catalog'
+import { useQuestionDeck, type CategoryTile } from '~/composables/useQuestionDeck'
 import type { MusicName } from '~/composables/useSound'
 import type { DifficultyMode } from '~/types/setup'
 
@@ -25,7 +25,11 @@ interface GameState {
   first: 0 | 1
   active: 0 | 1
   used: string[]
-  categories: string[]
+  /** Tiles on the current category board. */
+  tiles: CategoryTile[]
+  /** Category and format picked last turn; both sit out the next board. */
+  lastCategory: string | null
+  lastVisual: VisualKind | null
   currentQuestion: QuizQuestion | null
   selectedOption: number | null
   /** Options already answered wrong on this question; they stay locked during the steal. */
@@ -56,7 +60,9 @@ const emptyGame = (): GameState => ({
   first: 0,
   active: 0,
   used: [],
-  categories: [],
+  tiles: [],
+  lastCategory: null,
+  lastVisual: null,
   currentQuestion: null,
   selectedOption: null,
   wrongOptions: [],
@@ -114,6 +120,9 @@ export function useQuizGame() {
       const savedGame = JSON.parse(localStorage.getItem('jungle-game') || 'null')
       if (savedGame?.used && savedGame?.scores) {
         Object.assign(game, savedGame)
+        // Saves from before tiles existed only stored category labels.
+        if (!Array.isArray(savedGame.tiles) && Array.isArray(savedGame.categories))
+          game.tiles = savedGame.categories.map((category: string) => ({ category, visual: null }))
         // A refresh must always return to the setup screen. The saved game stays
         // available behind the explicit “Spiel fortsetzen” action.
         screen.value = 'menu'
@@ -250,8 +259,7 @@ export function useQuizGame() {
   }
 
   function prepareCategories() {
-    const categories = deck.getAvailableCategories(game.used)
-    game.categories = categories.sort(() => Math.random() - 0.5).slice(0, 6)
+    game.tiles = deck.planBoard(game.used, game.lastCategory, game.lastVisual)
     game.active = ((game.first + game.turn) % 2) as 0 | 1
     game.currentQuestion = null
     game.selectedOption = null
@@ -263,7 +271,7 @@ export function useQuizGame() {
     game.winner = null
     game.result = ''
 
-    if (!game.categories.length) {
+    if (!game.tiles.length) {
       finish()
       return
     }
@@ -272,8 +280,8 @@ export function useQuizGame() {
     persist()
   }
 
-  function chooseCategory(category: string) {
-    const question = deck.pickQuestion(category, config.difficulty, game.used)
+  function chooseCategory(tile: CategoryTile) {
+    const question = deck.pickQuestion(tile.category, config.difficulty, game.used, tile.visual)
     if (!question)
       return
     game.currentQuestion = deck.presentQuestion(question)
@@ -300,8 +308,11 @@ export function useQuizGame() {
     game.resolved = true
     game.winner = winner
     game.result = result
-    if (game.currentQuestion)
+    if (game.currentQuestion) {
       deck.markAnswered(game.currentQuestion.id)
+      game.lastCategory = game.currentQuestion.category
+      game.lastVisual = game.currentQuestion.media?.kind ?? null
+    }
     if (winner !== null)
       game.scores[winner]++
     persist()

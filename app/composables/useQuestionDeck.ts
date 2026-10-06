@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { QUESTIONS, type DifficultyLevel, type QuizQuestion } from '~/data/quiz-catalog'
+import { QUESTIONS, type DifficultyLevel, type QuizQuestion, type VisualKind } from '~/data/quiz-catalog'
 import type { DifficultyMode } from '~/types/setup'
 
 export const QUESTION_HISTORY_KEY = 'jungle-question-history-v1'
@@ -10,6 +10,18 @@ export const DIFFICULTY_WEIGHTS: Record<DifficultyMode, Record<DifficultyLevel, 
   hard: { 1: 10, 2: 30, 3: 60 },
 }
 
+/** The board always aims for this many tiles. */
+export const BOARD_SIZE = 6
+
+/** Upper bound of tiles that carry a visual question in one turn. */
+export const MAX_VISUAL_TILES = 4
+
+/** One pick on the category board: a category, optionally bound to a visual format. */
+export interface CategoryTile {
+  category: string
+  visual: VisualKind | null
+}
+
 /** How many recent correct-answer slots are remembered when placing the next one. */
 const POSITION_MEMORY = 6
 
@@ -17,7 +29,7 @@ function randomItem<T>(items: readonly T[]): T | undefined {
   return items[Math.floor(Math.random() * items.length)]
 }
 
-function shuffle<T>(items: readonly T[]): T[] {
+export function shuffle<T>(items: readonly T[]): T[] {
   const result = [...items]
   for (let index = result.length - 1; index > 0; index--) {
     const swap = Math.floor(Math.random() * (index + 1))
@@ -137,8 +149,65 @@ export function useQuestionDeck() {
     return [...new Set(getAvailableQuestions(excludedIds).map(question => question.category))]
   }
 
-  function pickQuestion(category: string, mode: DifficultyMode, excludedIds: readonly string[] = []) {
-    const candidates = getAvailableQuestions(excludedIds).filter(question => question.category === category)
+  function getVisualKinds(category: string, excludedIds: readonly string[] = []) {
+    const kinds = getAvailableQuestions(excludedIds)
+      .filter(question => question.category === category && question.media)
+      .map(question => question.media!.kind)
+    return [...new Set(kinds)]
+  }
+
+  /**
+   * Builds the board for one turn. The category and format played last turn rest, then
+   * 0–MAX_VISUAL_TILES tiles get a distinct visual format. A rested category leaves a gap,
+   * which an extra visual tile from another category fills, so the board stays at
+   * BOARD_SIZE whenever the catalog still allows it.
+   */
+  function planBoard(excludedIds: readonly string[] = [], restingCategory: string | null = null, restingKind: VisualKind | null = null): CategoryTile[] {
+    const available = getAvailableCategories(excludedIds)
+    const rested = available.filter(category => category !== restingCategory)
+    const pool = shuffle(rested.length ? rested : available)
+    const tiles: CategoryTile[] = pool.slice(0, BOARD_SIZE).map(category => ({ category, visual: null }))
+
+    const usedKinds = new Set<VisualKind>(restingKind ? [restingKind] : [])
+    const nextKind = (category: string) => shuffle(getVisualKinds(category, excludedIds)).find(kind => !usedKinds.has(kind))
+
+    // Formats are unique per board, so keep enough of them free to fill every gap.
+    const gaps = BOARD_SIZE - tiles.length
+    const freeKinds = new Set(pool.flatMap(category => getVisualKinds(category, excludedIds)).filter(kind => !usedKinds.has(kind)))
+    const overlayBudget = Math.max(0, Math.min(MAX_VISUAL_TILES, freeKinds.size) - gaps)
+    const overlayTarget = Math.min(Math.floor(Math.random() * (MAX_VISUAL_TILES + 1)), overlayBudget)
+    let overlays = 0
+    for (const tile of shuffle(tiles)) {
+      if (overlays >= overlayTarget)
+        break
+      const kind = nextKind(tile.category)
+      if (!kind)
+        continue
+      tile.visual = kind
+      usedKinds.add(kind)
+      overlays++
+    }
+
+    // Fill gaps with extra visual tiles, preferring categories whose tile is still plain.
+    const plainFirst = [...pool].sort((a, b) => Number(tiles.some(tile => tile.category === a && tile.visual)) - Number(tiles.some(tile => tile.category === b && tile.visual)))
+    for (const category of plainFirst) {
+      if (tiles.length >= BOARD_SIZE)
+        break
+      const kind = nextKind(category)
+      if (!kind)
+        continue
+      tiles.splice(Math.floor(Math.random() * (tiles.length + 1)), 0, { category, visual: kind })
+      usedKinds.add(kind)
+    }
+
+    return tiles
+  }
+
+  /** `visual` picks a question of that format; `null` keeps to plain text questions when any are left. */
+  function pickQuestion(category: string, mode: DifficultyMode, excludedIds: readonly string[] = [], visual: VisualKind | null = null) {
+    const inCategory = getAvailableQuestions(excludedIds).filter(question => question.category === category)
+    const matching = inCategory.filter(question => visual ? question.media?.kind === visual : !question.media)
+    const candidates = matching.length ? matching : inCategory
     if (!candidates.length)
       return undefined
 
@@ -171,6 +240,8 @@ export function useQuestionDeck() {
     resetHistory,
     getAvailableQuestions,
     getAvailableCategories,
+    getVisualKinds,
+    planBoard,
     pickQuestion,
     presentQuestion,
   }

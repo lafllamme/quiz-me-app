@@ -25,8 +25,10 @@ test.describe('Jungle Quiz flow', () => {
     const categoryOptions = page.locator('.category-board-option')
     await expect(categoryOptions).toHaveCount(6)
     await expect(page.locator('.category-board')).toHaveCSS('background-color', 'rgb(8, 24, 17)')
-    await expect(categoryOptions.first()).toHaveCSS('background-color', 'rgb(11, 68, 41)')
-    await expect(categoryOptions.first()).toHaveCSS('border-top-left-radius', '16px')
+    // Up to four tiles carry a visual question (cream); at least two plain tiles stay green.
+    const plainOption = page.locator('.category-board-option:not(.category-board-option--visual)').first()
+    await expect(plainOption).toHaveCSS('background-color', 'rgb(11, 68, 41)')
+    await expect(plainOption).toHaveCSS('border-top-left-radius', '16px')
     const gridColumns = await page.locator('.category-board-grid').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length)
     expect(gridColumns).toBe(3)
     const logoBox = await page.locator('.app-header .brand-logo').boundingBox()
