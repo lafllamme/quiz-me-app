@@ -1,4 +1,5 @@
 type SoundName = 'menu' | 'select' | 'start' | 'tick' | 'right' | 'wrong' | 'steal' | 'end' | 'drum' | 'ring'
+export type TrackName = 'tension' | 'timeOver' | 'wrong' | 'correct'
 
 const patterns: Record<SoundName, Array<[number, number, number, OscillatorType?]>> = {
   menu: [[350, 0, 0.08]],
@@ -13,9 +14,17 @@ const patterns: Record<SoundName, Array<[number, number, number, OscillatorType?
   ring: [[700, 0, 0.1], [950, 0.12, 0.1], [700, 0.24, 0.1], [950, 0.36, 0.18]],
 }
 
+const trackSources: Record<TrackName, string> = {
+  tension: '/audio/tension_45s.mp3',
+  timeOver: '/audio/time_over.mp3',
+  wrong: '/audio/wrong.mp3',
+  correct: '/audio/correct.mp3',
+}
+
 export function useSound() {
   const enabled = ref(true)
   let context: AudioContext | null = null
+  const tracks = new Map<TrackName, HTMLAudioElement>()
 
   function unlock() {
     if (import.meta.server || !enabled.value)
@@ -28,6 +37,61 @@ export function useSound() {
     catch {
       context = null
     }
+  }
+
+  function getTrack(name: TrackName) {
+    if (import.meta.server)
+      return null
+
+    let track = tracks.get(name)
+    if (!track) {
+      track = new Audio(trackSources[name])
+      track.preload = 'auto'
+      tracks.set(name, track)
+    }
+    return track
+  }
+
+  function playTrack(name: TrackName) {
+    if (!enabled.value)
+      return
+
+    const track = getTrack(name)
+    if (!track)
+      return
+
+    track.pause()
+    track.currentTime = 0
+    void track.play().catch(() => undefined)
+  }
+
+  function pauseTrack(name: TrackName) {
+    getTrack(name)?.pause()
+  }
+
+  function resumeTrack(name: TrackName) {
+    if (!enabled.value)
+      return
+
+    const track = getTrack(name)
+    if (track)
+      void track.play().catch(() => undefined)
+  }
+
+  function stopTrack(name: TrackName) {
+    const track = getTrack(name)
+    if (!track)
+      return
+
+    track.pause()
+    track.currentTime = 0
+  }
+
+  function stopAllTracks() {
+    tracks.forEach((track) => {
+      track.pause()
+      track.currentTime = 0
+    })
   }
 
   function tone(frequency: number, time: number, duration: number, type: OscillatorType = 'sine', volume = 0.16) {
@@ -59,7 +123,18 @@ export function useSound() {
     enabled.value = !enabled.value
     if (enabled.value)
       play('menu')
+    else
+      stopAllTracks()
   }
 
-  return { enabled, play, toggle }
+  return {
+    enabled,
+    play,
+    playTrack,
+    pauseTrack,
+    resumeTrack,
+    stopTrack,
+    stopAllTracks,
+    toggle,
+  }
 }

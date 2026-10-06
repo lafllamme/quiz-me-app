@@ -21,6 +21,10 @@ const emit = defineEmits<{
       </button>
 
       <nav class="flex items-center gap-1.5 md:gap-2" aria-label="Spielsteuerung">
+        <NuxtLink to="/type-lab" class="hidden items-center gap-2 px-3 py-2 text-xs font-600 uppercase tracking-[0.12em] text-muted transition hover:text-cream md:inline-flex">
+          <Icon name="lucide:type" size="16" aria-hidden="true" />
+          Type Lab
+        </NuxtLink>
         <button class="button-base border-0 px-2.5 py-2.5 text-muted hover:bg-white/6 hover:text-cream md:px-3.5" :aria-label="soundEnabled ? 'Sound ausschalten' : 'Sound einschalten'" @click="emit('toggleSound')">
           <Icon :name="soundEnabled ? 'lucide:volume-2' : 'lucide:volume-x'" size="17" aria-hidden="true" />
           <span class="hidden text-xs font-600 md:inline">{{ soundEnabled ? 'Sound an' : 'Sound aus' }}</span>

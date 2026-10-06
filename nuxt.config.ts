@@ -39,6 +39,24 @@ export default defineNuxtConfig({
         preload: true,
         weights: [400, 500, 600, 700],
       },
+      {
+        name: 'Switzer',
+        provider: 'fontshare',
+        global: true,
+        weights: [400, 500, 600, 700],
+      },
+      {
+        name: 'Satoshi',
+        provider: 'fontshare',
+        global: true,
+        weights: [400, 500, 600, 700],
+      },
+      {
+        name: 'Zodiak',
+        provider: 'fontshare',
+        global: true,
+        weights: [400, 500, 600, 700],
+      },
     ],
   },
   icon: {

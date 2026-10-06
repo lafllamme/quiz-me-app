@@ -23,6 +23,8 @@ interface GameState {
   used: string[]
   categories: string[]
   currentQuestion: QuizQuestion | null
+  selectedOption: number | null
+  timeExpired: boolean
   stolen: boolean
   revealed: boolean
   resolved: boolean
@@ -49,6 +51,8 @@ const emptyGame = (): GameState => ({
   used: [],
   categories: [],
   currentQuestion: null,
+  selectedOption: null,
+  timeExpired: false,
   stolen: false,
   revealed: false,
   resolved: false,
@@ -111,7 +115,7 @@ export function useQuizGame() {
     if (screen.value !== 'question' || game.resolved || game.revealed || timeRemaining.value <= 0 || timerRunning.value)
       return
 
-    sound.play('start')
+    sound.resumeTrack('tension')
     timerRunning.value = true
     timer = window.setInterval(() => {
       timeRemaining.value = Math.max(0, timeRemaining.value - 0.1)
@@ -127,9 +131,12 @@ export function useQuizGame() {
 
   function pauseTimer() {
     stopTimer()
+    sound.pauseTrack('tension')
   }
 
   function resetTimer() {
+    if (game.timeExpired)
+      return
     pauseTimer()
     timeRemaining.value = game.stolen && config.steal !== 'remaining' ? Number(config.steal) : config.seconds
     startTimer()
@@ -137,6 +144,7 @@ export function useQuizGame() {
 
   function openMenu() {
     stopTimer()
+    sound.stopAllTracks()
     screen.value = 'menu'
     persist()
   }
@@ -183,6 +191,8 @@ export function useQuizGame() {
     game.categories = categories.sort(() => Math.random() - 0.5).slice(0, 4)
     game.active = ((game.first + game.turn) % 2) as 0 | 1
     game.currentQuestion = null
+    game.selectedOption = null
+    game.timeExpired = false
     game.stolen = false
     game.revealed = false
     game.resolved = false
@@ -203,6 +213,8 @@ export function useQuizGame() {
     if (!question)
       return
     game.currentQuestion = question
+    game.selectedOption = null
+    game.timeExpired = false
     game.used.push(question.id)
     game.stolen = false
     game.revealed = false
@@ -218,6 +230,7 @@ export function useQuizGame() {
 
   function resolve(winner: 0 | 1 | null, result: string) {
     pauseTimer()
+    sound.stopTrack('tension')
     game.resolved = true
     game.winner = winner
     game.result = result
@@ -229,13 +242,28 @@ export function useQuizGame() {
   function markCorrect() {
     if (screen.value !== 'question' || game.resolved)
       return
-    sound.play('right')
+    sound.playTrack('correct')
     resolve(game.active, `${config.names[game.active]} bekommt +1 Punkt.`)
   }
 
   function markWrong(timeout = false) {
     if (screen.value !== 'question' || game.resolved)
       return
+
+    sound.stopTrack('tension')
+    sound.playTrack(timeout ? 'timeOver' : 'wrong')
+
+    if (timeout) {
+      game.timeExpired = true
+      game.result = 'Zeit abgelaufen. Wähle jetzt eine Antwort.'
+      persist()
+      return
+    }
+
+    if (game.timeExpired) {
+      resolve(null, 'Zeit abgelaufen. Kein Punkt.')
+      return
+    }
 
     if (!game.stolen && !game.revealed) {
       pauseTimer()
@@ -250,14 +278,25 @@ export function useQuizGame() {
       }
     }
 
-    sound.play('wrong')
     resolve(null, timeout ? 'Zeit abgelaufen. Kein Punkt.' : 'Kein Punkt für diese Frage.')
+  }
+
+  function selectOption(index: number) {
+    if (screen.value !== 'question' || game.resolved || game.revealed || !game.currentQuestion)
+      return
+
+    game.selectedOption = index
+    if (index === game.currentQuestion.correctIndex)
+      markCorrect()
+    else
+      markWrong()
   }
 
   function revealAnswer() {
     if (screen.value !== 'question' || game.resolved)
       return
     pauseTimer()
+    sound.stopTrack('tension')
     game.revealed = true
     persist()
   }
@@ -331,6 +370,7 @@ export function useQuizGame() {
     chooseCategory,
     markCorrect,
     markWrong,
+    selectOption,
     revealAnswer,
     nextQuestion,
     pauseTimer,

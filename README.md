@@ -12,16 +12,20 @@ Spielzustand, Fragen, Sounds und UI-Komponenten sauber getrennt werden.
 ## Status
 
 Nuxt-4-MVP der Quiz-App ist angelegt. Die Startansicht, Team-Setup,
-Kategorien, Countdown, Steal-Regel, Antwortauflösung, Tiebreaker und
-Web-Audio-Sounds sind als Vue-Komponenten und Composables umgesetzt.
+Kategorien, Countdown, Steal-Regel, A–D-Antworten, Antwortauflösung,
+Tiebreaker und Audio-Tracks sind als Vue-Komponenten und Composables umgesetzt.
 
-Geplante Bausteine:
+Unter `/type-lab` gibt es außerdem vier interaktive Clash-Display-
+Kombinationen zum Vergleichen: General Sans, Switzer, Satoshi und Zodiak.
+
+Enthalten:
 
 - wiederverwendbare Header-, Footer- und Spielfeld-Komponenten
 - zentraler Quiz-State für Teams, Runden, Timer und Spielverlauf
 - UnoCSS-Tokens für Jungle-Grün, Creme, Gold, Typografie und Motion
 - Nuxt Fonts mit Clash Display + General Sans via Fontshare
 - Nuxt Icons mit Lucide-Iconset
+- Audio-Tracks für Tension, Time Over, Correct und Wrong unter `public/audio`
 - responsive Darstellung für Desktop und kleinere Screens
 - reduzierte Bewegung und sichtbare Tastaturfokusse für Accessibility
 
@@ -51,6 +55,6 @@ pnpm build
 ## Ausgangspunkt
 
 Der aktuelle Verhaltens- und Content-Stand liegt in der ursprünglichen
-`index.html`-Datei. Sie dient als Referenz für Spielregeln, Beispiel-Fragen,
-Timer-Verhalten und Sound-Events, bis die einzelnen Verantwortlichkeiten in
-Nuxt-Komponenten und Composables überführt wurden.
+`index.html`-Datei. Sie diente als Referenz für Spielregeln, Beispiel-Fragen,
+Timer-Verhalten und Sound-Events. Die spielbare Oberfläche ist inzwischen in
+Nuxt-Komponenten und Composables überführt.
