@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+
 import type { DifficultyMode, SetupDraft } from '~/types/setup'
 
 const props = defineProps<{
@@ -34,6 +36,25 @@ const difficultyOptions: { value: DifficultyMode; label: string }[] = [
   { value: 'mixed', label: 'Gemischt' },
   { value: 'hard', label: 'Schwer' },
 ]
+
+type SetupField = 'rounds' | 'seconds' | 'difficulty'
+
+const activeSetupField = ref<SetupField>('rounds')
+const difficultyLabel = computed(() => difficultyOptions.find(option => option.value === props.draft.difficulty)?.label ?? '')
+
+function selectSetupOption(field: SetupField, value: number | DifficultyMode) {
+  if (field === 'rounds' && typeof value === 'number') {
+    emit('update:rounds', value)
+  }
+
+  if (field === 'seconds' && typeof value === 'number') {
+    emit('update:seconds', value)
+  }
+
+  if (field === 'difficulty' && typeof value === 'string') {
+    emit('update:difficulty', value as DifficultyMode)
+  }
+}
 </script>
 
 <template>
@@ -48,24 +69,31 @@ const difficultyOptions: { value: DifficultyMode; label: string }[] = [
       </label>
     </div>
     <div class="game-setup-config" aria-label="Spieleinstellungen">
-      <fieldset class="game-setup-choice">
-        <legend>Runden</legend>
-        <div class="game-setup-choice-options">
-          <button v-for="round in [3, 5, 7]" :key="round" type="button" :class="{ 'is-selected': draft.rounds === round }" :aria-pressed="draft.rounds === round" @click="emit('update:rounds', round)">{{ round }}</button>
+      <div class="game-setup-badges" role="tablist" aria-label="Aktive Spieleinstellungen">
+        <button class="game-setup-badge" :class="{ 'is-active': activeSetupField === 'rounds' }" type="button" role="tab" :aria-selected="activeSetupField === 'rounds'" @click="activeSetupField = 'rounds'">
+          <strong>{{ draft.rounds }}</strong>
+          <span>Runden</span>
+        </button>
+        <button class="game-setup-badge" :class="{ 'is-active': activeSetupField === 'seconds' }" type="button" role="tab" :aria-selected="activeSetupField === 'seconds'" @click="activeSetupField = 'seconds'">
+          <strong>{{ draft.seconds }}</strong>
+          <span>Sekunden</span>
+        </button>
+        <button class="game-setup-badge" :class="{ 'is-active': activeSetupField === 'difficulty' }" type="button" role="tab" :aria-selected="activeSetupField === 'difficulty'" @click="activeSetupField = 'difficulty'">
+          <strong>{{ difficultyLabel }}</strong>
+          <span>Modus</span>
+        </button>
+      </div>
+      <div class="game-setup-picker" :aria-label="`${activeSetupField === 'rounds' ? 'Runden' : activeSetupField === 'seconds' ? 'Sekunden' : 'Modus'} auswählen`">
+        <div v-if="activeSetupField === 'rounds'">
+          <button v-for="round in [3, 5, 7]" :key="round" type="button" :class="{ 'is-selected': draft.rounds === round }" :aria-pressed="draft.rounds === round" @click="selectSetupOption('rounds', round)">{{ round }}</button>
         </div>
-      </fieldset>
-      <fieldset class="game-setup-choice">
-        <legend>Zeit</legend>
-        <div class="game-setup-choice-options">
-          <button v-for="seconds in [30, 45, 60]" :key="seconds" type="button" :class="{ 'is-selected': draft.seconds === seconds }" :aria-pressed="draft.seconds === seconds" @click="emit('update:seconds', seconds)">{{ seconds }}</button>
+        <div v-else-if="activeSetupField === 'seconds'">
+          <button v-for="seconds in [30, 45, 60]" :key="seconds" type="button" :class="{ 'is-selected': draft.seconds === seconds }" :aria-pressed="draft.seconds === seconds" @click="selectSetupOption('seconds', seconds)">{{ seconds }} Sek.</button>
         </div>
-      </fieldset>
-      <fieldset class="game-setup-choice game-setup-choice--difficulty">
-        <legend>Schwierigkeit</legend>
-        <div class="game-setup-choice-options">
-          <button v-for="option in difficultyOptions" :key="option.value" type="button" :class="{ 'is-selected': draft.difficulty === option.value }" :aria-pressed="draft.difficulty === option.value" @click="emit('update:difficulty', option.value)">{{ option.label }}</button>
+        <div v-else>
+          <button v-for="option in difficultyOptions" :key="option.value" type="button" :class="{ 'is-selected': draft.difficulty === option.value }" :aria-pressed="draft.difficulty === option.value" @click="selectSetupOption('difficulty', option.value)">{{ option.label }}</button>
         </div>
-      </fieldset>
+      </div>
     </div>
     <div class="game-setup-form-foot">
       <span v-if="catalogExhausted" class="game-setup-history-warning">Katalog durchgespielt · <button type="button" @click="emit('reset-history')">Archiv zurücksetzen</button></span>

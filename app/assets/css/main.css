@@ -1331,72 +1331,103 @@ button:disabled {
 }
 
 .game-setup-config {
-  display: grid;
-  grid-template-columns: .75fr .85fr 1.4fr;
-  gap: 1rem;
   margin-top: 1.25rem;
-  border-top: 1px solid var(--setup-line);
-  padding-top: 1rem;
 }
 
-.game-setup-choice {
+.game-setup-badges {
+  display: grid;
+  grid-template-columns: .68fr .82fr 1.3fr;
+  border-top: 1px solid var(--setup-line);
+}
+
+.game-setup-badge {
+  display: flex;
   min-width: 0;
+  min-height: 4.5rem;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.18rem;
   border: 0;
   border-bottom: 1px solid var(--setup-line);
-  margin: 0;
-  padding: 0 0 0.7rem;
-}
-
-.game-setup-choice legend {
-  color: var(--setup-muted);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 0;
-  text-transform: uppercase;
-}
-
-.game-setup-choice-options {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.15rem 0.65rem;
-  margin-top: 0.7rem;
-}
-
-.game-setup-choice-options button {
-  border: 0;
   background: transparent;
-  color: var(--setup-muted);
+  color: var(--setup-cream);
   cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1.35;
-  padding: 0 0 0.2rem;
+  padding: 0.7rem 0.75rem;
+  text-align: left;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.game-setup-badge + .game-setup-badge {
+  border-left: 1px solid var(--setup-line);
+}
+
+.game-setup-badge:hover,
+.game-setup-badge:focus-visible,
+.game-setup-badge.is-active {
+  background: color-mix(in srgb, var(--setup-accent) 15%, transparent);
+}
+
+.game-setup-badge:focus-visible {
+  outline: 2px solid var(--setup-accent);
+  outline-offset: -2px;
+}
+
+.game-setup-badge strong {
+  overflow: hidden;
+  font-size: clamp(1.35rem, 2.35vw, 2.05rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.game-setup-choice-options button:hover,
-.game-setup-choice-options button.is-selected {
-  color: var(--setup-cream);
+.game-setup-badge span {
+  color: var(--setup-accent);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.game-setup-choice-options button.is-selected {
-  box-shadow: inset 0 -2px 0 var(--setup-accent);
+.game-setup-picker {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  border-bottom: 1px solid var(--setup-line);
+  padding: 0.65rem 0 0.7rem;
 }
 
-.game-setup-choice-options button:focus-visible {
-  box-shadow: inset 0 -2px 0 var(--setup-accent);
+.game-setup-picker > div {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  flex: 1;
+  gap: 0.35rem;
+}
+
+.game-setup-picker button {
+  min-height: 2.2rem;
+  border: 1px solid var(--setup-line);
+  background: transparent;
+  color: var(--setup-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.3rem 0.45rem;
+  text-align: center;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.game-setup-picker button:hover,
+.game-setup-picker button:focus-visible,
+.game-setup-picker button.is-selected {
+  border-color: var(--setup-accent);
+  background: var(--setup-accent);
+  color: var(--setup-ink);
   outline: none;
-}
-
-@media (max-width: 1180px) and (min-width: 810px) {
-  .game-setup-config {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .game-setup-choice--difficulty {
-    grid-column: 1 / -1;
-  }
 }
 
 .game-setup-form-foot {
@@ -1404,9 +1435,8 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-top: 1.1rem;
-  border-top: 1px solid var(--setup-line);
-  padding-top: 0.9rem;
+  margin-top: 0.95rem;
+  padding-top: 0;
   color: var(--setup-muted);
   font-size: 0.64rem;
 }
@@ -1510,8 +1540,22 @@ button:disabled {
 }
 
 @media (max-width: 560px) {
-  .game-setup-config {
-    grid-template-columns: 1fr;
+  .game-setup-badge {
+    min-height: 4.1rem;
+    padding-inline: 0.55rem;
+  }
+
+  .game-setup-badge strong {
+    font-size: 1.35rem;
+  }
+
+  .game-setup-picker {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .game-setup-picker > div {
+    width: 100%;
   }
 
   .game-setup-form-foot {
