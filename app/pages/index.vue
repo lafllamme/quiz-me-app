@@ -35,7 +35,7 @@ function toggleTimer() {
 <template>
   <div class="page-shell relative min-h-screen">
     <div class="app-noise" aria-hidden="true" />
-    <AppHeader v-if="quiz.screen.value !== 'menu'" :sound-enabled="quiz.sound.enabled.value" @toggle-sound="quiz.sound.toggle" @help="modal = 'rules'" @home="quiz.openMenu" />
+    <AppHeader v-if="quiz.screen.value !== 'menu'" @home="quiz.openMenu" />
 
     <main :class="quiz.screen.value === 'menu' ? 'game-stage-wrap relative z-1' : 'page-wrap relative z-1'">
       <Transition name="stage" mode="out-in">

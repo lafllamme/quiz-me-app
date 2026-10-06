@@ -57,6 +57,27 @@ button:disabled {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
 }
 
+.app-header {
+  position: relative;
+  z-index: 20;
+  background: var(--color-ink);
+}
+
+.app-header-inner {
+  display: flex;
+  min-height: 5.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 var(--page-gutter);
+}
+
+.app-header-inner > * {
+  pointer-events: auto;
+}
+
 .turn-indicator {
   display: inline-flex;
   align-items: center;
@@ -105,7 +126,7 @@ button:disabled {
   --category-line: rgb(251 248 237 / 24%);
   display: grid;
   grid-template-columns: minmax(290px, .62fr) minmax(0, 1.38fr);
-  min-height: calc(100vh - 7rem);
+  min-height: calc(100vh - 5.5rem);
   background: var(--category-jungle);
   color: var(--category-cream);
 }
@@ -304,7 +325,7 @@ button:disabled {
 
 .category-board--preview {
   display: block;
-  min-height: calc(100vh - 7rem);
+  min-height: calc(100vh - 5.5rem);
   background: var(--category-ink);
 }
 
@@ -313,7 +334,7 @@ button:disabled {
 }
 
 .category-board--preview .category-board-play {
-  min-height: calc(100vh - 7rem);
+  min-height: calc(100vh - 5.5rem);
   background: var(--category-ink);
   padding: clamp(1.5rem, 4vw, 3.5rem);
 }
