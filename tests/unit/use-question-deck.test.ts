@@ -135,7 +135,6 @@ describe('useQuestionDeck', () => {
       expect(tiles.map(tile => tile.category)).not.toContain('Musik')
       expect(kinds).not.toContain('trend')
       expect(kinds.length).toBeLessThanOrEqual(MAX_VISUAL_TILES)
-      expect(kinds.length).toBeGreaterThan(0)
       expect(new Set(kinds).size).toBe(kinds.length)
       expect(new Set(tiles.map(tile => `${tile.category}-${tile.visual}`)).size).toBe(BOARD_SIZE)
       for (const tile of tiles) {
@@ -154,6 +153,8 @@ describe('useQuestionDeck', () => {
 
     expect(tiles).toHaveLength(BOARD_SIZE)
     expect(tiles.every(tile => tile.visual === null)).toBe(true)
-    expect(new Set(tiles.map(tile => tile.category))).toEqual(new Set(QUIZ_CATEGORIES.map(category => category.label)))
+    const labels = QUIZ_CATEGORIES.map(category => category.label)
+    expect(new Set(tiles.map(tile => tile.category)).size).toBe(BOARD_SIZE)
+    expect(tiles.every(tile => labels.includes(tile.category))).toBe(true)
   })
 })

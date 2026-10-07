@@ -61,6 +61,12 @@ const VISUAL_LABELS: Record<VisualKind, string> = {
   doodle: 'Schlecht gemalt',
   trend: 'Trend-Kurve',
   swatch: 'Farbe raten',
+  silhouette: 'Umriss-Zoom',
+  quartet: 'Quartett',
+  pin: 'Wo liegt das?',
+  pixel: 'Pixel-Bild',
+  flag: 'Flaggen',
+  phrase: 'Schild lesen',
 }
 
 </script>

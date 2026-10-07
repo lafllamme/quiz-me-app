@@ -202,4 +202,130 @@ export const doodleQuestions: readonly QuestionSeed[] = [
       'M112 30 L113 30',
     ],
   }, ['nostalgia']),
+
+  // animals
+  v('doodle-animals-01', 'animals', 1, 'Welches Tier ist das?', 'Giraffe', ['Giraffe', 'Okapi', 'Lama', 'Kamel'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M10 130 Q100 127 190 130',
+      'M52 80 Q54 68 72 68 L102 66 Q114 68 112 82 Q110 95 98 96 L62 96 Q50 95 52 80 Z',
+      'M60 96 L57 128 M68 96 L68 128 M98 96 L99 128 M106 94 L109 128',
+      'M101 67 L127 24 M112 74 L138 30',
+      'M125 24 Q127 14 138 15 L156 21 Q161 27 154 30 L138 31 Q128 31 125 24 Z',
+      'M134 16 L132 6 M141 16 L141 6 M130 5 L134 5 M139 5 L143 5',
+      'M146 21 L147 21',
+      'M66 80 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0',
+      'M82 76 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0',
+      'M96 84 a4 4 0 1 0 8 0 a4 4 0 1 0 -8 0',
+      'M75 89 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0',
+      'M114 50 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0',
+      'M124 38 a3 3 0 1 0 6 0 a3 3 0 1 0 -6 0',
+      'M52 76 Q42 86 44 104 M41 104 L47 104',
+    ],
+  }, ['classic']),
+  v('doodle-animals-02', 'animals', 2, 'Welcher Vogel ist das?', 'Flamingo', ['Flamingo', 'Storch', 'Kranich', 'Reiher'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M20 128 Q35 124 50 128 M150 128 Q165 124 180 128',
+      'M62 60 Q72 42 100 46 Q124 50 120 64 Q112 78 90 77 Q70 76 62 60 Z',
+      'M62 60 L52 54 M64 64 L52 66',
+      'M96 77 L96 128 M96 128 L106 128',
+      'M100 77 L106 98 L90 92',
+      'M118 58 Q138 40 122 28 Q106 16 118 8 Q132 2 142 12',
+      'M142 12 Q152 16 150 28 Q148 32 144 30',
+      'M132 10 L133 10',
+    ],
+  }, ['classic']),
+  v('doodle-animals-03', 'animals', 2, 'Wer trägt hier einen Apfel?', 'Igel', ['Igel', 'Stachelschwein', 'Ameisenigel', 'Gürteltier'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M30 120 Q100 124 176 118',
+      'M38 112 L25.4 104.5 L39.8 99.8 L29.7 90 L45.1 88.4 L38.2 76.9 L53.6 78.4 L50.2 65.8 L64.7 70.4 L65.1 57.5 L77.8 64.9 L82 52.5 L92.2 62.2 L99.9 51 L106.9 62.6 L117.6 53.2 L121 65.8 L134.2 59 L133.8 71.9 L148.6 67.9 L144.4 80.3 L159.9 79.5 L152.3 90.7',
+      'M38 112 Q100 118 156 104',
+      'M152 98 Q166 92 184 106 Q176 116 154 114',
+      'M184 104 L188 107',
+      'M164 100 L165 100',
+      'M80 116 L80 122 M128 113 L128 120',
+      'M86 50 a9 9 0 1 0 18 0 a9 9 0 1 0 -18 0',
+      'M95 41 L97 34 M97 37 Q104 32 106 38',
+    ],
+  }, ['odd']),
+  v('doodle-animals-04', 'animals', 3, 'Welches Tier ist das?', 'Seepferdchen', ['Seepferdchen', 'Seenadel', 'Fetzenfisch', 'Kugelfisch'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M100 30 Q112 22 122 28 L150 30 L150 38 L124 40 Q118 46 120 56',
+      'M100 30 Q86 44 92 62 Q98 80 90 96 Q84 110 96 118 Q110 124 112 110 Q112 100 102 102 Q96 106 100 110',
+      'M120 56 Q128 72 118 88 Q110 100 104 102',
+      'M112 32 L113 32',
+      'M100 28 L96 18 L104 22 L106 14 L110 24',
+      'M92 50 L82 46 L88 58 L80 62 L92 66',
+      'M101 66 L110 68 M100 78 L112 78 M98 88 L108 92',
+      'M30 128 Q40 120 34 110 Q28 100 36 92 M170 128 Q162 116 168 104 Q174 94 166 86',
+    ],
+  }, ['classic']),
+
+  // food
+  v('doodle-food-01', 'food', 1, 'Welches Gebäck ist das?', 'Brezel', ['Brezel', 'Croissant', 'Franzbrötchen', 'Laugenstange'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M72 106 Q84 92 100 74 Q120 50 126 40 Q140 24 156 40 Q168 60 158 88 Q142 120 100 120 Q58 120 42 88 Q32 60 44 40 Q60 24 74 40 Q80 50 100 74 Q116 92 128 106',
+      'M64 108 L80 104 M120 104 L136 108',
+      'M60 48 L62 50 M140 48 L138 50 M100 112 L101 112 M80 112 L81 112 M120 112 L121 112 M50 72 L51 74 M150 72 L149 74',
+    ],
+  }, ['classic']),
+  v('doodle-food-02', 'food', 1, 'Was dreht sich hier?', 'Döner', ['Döner', 'Schaschlik', 'Spanferkel', 'Rollbraten'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M10 130 L190 130',
+      'M100 6 L100 128',
+      'M74 20 Q100 12 126 20 Q120 66 110 108 Q100 114 90 108 Q80 66 74 20 Z',
+      'M76 36 L124 40 M80 56 L120 60 M84 76 L116 80 M88 94 L112 97',
+      'M40 18 L56 18 L56 112 L40 112 Z M40 40 L56 40 M40 62 L56 62 M40 84 L56 84',
+      'M66 116 Q100 128 134 116 M128 112 L134 116 L128 121',
+      'M146 30 L146 84 Q152 90 158 84 L158 30 Z M152 84 L152 102',
+    ],
+  }, ['local']),
+  v('doodle-food-03', 'food', 2, 'Welche Frucht ist das?', 'Ananas', ['Ananas', 'Drachenfrucht', 'Artischocke', 'Mango'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M70 80 Q70 50 100 48 Q130 50 130 80 Q132 118 100 124 Q68 118 70 80 Z',
+      'M76 62 L124 110 M72 84 L106 122 M90 50 L130 92 M124 62 L76 110 M128 84 L94 122 M110 50 L70 92',
+      'M100 48 L92 22 L100 36 L102 8 L106 34 L118 16 L110 46',
+      'M100 48 L78 30 L94 44 M110 46 L130 32',
+    ],
+  }, ['classic']),
+
+  // world
+  v('doodle-world-01', 'world', 1, 'Welches Bauwerk soll das sein?', 'Eiffelturm', ['Eiffelturm', 'Tokyo Tower', 'Berliner Fernsehturm', 'Blackpool Tower'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M10 130 Q100 127 190 130',
+      'M60 128 Q84 90 92 50 Q96 26 99 8 M140 128 Q116 90 108 50 Q104 26 101 8',
+      'M99 8 L99 2 M101 8 L101 2',
+      'M76 106 L124 106 M76 106 Q100 86 124 106',
+      'M88 74 L112 74 M92 50 L108 50 M96 28 L104 28',
+      'M80 100 L120 78 M80 78 L120 100 M90 70 L110 54 M90 54 L110 70 M94 46 L106 32 M94 32 L106 46',
+    ],
+  }, ['classic']),
+  v('doodle-world-02', 'world', 2, 'Wo steht das?', 'Gizeh, Ägypten', ['Gizeh, Ägypten', 'Teotihuacán, Mexiko', 'Chichén Itzá, Mexiko', 'Tikal, Guatemala'], {
+    kind: 'doodle',
+    viewBox: box,
+    paths: [
+      'M10 126 Q100 122 190 126',
+      'M18 126 L66 52 L114 126',
+      'M66 52 L78 126',
+      'M108 116 L140 68 L172 126',
+      'M140 68 L148 126',
+      'M166 118 L178 102 L192 126',
+      'M150 26 a10 10 0 1 0 20 0 a10 10 0 1 0 -20 0',
+    ],
+  }, ['classic']),
 ]

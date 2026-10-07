@@ -22,4 +22,19 @@ export const swatchQuestions: readonly QuestionSeed[] = [
   v('swatch-cologne-01', 'cologne', 1, 'Welches ist das echte Telekom-Magenta?', '#E20074', ['#E20074', '#E8002A', '#A800E2', '#FF8FC8'], { kind: 'swatch', reveal: 'Telekom-Magenta' }, ['local']),
   v('swatch-cologne-02', 'cologne', 2, 'Welches ist das echte Deutsche-Post-Gelb?', '#FFCC00', ['#FFCC00', '#FA7F00', '#D9F000', '#FFE98A'], { kind: 'swatch', reveal: 'Post-Gelb' }, ['local']),
   v('swatch-cologne-03', 'cologne', 3, 'Welches ist das echte Deutsche-Bahn-Rot?', '#EC0016', ['#EC0016', '#FF5A1F', '#C0004E', '#8F0A12'], { kind: 'swatch', reveal: 'DB-Rot' }, ['local']),
+
+  // brands
+  v('swatch-brands-01', 'brands', 1, 'Welches ist das echte Milka-Lila?', '#7D69AC', ['#7D69AC', '#B05FB0', '#4A3A8C', '#6F8FD8'], { kind: 'swatch', reveal: 'Milka-Lila' }, ['classic']),
+  v('swatch-brands-02', 'brands', 2, 'Welches ist das echte IKEA-Blau?', '#0058A3', ['#0058A3', '#00A0DC', '#1C2B6E', '#4B3FA8'], { kind: 'swatch', reveal: 'IKEA-Blau' }, ['classic']),
+  v('swatch-brands-03', 'brands', 2, 'Welches ist das echte Starbucks-Grün?', '#00704A', ['#00704A', '#00A878', '#5E8C2A', '#0B3D33'], { kind: 'swatch', reveal: 'Starbucks-Grün' }, ['classic']),
+  v('swatch-brands-04', 'brands', 3, 'Welches ist das echte Coca-Cola-Rot?', '#F40009', ['#F40009', '#FF5A1F', '#B8102E', '#E0006E'], { kind: 'swatch', reveal: 'Coca-Cola-Rot' }, ['classic']),
+
+  // world: flag colours
+  v('swatch-world-01', 'world', 1, 'Welches Blau hat die Flagge Griechenlands?', '#0D5EAF', ['#0D5EAF', '#75AADB', '#012169', '#0093C8'], { kind: 'swatch', reveal: 'Griechisches Flaggenblau' }, ['classic']),
+  v('swatch-world-02', 'world', 2, 'Welches Grün hat die Flagge Irlands?', '#169B62', ['#169B62', '#6CBF3A', '#00594C', '#2FCF9E'], { kind: 'swatch', reveal: 'Irisches Flaggengrün' }, ['classic']),
+  v('swatch-world-03', 'world', 3, 'Welches Rot hat die Flagge der Niederlande?', '#AE1C28', ['#AE1C28', '#FF7F00', '#E8503A', '#6B0F1A'], { kind: 'swatch', reveal: 'Helder vermiljoen – kein Oranje!' }, ['odd']),
+
+  // food
+  v('swatch-food-01', 'food', 1, 'Welche Farbe hat ein Aperol Spritz?', '#F26B1D', ['#F26B1D', '#C8102E', '#FFB81C', '#E8457A'], { kind: 'swatch', reveal: 'Aperol-Orange' }, ['classic']),
+  v('swatch-food-02', 'food', 2, 'Welcher Farbton heißt „Lachs“?', '#FA8072', ['#FA8072', '#FF5E8A', '#F4A460', '#C8553D'], { kind: 'swatch', reveal: 'Lachsrosa' }, ['odd']),
 ]

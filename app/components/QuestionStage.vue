@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import type { PanelMedia } from '~/components/QuestionMediaPanel.vue'
 import type { QuizQuestion } from '~/data/questions'
+import { formatEstimate } from '~/utils/estimate-format'
 
 const props = defineProps<{
   question: QuizQuestion
@@ -23,6 +25,7 @@ const props = defineProps<{
   timerRunning: boolean
   drink: boolean
   winnerName: string
+  estimateGuesses?: [number, number] | null
 }>()
 
 const emit = defineEmits<{
@@ -31,6 +34,7 @@ const emit = defineEmits<{
   toggleTimer: []
   resetTimer: []
   next: []
+  estimate: [guesses: [number, number]]
 }>()
 
 const letters = ['A', 'B', 'C', 'D']
@@ -43,8 +47,44 @@ const isOpen = computed(() => !props.resolved && !props.revealed)
 const timerWarning = computed(() => isOpen.value && seconds.value <= 10)
 const media = computed(() => props.question.media)
 const isSwatch = computed(() => media.value?.kind === 'swatch')
-const displayMedia = computed(() => media.value?.kind === 'swatch' ? undefined : media.value)
-const answerLabel = computed(() => media.value?.kind === 'swatch' ? media.value.reveal : props.question.answer)
+// Flag questions without `show` put the flags into the answer buttons, like colour swatches.
+const isFlagOptions = computed(() => media.value?.kind === 'flag' && 'reveal' in media.value)
+const displayMedia = computed<PanelMedia | undefined>(() => {
+  const current = media.value
+  if (!current || current.kind === 'swatch' || (current.kind === 'flag' && 'reveal' in current))
+    return undefined
+  return current
+})
+const answerLabel = computed(() => {
+  const current = media.value
+  if (current?.kind === 'swatch' || (current?.kind === 'flag' && 'reveal' in current))
+    return current.reveal
+  return props.question.answer
+})
+// Drives the formats that reveal themselves while the clock runs.
+const mediaProgress = computed(() => 1 - timerProgress.value)
+
+const estimate = computed(() => props.question.estimate)
+const estimateInputs = reactive<[string, string]>(['', ''])
+const estimateError = ref('')
+watch(() => props.question.id, () => {
+  estimateInputs[0] = ''
+  estimateInputs[1] = ''
+  estimateError.value = ''
+})
+
+function submitEstimate() {
+  const values = estimateInputs.map(value => Number(String(value).replace(/\./g, '').replace(',', '.'))) as [number, number]
+  if (estimateInputs.some(value => String(value).trim() === '') || values.some(value => !Number.isFinite(value))) {
+    estimateError.value = 'Bitte für beide Teams eine Zahl eingeben.'
+    return
+  }
+  estimateError.value = ''
+  emit('estimate', values)
+}
+
+const formatNumber = (value: number) => formatEstimate(value, estimate.value?.unit ?? '')
+const estimateDistance = (index: 0 | 1) => props.estimateGuesses && estimate.value ? Math.abs(props.estimateGuesses[index] - estimate.value.value) : null
 
 // Long questions step down in size so the whole stage fits one screen without scrolling.
 const questionSize = computed(() => {
@@ -99,7 +139,7 @@ function optionClass(index: number) {
       <div class="question-live-copy">
         <span class="question-live-category">{{ question.category }}</span>
         <h2 :class="`question-live-question--${questionSize}`">{{ question.question }}</h2>
-        <QuestionMediaPanel v-if="displayMedia" :key="question.id" :media="displayMedia" />
+        <QuestionMediaPanel v-if="displayMedia" :key="question.id" :media="displayMedia" :progress="mediaProgress" :revealed="!isOpen" />
       </div>
 
       <aside class="question-live-timer" :class="{ 'question-live-timer--warning': timerWarning, 'question-live-timer--done': !isOpen }" aria-label="Antwortzeit">
@@ -113,7 +153,19 @@ function optionClass(index: number) {
       </aside>
     </div>
 
-    <div class="question-live-answers" :class="{ 'question-live-answers--swatch': isSwatch }" aria-label="Antwortmöglichkeiten">
+    <form v-if="estimate" class="question-estimate" :class="{ 'question-estimate--done': !isOpen }" aria-label="Schätzungen" @submit.prevent="submitEstimate">
+      <label v-for="index in [0, 1] as const" :key="index" class="question-estimate-team" :class="{ 'question-estimate-team--winner': !isOpen && winner === index }">
+        <span>{{ names[index] }}</span>
+        <input v-if="isOpen" v-model="estimateInputs[index]" type="text" inputmode="decimal" autocomplete="off" placeholder="Schätzung">
+        <strong v-else-if="estimateGuesses">{{ formatNumber(estimateGuesses[index]) }}<small v-if="estimate.unit" class="question-estimate-unit">{{ estimate.unit }}</small></strong>
+        <small v-if="!isOpen && estimateDistance(index) !== null">{{ estimateDistance(index) === 0 ? 'Volltreffer' : `${formatNumber(estimateDistance(index)!)} daneben` }}</small>
+        <small v-else-if="isOpen && estimate.unit">in {{ estimate.unit }}</small>
+      </label>
+      <button v-if="isOpen" type="submit" data-uisfx-hover="hover" data-uisfx-press="press" class="button-primary question-estimate-submit">Auswerten <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
+      <p v-if="estimateError" class="question-estimate-error" role="alert">{{ estimateError }}</p>
+    </form>
+
+    <div v-else class="question-live-answers" :class="{ 'question-live-answers--swatch': isSwatch || isFlagOptions }" aria-label="Antwortmöglichkeiten">
       <button
         v-for="(option, index) in question.options"
         :key="option"
@@ -122,11 +174,12 @@ function optionClass(index: number) {
         data-uisfx-hover="hover"
         :disabled="!isOpen || wrongOptions.includes(index)"
         :aria-keyshortcuts="`${index + 1} ${letters[index]}`"
-        :aria-label="isSwatch ? `Antwort ${letters[index]}: Farbe ${letters[index]}` : `Antwort ${letters[index]}: ${option}`"
+        :aria-label="isSwatch ? `Antwort ${letters[index]}: Farbe ${letters[index]}` : isFlagOptions ? `Antwort ${letters[index]}: Flagge ${letters[index]}` : `Antwort ${letters[index]}: ${option}`"
         @click="emit('select', index)"
       >
         <span class="question-live-option-letter">{{ letters[index] }}</span>
         <span v-if="isSwatch" class="question-live-option-swatch" :style="{ background: option }" />
+        <FlagImage v-else-if="isFlagOptions" class="question-live-option-flag" :spec="option" />
         <span v-else class="question-live-option-copy">{{ option }}</span>
         <Icon v-if="!isOpen && index === question.correctIndex" name="lucide:check" size="22" aria-hidden="true" />
         <Icon v-else-if="wrongOptions.includes(index)" name="lucide:x" size="22" aria-hidden="true" />
@@ -143,12 +196,107 @@ function optionClass(index: number) {
 
       <button v-if="!isOpen" data-uisfx-hover="hover" data-uisfx-press="press" class="button-primary question-live-next" @click="emit('next')">Weiter <Icon name="lucide:arrow-right" size="17" aria-hidden="true" /></button>
       <p v-else-if="stolen" class="question-live-steal" role="status">{{ result }}</p>
+      <p v-else-if="estimate" class="question-live-hint">Beide Teams schätzen, näher dran punktet</p>
       <p v-else class="question-live-hint">Antwort mit <kbd>1</kbd>–<kbd>4</kbd> oder <kbd>A</kbd>–<kbd>D</kbd></p>
     </div>
   </section>
 </template>
 
 <style scoped>
+/* Flag answers: the flag is the option, sized like a small card. */
+.question-live-option-flag {
+  height: clamp(3.2rem, 9vh, 5.4rem);
+  justify-self: start;
+}
+
+.question-live-option--wrong .question-live-option-flag,
+.question-live-option--muted .question-live-option-flag {
+  opacity: 0.6;
+}
+
+/* Estimate: one big input per team instead of four options. */
+.question-estimate {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  align-items: stretch;
+  gap: 0.8rem;
+}
+
+.question-estimate--done {
+  grid-template-columns: 1fr 1fr;
+}
+
+.question-estimate-team {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--question-line);
+  border-radius: 0.9rem;
+  background: rgb(251 248 237 / 6%);
+  padding: 0.8rem 1rem;
+  color: var(--question-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.question-estimate-team input {
+  width: 100%;
+  border: 0;
+  border-bottom: 2px solid var(--question-accent);
+  background: transparent;
+  color: var(--question-cream);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.question-estimate-team input::placeholder {
+  color: rgb(251 248 237 / 30%);
+}
+
+.question-estimate-team strong {
+  color: var(--question-cream);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.question-estimate-team small {
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.question-estimate-team .question-estimate-unit {
+  margin-left: 0.3em;
+  color: var(--question-muted);
+  font-size: 0.5em;
+}
+
+.question-estimate-team--winner {
+  border-color: var(--question-accent);
+  background: rgb(202 255 74 / 12%);
+}
+
+.question-estimate-submit {
+  align-self: center;
+}
+
+.question-estimate-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--question-coral);
+}
+
+@media (max-width: 720px) {
+  .question-estimate {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Colour-guess answers: the swatch is the option, so it fills the whole label area. */
 .question-live-option-swatch {
   display: block;

@@ -25,4 +25,26 @@ export const emojiQuestions: readonly QuestionSeed[] = [
   // cologne
   v('emoji-cologne-01', 'cologne', 1, 'Welcher Karnevalsbegriff ist das?', 'Kamelle', ['Kamelle', 'Strüßjer', 'Bützje', 'Alaaf'], { kind: 'emoji', symbols: '🐪🐪🍬🎭' }, ['local']),
   v('emoji-cologne-02', 'cologne', 2, 'Welcher Kölner Ort ist das?', 'Hohenzollernbrücke', ['Hohenzollernbrücke', 'Severinsbrücke', 'Deutzer Brücke', 'Rheinauhafen'], { kind: 'emoji', symbols: '❤️🔒🌉🚆' }, ['local']),
+
+  // animals: German idioms with animals
+  v('emoji-animals-01', 'animals', 1, 'Welche Redewendung ist das?', 'Schwein gehabt', ['Schwein gehabt', 'Die Sau rauslassen', 'Kein Schwein ruft an', 'Perlen vor die Säue'], { kind: 'emoji', symbols: '🐷🍀' }, ['classic']),
+  v('emoji-animals-02', 'animals', 2, 'Welche Redewendung ist das?', 'Einen Kater haben', ['Einen Kater haben', 'Sich einen Affen antrinken', 'Einen Vogel haben', 'Einen Frosch im Hals haben'], { kind: 'emoji', symbols: '🐈🍻🤕' }, ['chat']),
+  v('emoji-animals-03', 'animals', 2, 'Welche Redewendung ist das?', 'Die Katze im Sack kaufen', ['Die Katze im Sack kaufen', 'Die Katze aus dem Sack lassen', 'Wie die Katze um den Brei', 'Für die Katz sein'], { kind: 'emoji', symbols: '💶👜🐈❓' }, ['classic']),
+  v('emoji-animals-04', 'animals', 3, 'Welche Redewendung ist das?', 'Eulen nach Athen tragen', ['Eulen nach Athen tragen', 'Den Bock zum Gärtner machen', 'Das Pferd von hinten aufzäumen', 'Mit den Hühnern aufstehen'], { kind: 'emoji', symbols: '🦉➡️🏛️🇬🇷' }, ['odd']),
+
+  // world
+  v('emoji-world-01', 'world', 1, 'Welche Stadt ist das?', 'New York', ['New York', 'Washington', 'Chicago', 'Boston'], { kind: 'emoji', symbols: '🍎🗽🚕' }, ['classic']),
+  v('emoji-world-02', 'world', 2, 'Welche Stadt ist das?', 'Salzburg', ['Salzburg', 'Innsbruck', 'Hallstatt', 'Linz'], { kind: 'emoji', symbols: '🧂🏰🎹' }, ['classic']),
+  v('emoji-world-03', 'world', 3, 'Welche Stadt ist das?', 'Bern', ['Bern', 'Zürich', 'Basel', 'Genf'], { kind: 'emoji', symbols: '🐻🏔️🧀🏛️' }, ['odd']),
+
+  // food
+  v('emoji-food-01', 'food', 1, 'Welches Essen ist das?', 'Hot Dog', ['Hot Dog', 'Currywurst', 'Corn Dog', 'Bratwurst'], { kind: 'emoji', symbols: '🔥🐶' }, ['classic']),
+  v('emoji-food-02', 'food', 2, 'Welcher Kuchen ist das?', 'Bienenstich', ['Bienenstich', 'Honigkuchen', 'Donauwelle', 'Zuckerkuchen'], { kind: 'emoji', symbols: '🐝💉🍰' }, ['classic']),
+  v('emoji-food-03', 'food', 2, 'Welches Gericht ist das?', 'Kaiserschmarrn', ['Kaiserschmarrn', 'Königsberger Klopse', 'Prinzregententorte', 'Arme Ritter'], { kind: 'emoji', symbols: '👑🥞🤪' }, ['classic']),
+  v('emoji-food-04', 'food', 3, 'Welches kölsche Gericht ist das?', 'Himmel un Ääd', ['Himmel un Ääd', 'Halve Hahn', 'Kölsche Kaviar', 'Rievkooche'], { kind: 'emoji', symbols: '☁️🌍🍎🥔' }, ['local']),
+
+  // brands
+  v('emoji-brands-01', 'brands', 1, 'Welche Marke ist das?', 'Red Bull', ['Red Bull', 'Monster Energy', 'Rockstar', 'Burn'], { kind: 'emoji', symbols: '🔴🐂' }, ['classic']),
+  v('emoji-brands-02', 'brands', 2, 'Welche Marke ist das?', 'Jägermeister', ['Jägermeister', 'Kleiner Feigling', 'Ramazzotti', 'Berentzen'], { kind: 'emoji', symbols: '🏹🦌🥇' }, ['classic']),
+  v('emoji-brands-03', 'brands', 3, 'Welche Marke ist das?', 'Schwarzkopf', ['Schwarzkopf', 'Wella', 'Garnier', 'L’Oréal'], { kind: 'emoji', symbols: '⚫👤💇‍♀️' }, ['odd']),
 ]

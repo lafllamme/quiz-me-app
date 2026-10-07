@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { VisualKind } from '~/data/quiz-catalog'
+import { GEO_SHAPES } from '~/data/geo/shapes'
 
 /**
  * Generic preview of a visual question format on a category tile. It hints at the
@@ -15,6 +16,14 @@ const trendPoints = Array.from({ length: 36 }, (_, month) => {
 }).join(' ')
 
 const swatches = ['#1DB954', '#1ED760', '#17A34A', '#2EC866']
+
+const boot = GEO_SHAPES.ITA
+const germany = GEO_SHAPES.DEU
+
+// A small pixel heart: '#' is filled.
+const pixelHeart = ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...']
+  .flatMap((row, y) => [...row].map((char, x) => ({ x, y, on: char === '#' })).filter(cell => cell.on))
+  .map((cell, index) => ({ ...cell, delay: `${200 + ((index * 37) % 23) * 40}ms` }))
 </script>
 
 <template>
@@ -31,6 +40,29 @@ const swatches = ['#1DB954', '#1ED760', '#17A34A', '#2EC866']
     <span v-else-if="kind === 'swatch'" class="visual-teaser-swatch">
       <i v-for="color in swatches" :key="color" :style="{ background: color }" />
     </span>
+
+    <svg v-else-if="kind === 'silhouette'" class="visual-teaser-silhouette" :viewBox="boot.viewBox">
+      <path :d="boot.path" fill-rule="evenodd" />
+    </svg>
+
+    <span v-else-if="kind === 'quartet'" class="visual-teaser-quartet">
+      <b>???</b><i /><i /><i />
+    </span>
+
+    <svg v-else-if="kind === 'pin'" class="visual-teaser-pin" :viewBox="germany.viewBox">
+      <path :d="germany.path" fill-rule="evenodd" />
+      <circle cx="16" cy="45" r="5" />
+    </svg>
+
+    <svg v-else-if="kind === 'pixel'" class="visual-teaser-pixel" viewBox="0 0 7 6" shape-rendering="crispEdges">
+      <rect v-for="cell in pixelHeart" :key="`${cell.x}-${cell.y}`" :x="cell.x" :y="cell.y" width="1" height="1" :style="{ animationDelay: cell.delay }" />
+    </svg>
+
+    <span v-else-if="kind === 'flag'" class="visual-teaser-flag">
+      <i style="background: #000" /><i style="background: #dd0000" /><i style="background: #2e9e4f" />
+    </span>
+
+    <span v-else-if="kind === 'phrase'" class="visual-teaser-phrase">Dziękuję</span>
 
     <svg v-else class="visual-teaser-doodle" viewBox="0 0 120 80">
       <path pathLength="1" d="M6 76 Q40 72 62 76 T116 75" />
@@ -125,6 +157,102 @@ const swatches = ['#1DB954', '#1ED760', '#17A34A', '#2EC866']
   transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.visual-teaser-silhouette,
+.visual-teaser-pin {
+  height: clamp(2.6rem, 5.4vh, 3.5rem);
+  overflow: visible;
+}
+
+.visual-teaser-silhouette path {
+  fill: var(--category-cream);
+  transform-box: fill-box;
+  transform-origin: 70% 75%;
+  transform: scale(1.5);
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.visual-teaser-pin path {
+  fill: color-mix(in srgb, var(--category-cream) 85%, transparent);
+}
+
+.visual-teaser-pin circle {
+  fill: var(--category-accent);
+  stroke: var(--category-ink);
+  stroke-width: 2;
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.visual-teaser-quartet {
+  display: grid;
+  width: 46%;
+  gap: 0.22rem;
+  border-radius: 0.35rem;
+  background: var(--category-cream);
+  padding: 0.3rem 0.45rem 0.4rem;
+  transform: rotate(-3deg);
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.visual-teaser-quartet b {
+  color: var(--category-ink);
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  line-height: 1;
+}
+
+.visual-teaser-quartet i {
+  display: block;
+  height: 0.22rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--category-ink) 30%, transparent);
+}
+
+.visual-teaser-quartet i:nth-of-type(2) { width: 70%; }
+.visual-teaser-quartet i:nth-of-type(3) { width: 85%; }
+
+.visual-teaser-pixel {
+  height: clamp(2.4rem, 5vh, 3.1rem);
+}
+
+.visual-teaser-pixel rect {
+  fill: var(--category-accent);
+  opacity: 0;
+  animation: visual-teaser-appear 1ms linear forwards;
+}
+
+.visual-teaser-flag {
+  display: flex;
+  width: 3.6rem;
+  height: 2.7rem;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0.3rem;
+  transform: rotate(2deg);
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.visual-teaser-flag i {
+  display: block;
+  flex: 1;
+}
+
+.visual-teaser-phrase {
+  border-radius: 0.35rem;
+  background: var(--category-cream);
+  padding: 0.3rem 0.6rem;
+  color: var(--category-ink);
+  font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+  font-weight: 800;
+  transform: rotate(-2deg);
+  transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes visual-teaser-appear {
+  to { opacity: 1; }
+}
+
 @keyframes visual-teaser-draw {
   to { stroke-dashoffset: 0; }
 }
@@ -137,8 +265,17 @@ const swatches = ['#1DB954', '#1ED760', '#17A34A', '#2EC866']
   }
 
   .visual-teaser-emoji span,
-  .visual-teaser-swatch i {
+  .visual-teaser-swatch i,
+  .visual-teaser-silhouette path,
+  .visual-teaser-quartet,
+  .visual-teaser-flag,
+  .visual-teaser-phrase {
     transition: none;
+  }
+
+  .visual-teaser-pixel rect {
+    animation: none;
+    opacity: 1;
   }
 }
 </style>
@@ -152,4 +289,9 @@ const swatches = ['#1DB954', '#1ED760', '#17A34A', '#2EC866']
 .category-board-option:hover .visual-teaser-swatch i:nth-child(2) { transition-delay: 40ms; }
 .category-board-option:hover .visual-teaser-swatch i:nth-child(3) { transition-delay: 80ms; }
 .category-board-option:hover .visual-teaser-swatch i:nth-child(4) { transition-delay: 120ms; }
+.category-board-option:hover .visual-teaser-silhouette path { transform: scale(1); }
+.category-board-option:hover .visual-teaser-pin circle { transform: translateY(-3px) scale(1.2); }
+.category-board-option:hover .visual-teaser-quartet { transform: rotate(2deg); }
+.category-board-option:hover .visual-teaser-flag { transform: rotate(-3deg); }
+.category-board-option:hover .visual-teaser-phrase { transform: rotate(1deg) scale(1.05); }
 </style>

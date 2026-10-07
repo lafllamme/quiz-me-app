@@ -50,6 +50,8 @@ interface GameState {
   result: string
   /** One entry per resolved question, in play order. */
   history: TurnRecord[]
+  /** Both teams' numbers on an estimation question, once submitted. */
+  estimateGuesses: [number, number] | null
 }
 
 const defaultConfig: QuizConfig = {
@@ -83,6 +85,7 @@ const emptyGame = (): GameState => ({
   winner: null,
   result: '',
   history: [],
+  estimateGuesses: null,
 })
 
 // One music track per screen; screens without an entry are silent. The question screen's
@@ -111,7 +114,14 @@ export function useQuizGame() {
   const roundNumber = computed(() => Math.floor(game.turn / config.perRound) + 1)
   const availableQuestions = computed(() => deck.getAvailableQuestions(game.used))
   const catalogExhausted = computed(() => deck.isExhausted.value)
-  const tieQuestion = computed(() => TIE_QUESTIONS[tieIndex.value % TIE_QUESTIONS.length] ?? { question: '', answer: 0 })
+  // The tie-break draws unplayed estimation questions first, then the fixed fallback list.
+  const tieQuestion = computed(() => {
+    const pool = [
+      ...deck.getAvailableQuestions(game.used).filter(question => question.estimate).map(question => ({ question: question.question, answer: question.estimate!.value })),
+      ...TIE_QUESTIONS,
+    ]
+    return pool[tieIndex.value % pool.length] ?? { question: '', answer: 0 }
+  })
 
   function persist() {
     if (import.meta.server)
@@ -284,6 +294,7 @@ export function useQuizGame() {
     game.resolved = false
     game.winner = null
     game.result = ''
+    game.estimateGuesses = null
 
     if (!game.tiles.length) {
       finish()
@@ -309,6 +320,7 @@ export function useQuizGame() {
     game.resolved = false
     game.winner = null
     game.result = ''
+    game.estimateGuesses = null
     timeRemaining.value = config.seconds
     screen.value = 'question'
     sound.play('select')
@@ -341,7 +353,7 @@ export function useQuizGame() {
   }
 
   function markCorrect() {
-    if (screen.value !== 'question' || game.resolved)
+    if (screen.value !== 'question' || game.resolved || game.currentQuestion?.estimate)
       return
     sound.playTrack('correct')
     resolve(game.active, `${config.names[game.active]} bekommt +1 Punkt.`)
@@ -351,6 +363,19 @@ export function useQuizGame() {
   function markWrong(timeout = false) {
     if (screen.value !== 'question' || game.resolved)
       return
+
+    // Estimation questions have no steal: time up only means the numbers go in now.
+    if (game.currentQuestion?.estimate) {
+      if (!timeout)
+        return
+      stopTimer()
+      sound.stopMusic()
+      sound.playTrack('timeOver')
+      game.timeExpired = true
+      game.result = 'Zeit um. Jetzt die Schätzungen eintragen.'
+      persist()
+      return
+    }
 
     stopTimer()
     sound.stopMusic()
@@ -375,7 +400,7 @@ export function useQuizGame() {
   }
 
   function selectOption(index: number) {
-    if (screen.value !== 'question' || game.resolved || game.revealed || !game.currentQuestion)
+    if (screen.value !== 'question' || game.resolved || game.revealed || !game.currentQuestion || game.currentQuestion.estimate)
       return
     if (index < 0 || index >= game.currentQuestion.options.length || game.wrongOptions.includes(index))
       return
@@ -416,6 +441,24 @@ export function useQuizGame() {
     }
 
     prepareCategories()
+  }
+
+  /** Estimation question: the closer guess scores; an equal distance scores nobody. */
+  function submitEstimate(guesses: [number, number]) {
+    const target = game.currentQuestion?.estimate
+    if (screen.value !== 'question' || game.resolved || !target)
+      return
+    game.estimateGuesses = guesses
+    const [first, second] = guesses.map(guess => Math.abs(guess - target.value))
+    if (first === second) {
+      sound.playTrack('wrong')
+      resolve(null, 'Beide gleich nah dran. Kein Punkt.')
+      return
+    }
+    const winner = (first! < second! ? 0 : 1) as 0 | 1
+    game.active = winner
+    sound.playTrack('correct')
+    resolve(winner, `${config.names[winner]} liegt näher dran: +1 Punkt.`)
   }
 
   function submitTie(guesses: [number, number]) {
@@ -499,6 +542,7 @@ export function useQuizGame() {
     startTimer,
     resetTimer,
     submitTie,
+    submitEstimate,
     resetQuestionHistory: deck.resetHistory,
   }
 }

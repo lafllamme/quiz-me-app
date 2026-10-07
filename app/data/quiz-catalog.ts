@@ -1,14 +1,30 @@
 import type { QuestionSeed } from './catalog/seed'
+import { animalsQuestions } from './catalog/animals'
+import { brandsQuestions } from './catalog/brands'
 import { cologneQuestions } from './catalog/cologne'
+import { estimateQuestions } from './catalog/estimate'
+import { foodQuestions } from './catalog/food'
+import { gamingQuestions } from './catalog/gaming'
 import { internetQuestions } from './catalog/internet'
 import { knowledgeQuestions } from './catalog/knowledge'
+import { languageQuestions } from './catalog/language'
 import { musicQuestions } from './catalog/music'
 import { nostalgiaQuestions } from './catalog/nostalgia'
 import { screenQuestions } from './catalog/screen'
+import { truthQuestions } from './catalog/truth'
 import { doodleQuestions } from './catalog/visual-doodle'
 import { emojiQuestions } from './catalog/visual-emoji'
+import { flagQuestions } from './catalog/visual-flag'
+import { pinQuestions } from './catalog/visual-pin'
+import { pixelQuestions } from './catalog/visual-pixel'
+import { quartetQuestions } from './catalog/visual-quartet'
+import { silhouetteQuestions } from './catalog/visual-silhouette'
 import { swatchQuestions } from './catalog/visual-swatch'
 import { trendQuestions } from './catalog/visual-trend'
+import { worldQuestions } from './catalog/world'
+import { FLAG_SPEC } from '../utils/flag-spec'
+import { GEO_MAPS } from './geo/maps'
+import { GEO_SHAPES } from './geo/shapes'
 import type {
   QuestionMedia,
   QuizCategory,
@@ -35,6 +51,14 @@ export const QUIZ_CATEGORIES: readonly QuizCategory[] = [
   { id: 'internet', label: 'Netz & Memes', descriptor: 'Chat, Running Gags und Internetkultur' },
   { id: 'knowledge', label: 'Wissen', descriptor: 'Körper, Alltag und unnütze Fakten' },
   { id: 'nostalgia', label: 'Nostalgie', descriptor: '2000er, 2010er und frühe Netzkultur' },
+  { id: 'animals', label: 'Tierisch', descriptor: 'Rekorde, Macken und seltsame Viecher' },
+  { id: 'world', label: 'Einmal um die Welt', descriptor: 'Länder, Städte und Landkarten' },
+  { id: 'food', label: 'Essen & Trinken', descriptor: 'Küche, Drinks und Snack-Geschichte' },
+  { id: 'brands', label: 'Marken & Werbung', descriptor: 'Slogans, Logos und Konsumkultur' },
+  { id: 'estimate', label: 'Schätzen', descriptor: 'Beide tippen eine Zahl, näher dran punktet' },
+  { id: 'truth', label: 'Wahr oder gelogen', descriptor: 'Vier Behauptungen, eine ist erfunden' },
+  { id: 'gaming', label: 'Gaming', descriptor: 'Konsolen, Klassiker und Rage-Quits' },
+  { id: 'language', label: 'Sprache', descriptor: 'Wörter, Dialekte und fremde Zungen' },
 ]
 
 const seeds: readonly QuestionSeed[] = [
@@ -48,6 +72,19 @@ const seeds: readonly QuestionSeed[] = [
   ...doodleQuestions,
   ...trendQuestions,
   ...swatchQuestions,
+  ...animalsQuestions,
+  ...worldQuestions,
+  ...foodQuestions,
+  ...brandsQuestions,
+  ...estimateQuestions,
+  ...truthQuestions,
+  ...gamingQuestions,
+  ...languageQuestions,
+  ...silhouetteQuestions,
+  ...quartetQuestions,
+  ...pinQuestions,
+  ...pixelQuestions,
+  ...flagQuestions,
 ]
 
 function buildQuestion(seed: QuestionSeed): QuizQuestion {
@@ -88,17 +125,36 @@ export const MIN_QUESTIONS_PER_DIFFICULTY = 20
 
 const HEX_COLOUR = /^#[0-9A-F]{6}$/i
 
+const VIEWBOX = /^[\d.\s-]+$/
+
 function isValidMedia(media: QuestionMedia, options: readonly string[]) {
   switch (media.kind) {
     case 'emoji':
       return media.symbols.trim().length > 0
     case 'doodle':
-      return media.paths.length > 0 && /^[\d.\s-]+$/.test(media.viewBox)
+      return media.paths.length > 0 && VIEWBOX.test(media.viewBox)
     case 'trend':
       return media.values.length >= 12 && media.values.every(value => value >= 0 && value <= 100)
     case 'swatch':
       return media.reveal.length > 0 && options.every(option => HEX_COLOUR.test(option))
+    case 'silhouette':
+      return 'shape' in media ? media.shape in GEO_SHAPES : media.path.length > 0 && VIEWBOX.test(media.viewBox)
+    case 'quartet':
+      return media.stats.length >= 3 && media.stats.length <= 5
+    case 'pin':
+      return media.map in GEO_MAPS && isInside(media.map, media.at) && (!media.reference || isInside(media.map, media.reference.at))
+    case 'pixel':
+      return media.rows.length > 0 && media.rows.length <= 24 && media.rows.every(row => row.length === media.rows[0]!.length && row.length <= 24 && [...row].every(char => char === '.' || char in media.palette))
+    case 'flag':
+      return 'show' in media ? FLAG_SPEC.test(media.show) : media.reveal.length > 0 && options.every(option => FLAG_SPEC.test(option))
+    case 'phrase':
+      return media.text.trim().length > 0
   }
+}
+
+function isInside(map: keyof typeof GEO_MAPS, [lon, lat]: readonly [number, number]) {
+  const [west, east, south, north] = GEO_MAPS[map].bounds
+  return lon >= west && lon <= east && lat >= south && lat <= north
 }
 
 function validateCatalog() {
@@ -121,6 +177,9 @@ function validateCatalog() {
 
     if (new Set(question.options).size !== question.options.length)
       throw new Error(`Duplicate answer options for quiz question: ${question.id}`)
+
+    if (question.estimate && !Number.isFinite(question.estimate.value))
+      throw new Error(`Invalid estimate for quiz question: ${question.id}`)
 
     if (question.media && !isValidMedia(question.media, question.options))
       throw new Error(`Invalid media for quiz question: ${question.id}`)

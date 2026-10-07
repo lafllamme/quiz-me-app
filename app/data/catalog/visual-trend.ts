@@ -82,4 +82,62 @@ export const trendQuestions: readonly QuestionSeed[] = [
     from: 2012,
     values: [6, 7, 9, 32, 62, 72, 16, 5, 3, 5, 4, 5, 4, 3, 3, 2, 3, 4, 3, 2, 3, 3, 2, 4, 6, 8, 14, 52, 86, 100, 44, 8, 5, 4, 3, 4, 5, 4, 3, 3, 3, 5, 3, 4, 3, 2, 2, 3],
   }, ['nostalgia', 'classic']),
+
+  // food
+  v('trend-food-01', 'food', 1, 'Wonach wurde hier gegoogelt?', 'Erdbeeren', ['Erdbeeren', 'Kirschen', 'Spargel', 'Pflaumen'], {
+    kind: 'trend',
+    from: 2023,
+    values: [4, 4, 7, 12, 43, 84, 52, 15, 8, 4, 3, 5, 4, 5, 8, 14, 47, 89, 55, 17, 7, 5, 4, 7, 5, 5, 8, 13, 47, 100, 58, 19, 8, 6, 4, 6],
+  }, ['classic']),
+  v('trend-food-02', 'food', 2, 'Welches Getränk wird hier gesucht?', 'Federweißer', ['Federweißer', 'Glühwein', 'Maibowle', 'Aperol Spritz'], {
+    kind: 'trend',
+    from: 2023,
+    values: [3, 1, 2, 3, 3, 4, 5, 29, 86, 54, 6, 2, 3, 1, 1, 3, 3, 3, 6, 32, 97, 56, 7, 3, 2, 2, 1, 2, 3, 3, 5, 30, 100, 55, 5, 3],
+  }, ['classic']),
+  v('trend-food-03', 'food', 2, 'Wonach wurde hier gegoogelt?', 'Bärlauch', ['Bärlauch', 'Rhabarber', 'Pfifferlinge', 'Grünkohl'], {
+    kind: 'trend',
+    from: 2023,
+    values: [5, 18, 73, 93, 28, 5, 2, 3, 2, 2, 2, 3, 5, 23, 83, 99, 29, 5, 2, 2, 2, 3, 2, 2, 5, 23, 85, 100, 30, 7, 3, 3, 3, 2, 3, 2],
+  }, ['classic']),
+  v('trend-food-04', 'food', 3, 'Wonach wurde hier gegoogelt?', 'Raclette', ['Raclette', 'Glühwein', 'Lebkuchen', 'Gänsebraten'], {
+    kind: 'trend',
+    from: 2023,
+    values: [25, 9, 5, 4, 3, 2, 3, 4, 4, 7, 18, 85, 27, 9, 5, 5, 4, 3, 2, 2, 4, 7, 21, 90, 30, 9, 4, 4, 4, 3, 3, 3, 4, 9, 22, 100],
+  }, ['classic']),
+
+  // brands
+  v('trend-brands-01', 'brands', 2, 'Wonach wurde hier gegoogelt?', 'Black Friday', ['Black Friday', 'Prime Day', 'Adventskalender', 'Sommerschlussverkauf'], {
+    kind: 'trend',
+    from: 2023,
+    values: [4, 1, 2, 1, 2, 3, 4, 2, 4, 8, 92, 12, 3, 2, 2, 1, 2, 1, 4, 4, 4, 7, 93, 11, 4, 2, 3, 2, 1, 2, 5, 4, 4, 8, 100, 13],
+  }, ['current']),
+  v('trend-brands-02', 'brands', 3, 'Welches Produkt hat jedes Jahr diesen Peak?', 'iPhone', ['iPhone', 'PlayStation', 'Nintendo Switch', 'Samsung Galaxy'], {
+    kind: 'trend',
+    from: 2023,
+    values: [35, 33, 31, 30, 32, 34, 34, 37, 88, 59, 49, 57, 40, 36, 34, 36, 35, 36, 36, 38, 92, 58, 51, 61, 38, 35, 34, 35, 38, 36, 37, 39, 100, 60, 51, 57],
+  }, ['current']),
+
+  // animals
+  v('trend-animals-01', 'animals', 1, 'Welches Tier wird hier gesucht?', 'Maikäfer', ['Maikäfer', 'Marienkäfer', 'Glühwürmchen', 'Wespen'], {
+    kind: 'trend',
+    from: 2023,
+    values: [1, 1, 4, 37, 91, 26, 5, 3, 2, 2, 3, 2, 3, 3, 5, 38, 89, 27, 6, 3, 2, 1, 3, 2, 1, 2, 3, 39, 100, 29, 6, 3, 1, 1, 2, 1],
+  }, ['classic']),
+  v('trend-animals-02', 'animals', 3, 'Welches Tier wird hier gesucht?', 'Wespen', ['Wespen', 'Mücken', 'Zecken', 'Maikäfer'], {
+    kind: 'trend',
+    from: 2023,
+    values: [1, 2, 2, 5, 8, 23, 60, 89, 69, 16, 4, 2, 2, 1, 3, 6, 10, 22, 56, 98, 66, 18, 4, 1, 3, 2, 3, 7, 10, 22, 59, 100, 68, 17, 5, 3],
+  }, ['classic']),
+
+  // world
+  v('trend-world-01', 'world', 1, 'Wohin will Deutschland hier?', 'Mallorca', ['Mallorca', 'Lappland', 'Kapstadt', 'Ischgl'], {
+    kind: 'trend',
+    from: 2023,
+    values: [43, 41, 41, 49, 65, 70, 91, 82, 57, 38, 26, 29, 42, 40, 42, 54, 65, 74, 89, 84, 61, 40, 27, 30, 42, 43, 43, 54, 66, 78, 100, 92, 59, 42, 27, 32],
+  }, ['classic']),
+  v('trend-world-02', 'world', 1, 'Wonach wurde hier gegoogelt?', 'Skiurlaub', ['Skiurlaub', 'Wanderurlaub', 'Kreuzfahrt', 'Städtetrip'], {
+    kind: 'trend',
+    from: 2023,
+    values: [93, 73, 30, 9, 4, 3, 4, 6, 10, 21, 49, 73, 89, 74, 33, 8, 4, 3, 4, 5, 11, 21, 55, 74, 100, 73, 34, 9, 5, 2, 4, 6, 10, 23, 55, 75],
+  }, ['classic']),
 ]
