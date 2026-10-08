@@ -9,7 +9,7 @@ const props = withDefaults(defineProps<{
   finish?: CoinFinish
 }>(), { finish: 'gold' })
 
-const emit = defineEmits<{ landed: [] }>()
+const emit = defineEmits<{ thrown: [], landed: [] }>()
 
 const host = ref<HTMLDivElement>()
 const failed = ref(false)
@@ -172,6 +172,7 @@ async function mountCoin() {
     emit('landed')
   }
   else {
+    emit('thrown')
     const started = performance.now()
     const tick = (now: number) => {
       const t = (now - started) / 1000

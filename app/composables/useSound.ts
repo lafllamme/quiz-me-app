@@ -1,6 +1,7 @@
 type SoundName = 'menu' | 'select' | 'start' | 'tick' | 'right' | 'wrong' | 'steal' | 'end' | 'drum' | 'ring'
-export type TrackName = 'startScreen' | 'tension' | 'categorySelection' | 'timeOver' | 'wrong' | 'correct'
-export type MusicName = Extract<TrackName, 'startScreen' | 'tension' | 'categorySelection'>
+export type TrackName = 'startScreen' | 'tension' | 'categorySelection' | 'toss' | 'timeOver' | 'wrong' | 'correct'
+export type MusicName = Extract<TrackName, 'startScreen' | 'tension' | 'categorySelection' | 'toss'>
+export type SampleName = 'coinFlip' | 'coinSwoosh'
 
 const patterns: Record<SoundName, Array<[number, number, number, OscillatorType?]>> = {
   menu: [[350, 0, 0.08]],
@@ -19,10 +20,25 @@ const trackSources: Record<TrackName, string> = {
   startScreen: '/audio/start_screen.mp3',
   tension: '/audio/tension_45s.mp3',
   categorySelection: '/audio/category_selection.mp3',
+  toss: '/audio/toss_music.mp3',
   timeOver: '/audio/time_over.mp3',
   wrong: '/audio/wrong.mp3',
   correct: '/audio/correct.mp3',
 }
+
+// Gains that bring the files to one level: the music sits around -17 dB RMS like the
+// other tracks, the throw effects peak just above it. Measured, not guessed.
+const trackVolumes: Partial<Record<TrackName, number>> = {
+  toss: 0.6,
+}
+
+// Short effects that must line up with an animation play through Web Audio:
+// sample-accurate and not subject to the per-element autoplay rules of <audio>.
+const samples: Record<SampleName, { src: string, volume: number }> = {
+  coinFlip: { src: '/audio/coin_flip.wav', volume: 1 },
+  coinSwoosh: { src: '/audio/coin_swoosh.mp3', volume: 0.75 },
+}
+const sampleBuffers = new Map<SampleName, Promise<AudioBuffer | null>>()
 
 // Audio elements live at module level so every caller shares them. Music is a single channel:
 // starting one music track always stops the previous one, so two songs can never overlap.
@@ -55,6 +71,7 @@ export function useSound() {
     if (!track) {
       track = new Audio(trackSources[name])
       track.preload = 'auto'
+      track.volume = trackVolumes[name] ?? 1
       tracks.set(name, track)
     }
     return track
@@ -160,6 +177,46 @@ export function useSound() {
     oscillator.stop(start + duration + 0.02)
   }
 
+  function loadSample(name: SampleName) {
+    let buffer = sampleBuffers.get(name)
+    if (!buffer) {
+      const ctx = context
+      buffer = !ctx
+        ? Promise.resolve(null)
+        : fetch(samples[name].src)
+            .then(response => response.arrayBuffer())
+            .then(data => ctx.decodeAudioData(data))
+            .catch(() => null)
+      if (ctx)
+        sampleBuffers.set(name, buffer)
+    }
+    return buffer
+  }
+
+  /** Unlocks audio and decodes the samples ahead of time; call from a user gesture. */
+  function prepareSamples(names: SampleName[]) {
+    unlock()
+    names.forEach(loadSample)
+  }
+
+  async function playSample(name: SampleName, delay = 0) {
+    if (!enabled.value)
+      return
+
+    unlock()
+    const buffer = await loadSample(name)
+    if (!buffer || !context || !enabled.value)
+      return
+
+    const source = context.createBufferSource()
+    const gain = context.createGain()
+    source.buffer = buffer
+    gain.gain.value = samples[name].volume
+    source.connect(gain)
+    gain.connect(context.destination)
+    source.start(context.currentTime + delay)
+  }
+
   function play(name: SoundName) {
     unlock()
     patterns[name].forEach(([frequency, time, duration, type]) => tone(frequency, time, duration, type, name === 'drum' ? 0.24 : 0.16))
@@ -182,6 +239,8 @@ export function useSound() {
     play,
     playTrack,
     playMusic,
+    playSample,
+    prepareSamples,
     pauseMusic,
     resumeMusic,
     stopMusic,

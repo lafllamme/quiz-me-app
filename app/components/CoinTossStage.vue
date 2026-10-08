@@ -14,6 +14,14 @@ const emit = defineEmits<{ continue: [] }>()
 
 // The game decides the result up front; only reveal it once the coin shows it.
 const landed = ref(false)
+
+const sound = useSound()
+
+// The flick lands with the throw, the swoosh trails it by a beat.
+function thrown() {
+  void sound.playSample('coinFlip')
+  void sound.playSample('coinSwoosh', 0.08)
+}
 const revealed = computed(() => props.ready && landed.value)
 
 const teams = computed(() => [
@@ -45,7 +53,7 @@ const teams = computed(() => [
           <small aria-hidden="true">beginnt</small>
         </div>
         <ClientOnly>
-          <TossCoin :names="names" :result="result" finish="bimetal-portrait" @landed="landed = true" />
+          <TossCoin :names="names" :result="result" finish="bimetal-portrait" @thrown="thrown" @landed="landed = true" />
         </ClientOnly>
       </div>
 

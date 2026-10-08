@@ -92,6 +92,7 @@ const emptyGame = (): GameState => ({
 // tension track is driven by the timer instead, so it pauses and resumes with it.
 const screenMusic: Partial<Record<GameScreen, MusicName>> = {
   menu: 'startScreen',
+  toss: 'toss',
   category: 'categorySelection',
 }
 
@@ -238,7 +239,7 @@ export function useQuizGame() {
     hasSavedGame.value = false
     screen.value = 'toss'
     tossReady.value = false
-    sound.play('ring')
+    sound.prepareSamples(['coinFlip', 'coinSwoosh'])
     persist()
 
     if (tossTimeout)
