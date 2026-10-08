@@ -475,3 +475,119 @@ Sources: [Freesound](https://freesound.org) (CC0 1.0) and [Kenney](https://kenne
 | `human/child-laugh.mp3` | Boy or Young Child Laughing | OBXJohn | https://freesound.org/s/365632/ | CC0 1.0 |
 | `human/hair-brushing.mp3` | Brushing Hair.wav | ryanharding95 | https://freesound.org/s/272423/ | CC0 1.0 |
 | `human/face-slap.mp3` | Slap hit on the face or shoulder | khenshom | https://freesound.org/s/539163/ | CC0 1.0 |
+
+## Batch 3
+
+Source: [Freesound](https://freesound.org) (CC0 1.0). Processed the same way as batch 1.
+
+### animals
+
+| File | Original title | Author | Source | License |
+| --- | --- | --- | --- | --- |
+| `animals/cat-fight.mp3` | cat fight.wav | jess90 | https://freesound.org/s/647307/ | CC0 1.0 |
+| `animals/snake-hiss.mp3` | Snake hissing.mp3 | schreibsel | https://freesound.org/s/540162/ | CC0 1.0 |
+| `animals/bull.mp3` | Bovines - Cattle; Loud Bellow from Hereford Bull | TheKingOfGeeks360 | https://freesound.org/s/827111/ | CC0 1.0 |
+| `animals/canary.mp3` | CanaryArtie-2.wav | ReadeOnly | https://freesound.org/s/85402/ | CC0 1.0 |
+| `animals/cockatoo.mp3` | S29-11 Cockatoo screeches.wav | craigsmith | https://freesound.org/s/675963/ | CC0 1.0 |
+| `animals/magpie.mp3` | Magpie - 01.wav | Metalman101 | https://freesound.org/s/231302/ | CC0 1.0 |
+
+### everyday
+
+| File | Original title | Author | Source | License |
+| --- | --- | --- | --- | --- |
+| `everyday/glass-breaking.mp3` | smashing glass.wav | mgamabile | https://freesound.org/s/440773/ | CC0 1.0 |
+| `everyday/plate-smash.mp3` | Plate Break 1.wav | jc.sg | https://freesound.org/s/565642/ | CC0 1.0 |
+| `everyday/kitchen-timer.mp3` | Bell, egg timer | knufds | https://freesound.org/s/490326/ | CC0 1.0 |
+| `everyday/coin-spin.mp3` | Quarter Spin | TravieDoodle | https://freesound.org/s/542232/ | CC0 1.0 |
+| `everyday/ketchup-squirt.mp3` | Smith_Squeezing_ketchup.WAV | gmsmith1918 | https://freesound.org/s/676371/ | CC0 1.0 |
+| `everyday/door-slam.mp3` | Door slamming hard | NachtmahrTV | https://freesound.org/s/571797/ | CC0 1.0 |
+| `everyday/digital-alarm.mp3` | alarm beep electronic.wav | reecord2 | https://freesound.org/s/96063/ | CC0 1.0 |
+| `everyday/bike-pump.mp3` | J8_pumping tire.mp3 | Iamgiorgio | https://freesound.org/s/371838/ | CC0 1.0 |
+| `everyday/bath-filling.mp3` | Bathwater Sound | jakepessin | https://freesound.org/s/587105/ | CC0 1.0 |
+| `everyday/hand-washing.mp3` | Washing Hands.wav | allie_on_toast | https://freesound.org/s/648346/ | CC0 1.0 |
+| `everyday/electric-kettle.mp3` | Boil water (Electric kettle) | muy2149972 | https://freesound.org/s/586421/ | CC0 1.0 |
+| `everyday/soda-bottle-open.mp3` | open 24oz soda bottle outdoors long fizz explode | jwsoundfoley | https://freesound.org/s/207562/ | CC0 1.0 |
+| `everyday/sparkling-water-pour.mp3` | fizzy water pour 001.WAV | uwesoundboiz | https://freesound.org/s/60386/ | CC0 1.0 |
+| `everyday/fire-extinguisher.mp3` | Fire Extinguisher | tranzfusion | https://freesound.org/s/642961/ | CC0 1.0 |
+| `everyday/fluorescent-light.mp3` | zuendung.wav | bOmbhead | https://freesound.org/s/49589/ | CC0 1.0 |
+| `everyday/hole-punch.mp3` | Hole Punch.wav | sophiehall3535 | https://freesound.org/s/248034/ | CC0 1.0 |
+| `everyday/pencil-writing.mp3` | pencil_strokes.mp3 | sirrealist2 | https://freesound.org/s/278159/ | CC0 1.0 |
+| `everyday/rubber-duck.mp3` | Rubber Duck | Slothfully_So | https://freesound.org/s/685067/ | CC0 1.0 |
+| `everyday/baby-rattle.mp3` | baby rattle sound effect | deleted_user_7146007 | https://freesound.org/s/383234/ | CC0 1.0 |
+| `everyday/pot-lid.mp3` | Pots and Pans Clatter 1 | OwlStorm | https://freesound.org/s/209002/ | CC0 1.0 |
+| `everyday/nutcracker.mp3` | nut cracking 2.wav | toddcircle | https://freesound.org/s/443888/ | CC0 1.0 |
+| `everyday/tea-stirring.mp3` | stirring coffee.wav | keweldog | https://freesound.org/s/181716/ | CC0 1.0 |
+| `everyday/bread-cutting.mp3` | Cutting_Bread.wav | 14FPanskaEberlova_Katerina | https://freesound.org/s/419756/ | CC0 1.0 |
+| `everyday/whipped-cream.mp3` | whipped cream | nincamindza07 | https://freesound.org/s/846514/ | CC0 1.0 |
+| `everyday/shower-curtain.mp3` | shower curtain fast.wav | ryancacophony | https://freesound.org/s/202014/ | CC0 1.0 |
+| `everyday/knitting.mp3` | 17Tejiendo.wav.wav | juliadang | https://freesound.org/s/468198/ | CC0 1.0 |
+| `everyday/phone-hangup.mp3` | Heavy Phone Up and Down_near_mono.wav | _stubb | https://freesound.org/s/406233/ | CC0 1.0 |
+| `everyday/plastic-bag.mp3` | Thin plastic bag rustling.aif | carroll27 | https://freesound.org/s/151887/ | CC0 1.0 |
+| `everyday/aluminium-foil.mp3` | aluminium_foil.wav | nauix26 | https://freesound.org/s/186409/ | CC0 1.0 |
+| `everyday/gift-unwrapping.mp3` | Unwrapping 2.wav | vladikhuk | https://freesound.org/s/331440/ | CC0 1.0 |
+| `everyday/matchbox-shake.mp3` | MatchBox Shake.wav | JarredGibb | https://freesound.org/s/248240/ | CC0 1.0 |
+| `everyday/pill-bottle.mp3` | Shaking_Pillbottle.aif | kbnevel | https://freesound.org/s/119856/ | CC0 1.0 |
+| `everyday/spray-shake.mp3` | paint_shake_and_spray.wav | Mohagged | https://freesound.org/s/707374/ | CC0 1.0 |
+| `everyday/hand-dryer.mp3` | Hand Dryer 2 (no hand movement) .wav | 1chris.murray1 | https://freesound.org/s/352268/ | CC0 1.0 |
+| `everyday/swing-top-bottle.mp3` | Open a swing top beer bottle (Plopp) - Bierflasche oeffnen mit Buegelverschluss | Audeption | https://freesound.org/s/418511/ | CC0 1.0 |
+| `everyday/wine-pour.mp3` | fpwinebottle_pour_in.wav | jesuswasasoundboy | https://freesound.org/s/527199/ | CC0 1.0 |
+| `everyday/window-squeegee.mp3` | 2024-07-20-window-cleaning-squeegee-019.wav | ilmari_freesound | https://freesound.org/s/746980/ | CC0 1.0 |
+| `everyday/rocking-chair.mp3` | SFX2 - rocking chair creak.wav | JK129645 | https://freesound.org/s/547466/ | CC0 1.0 |
+
+### nature
+
+| File | Original title | Author | Source | License |
+| --- | --- | --- | --- | --- |
+| `nature/jungle.mp3` | jungle birds.wav | mlsprovideos | https://freesound.org/s/135931/ | CC0 1.0 |
+| `nature/wood-chopping.mp3` | Wood Chop 8.wav | wavecal22 | https://freesound.org/s/537435/ | CC0 1.0 |
+| `nature/digging.mp3` | S04-30 Digging with shovel; poking ground.wav | craigsmith | https://freesound.org/s/675977/ | CC0 1.0 |
+| `nature/lawn-sprinkler.mp3` | Sprinkler.wav | bsumusictech | https://freesound.org/s/62403/ | CC0 1.0 |
+| `nature/hedge-shears.mp3` | Hedge Trimmer 01.wav | Tim_Verberne | https://freesound.org/s/537754/ | CC0 1.0 |
+| `nature/wheelbarrow.mp3` | wheelbarrow.wav | 14FPanskaPavlik_Filip | https://freesound.org/s/420067/ | CC0 1.0 |
+
+### tech
+
+| File | Original title | Author | Source | License |
+| --- | --- | --- | --- | --- |
+| `tech/bike-freewheel.mp3` | Bike click | fredelisle | https://freesound.org/s/378211/ | CC0 1.0 |
+| `tech/cement-mixer.mp3` | Cement mixer.wav | 15HPanskaSuchopar_Jakub | https://freesound.org/s/461434/ | CC0 1.0 |
+| `tech/money-counter.mp3` | banknote-counter.wav | madvedj | https://freesound.org/s/178097/ | CC0 1.0 |
+| `tech/dtmf-dialing.mp3` | DTMF_dial.mp3 | Felfa | https://freesound.org/s/178817/ | CC0 1.0 |
+| `tech/geiger-counter.mp3` | R11-44-Radiation Geiger Counter.wav | craigsmith | https://freesound.org/s/482748/ | CC0 1.0 |
+| `tech/busy-signal.mp3` | busy signal_europe.mp3 | Felfa | https://freesound.org/s/178821/ | CC0 1.0 |
+
+### gaming
+
+| File | Original title | Author | Source | License |
+| --- | --- | --- | --- | --- |
+| `gaming/jump-rope.mp3` | jumping rope | vhschool2019 | https://freesound.org/s/461119/ | CC0 1.0 |
+| `gaming/rubiks-cube.mp3` | Rubik's cube | j2024w | https://freesound.org/s/717783/ | CC0 1.0 |
+| `gaming/water-pistol.mp3` | Water Gun Shot.mp3 | belanhud | https://freesound.org/s/537941/ | CC0 1.0 |
+| `gaming/roller-skates.mp3` | roller skates.mp3 | ItsFunnyInc | https://freesound.org/s/141462/ | CC0 1.0 |
+| `gaming/chains-rattle.mp3` | Chains Rattling | evantheblonde | https://freesound.org/s/368995/ | CC0 1.0 |
+| `gaming/lego-bricks.mp3` | LEGO_Rustle_v001.mp3 | KevRyanCG | https://freesound.org/s/518947/ | CC0 1.0 |
+| `gaming/badminton.mp3` | Badminton.wav | 13FPanska_Marval_Lukas | https://freesound.org/s/379325/ | CC0 1.0 |
+| `gaming/rollercoaster.mp3` | Riding on a Roller Coaster | Robo9418 | https://freesound.org/s/861702/ | CC0 1.0 |
+| `gaming/skiing.mp3` | Ski passby | cribbler | https://freesound.org/s/592379/ | CC0 1.0 |
+
+### show
+
+| File | Original title | Author | Source | License |
+| --- | --- | --- | --- | --- |
+| `show/big-ben.mp3` | Big Ben chimes | AlexMilsom | https://freesound.org/s/791991/ | CC0 1.0 |
+| `show/clown-horn.mp3` | Clown_Horn.mp3 | inplay | https://freesound.org/s/251611/ | CC0 1.0 |
+| `show/whip-crack.mp3` | Whip Crack.m4a | SciFiSounds | https://freesound.org/s/529925/ | CC0 1.0 |
+| `show/ship-bell.mp3` | Ship Bell Two Chimes | Sojan | https://freesound.org/s/353232/ | CC0 1.0 |
+| `show/service-bell.mp3` | desk bell center.mp3 | tonmayster | https://freesound.org/s/685111/ | CC0 1.0 |
+| `show/mic-feedback.mp3` | Microphone Feedback | CreationsByJacobFilms | https://freesound.org/s/411441/ | CC0 1.0 |
+
+### human
+
+| File | Original title | Author | Source | License |
+| --- | --- | --- | --- | --- |
+| `human/two-finger-whistle.mp3` | stock-whistle-00.flac | pbimal | https://freesound.org/s/534607/ | CC0 1.0 |
+| `human/woman-crying.mp3` | Woman crying | akoecreative | https://freesound.org/s/790620/ | CC0 1.0 |
+| `human/mouth-pop.mp3` | mouthPop_02.wav | carlSablowEdwards | https://freesound.org/s/47498/ | CC0 1.0 |
+| `human/flip-flops.mp3` | FlipFlop.WAV | jrsevers3 | https://freesound.org/s/452865/ | CC0 1.0 |
+| `human/slippers.mp3` | SlippersOnWoodenFloor.wav | singingmonk02 | https://freesound.org/s/388518/ | CC0 1.0 |
+| `human/stairs-footsteps.mp3` | Stairs | Poligonstudio | https://freesound.org/s/392604/ | CC0 1.0 |
