@@ -11,6 +11,9 @@ const MODE_KEY = 'jungle-mode'
 const mode = ref<GameMode>('quiz')
 const isSniper = computed(() => quiz.screen.value === 'sniper')
 const sniperFinal = computed(() => isSniper.value && sniper.state.phase === 'final')
+// While a team's half floods lime, the header element over that half switches to ink.
+const sniperFlood = computed(() => isSniper.value && sniper.state.phase === 'buzzed' && !sniper.state.revealed ? sniper.state.buzzer : null)
+const headerLight = computed(() => quiz.screen.value === 'category' || sniperFlood.value === 0)
 const modal = ref<'rules' | 'settings' | 'new' | null>(null)
 const route = useRoute()
 
@@ -203,7 +206,7 @@ function goForward() {
 <template>
   <div class="page-shell relative min-h-screen">
     <div class="app-noise" aria-hidden="true" />
-    <AppHeader :tone="quiz.screen.value === 'category' ? 'light' : 'dark'" :can-back="canGoBack" :can-forward="canGoForward" :split="quiz.screen.value === 'category'" @home="goMenu" @back="goBack" @forward="goForward" />
+    <AppHeader :tone="headerLight ? 'light' : 'dark'" :can-back="canGoBack" :can-forward="canGoForward" :split="headerLight" :nav-ink="sniperFlood === 1" @home="goMenu" @back="goBack" @forward="goForward" />
 
     <main :class="quiz.screen.value === 'menu' ? 'game-stage-wrap relative z-1' : 'game-screen-transition relative z-1'">
       <Transition name="stage" mode="out-in">

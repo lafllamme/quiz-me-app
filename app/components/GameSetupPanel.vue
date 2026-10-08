@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 import { SNIPER_ROUND_OPTIONS, SNIPER_SECOND_OPTIONS } from '~/composables/useSniperGame'
 import { SNIPER_CATEGORIES, type SniperCategoryId } from '~/data/sniper-sounds.types'
@@ -78,12 +78,24 @@ function cycleSeconds() {
     emit('update:seconds', nextOf(secondOptions, props.draft.seconds))
 }
 
+const categoriesOpen = ref(false)
+const activeCategories = computed(() => props.draft.sniperCategories.length)
+const categorySummary = computed(() => {
+  const off = SNIPER_CATEGORIES.filter(category => !props.draft.sniperCategories.includes(category.id))
+  if (!off.length)
+    return 'alle aktiv'
+  if (off.length === 1)
+    return `ohne ${off[0]!.label}`
+  return `${off.length} ausgeschaltet`
+})
+
 function cycleDifficulty() {
   emit('update:difficulty', difficultyOptions[(difficultyIndex.value + 1) % difficultyOptions.length]!.value)
 }
 </script>
 
 <template>
+  <!-- S2 / Spielbrett-Leiste: who plays on top, the rules as a ruled strip at the foot. -->
   <form class="game-setup-form" @submit.prevent="emit('start')">
     <div class="game-setup-mode" role="radiogroup" aria-label="Spielmodus">
       <button
@@ -98,49 +110,57 @@ function cycleDifficulty() {
         {{ option.label }}
       </button>
     </div>
-    <label class="game-setup-team" for="team-one"><span>Team eins</span>
-      <input id="team-one" :value="draft.names[0]" maxlength="28" autocomplete="off" spellcheck="false" @input="updateName(0, $event)">
-    </label>
-    <div class="game-setup-versus" aria-hidden="true"><i /><b>vs</b><i /></div>
-    <label class="game-setup-team" for="team-two"><span>Team zwei</span>
-      <input id="team-two" :value="draft.names[1]" maxlength="28" autocomplete="off" spellcheck="false" @input="updateName(1, $event)">
-    </label>
-    <p class="game-setup-sentence" aria-label="Spieleinstellungen">
-      <button type="button" :aria-label="`Runden: ${rounds}. Klicken zum Ändern`" @click="cycleRounds">{{ rounds }} Runden</button>
-      <span aria-hidden="true">·</span>
-      <button type="button" :aria-label="`${isSniper ? 'Hörzeit' : 'Zeit'}: ${seconds} Sekunden. Klicken zum Ändern`" @click="cycleSeconds">{{ seconds }} Sek.</button>
-      <template v-if="!isSniper">
-        <span aria-hidden="true">·</span>
-        <button type="button" :aria-label="`Modus: ${difficultyLabel}. Klicken zum Ändern`" @click="cycleDifficulty">{{ difficultyLabel }}</button>
-      </template>
-    </p>
-    <div v-if="isSniper" class="game-setup-categories" role="group" aria-label="Sound-Kategorien">
-      <button
-        v-for="category in SNIPER_CATEGORIES"
-        :key="category.id"
-        type="button"
-        :aria-pressed="draft.sniperCategories.includes(category.id)"
-        :class="{ 'is-on': draft.sniperCategories.includes(category.id) }"
-        @click="emit('toggle-category', category.id)"
-      >
-        {{ category.label }}
+
+    <div class="game-setup-match">
+      <label class="game-setup-team" for="team-one"><span>Team eins</span>
+        <input id="team-one" :value="draft.names[0]" maxlength="28" autocomplete="off" spellcheck="false" @input="updateName(0, $event)">
+      </label>
+      <div class="game-setup-versus" aria-hidden="true"><i /><b>vs</b><i /></div>
+      <label class="game-setup-team" for="team-two"><span>Team zwei</span>
+        <input id="team-two" :value="draft.names[1]" maxlength="28" autocomplete="off" spellcheck="false" @input="updateName(1, $event)">
+      </label>
+      <button type="submit" class="game-setup-action" :disabled="isSniper && !sniperPoolCount">
+        {{ primaryActionLabel }}
+        <Icon name="lucide:arrow-up-right" size="18" aria-hidden="true" />
       </button>
-    </div>
-    <button type="submit" class="game-setup-action" :disabled="isSniper && !sniperPoolCount">
-      {{ primaryActionLabel }}
-      <Icon name="lucide:arrow-up-right" size="18" aria-hidden="true" />
-    </button>
-    <div class="game-setup-form-foot">
-      <template v-if="isSniper">
-        <span v-if="sniperPoolCount">{{ questionCount }} Sounds pro Spiel · {{ sniperPoolCount }} Sounds im Pool</span>
-        <span v-else class="game-setup-history-warning">Noch keine Sounds. MP3s nach <code>public/sounds/sniper/</code> legen und in <code>app/data/sniper-sounds.ts</code> eintragen.</span>
-      </template>
-      <span v-else-if="catalogExhausted" class="game-setup-history-warning">Katalog durchgespielt · <button type="button" @click="emit('reset-history')">Archiv zurücksetzen</button></span>
-      <span v-else>{{ questionCount }} Fragen pro Spiel · {{ remainingQuestionCount }} / {{ totalQuestionCount }} im Pool</span>
-      <div>
+      <div class="game-setup-links">
+        <span v-if="isSniper && !sniperPoolCount" class="game-setup-history-warning">Noch keine Sounds. MP3s nach <code>public/sounds/sniper/</code> legen und in <code>app/data/sniper-sounds.ts</code> eintragen.</span>
+        <span v-else-if="!isSniper && catalogExhausted" class="game-setup-history-warning">Katalog durchgespielt · <button type="button" @click="emit('reset-history')">Archiv zurücksetzen</button></span>
         <button type="button" @click="emit('newGame')">{{ hasSavedGame ? 'Neues Spiel' : 'Schnellstart' }}</button>
         <button type="button" @click="emit('rules')">Regeln</button>
       </div>
+    </div>
+
+    <div class="game-setup-rules">
+    <Transition name="game-setup-drawer">
+      <div v-if="isSniper && categoriesOpen" class="game-setup-categories" role="group" aria-label="Sound-Kategorien">
+        <button
+          v-for="category in SNIPER_CATEGORIES"
+          :key="category.id"
+          type="button"
+          :aria-pressed="draft.sniperCategories.includes(category.id)"
+          :class="{ 'is-on': draft.sniperCategories.includes(category.id) }"
+          @click="emit('toggle-category', category.id)"
+        >
+          {{ category.label }}
+        </button>
+      </div>
+    </Transition>
+
+    <div class="game-setup-strip" role="group" aria-label="Spieleinstellungen">
+      <button type="button" :aria-label="`Runden: ${rounds}. Klicken zum Ändern`" @click="cycleRounds">
+        <span>Runden</span><strong>{{ rounds }}</strong><small>{{ questionCount }} {{ isSniper ? 'Sounds' : 'Fragen' }}</small>
+      </button>
+      <button type="button" :aria-label="`${isSniper ? 'Hörzeit' : 'Zeit'}: ${seconds} Sekunden. Klicken zum Ändern`" @click="cycleSeconds">
+        <span>{{ isSniper ? 'Hörzeit' : 'Zeit' }}</span><strong>{{ seconds }}<em>s</em></strong><small>pro {{ isSniper ? 'Sound' : 'Frage' }}</small>
+      </button>
+      <button v-if="isSniper" type="button" :aria-expanded="categoriesOpen" :class="{ 'is-open': categoriesOpen }" @click="categoriesOpen = !categoriesOpen">
+        <span>Kategorien</span><strong>{{ activeCategories }}<em>/{{ SNIPER_CATEGORIES.length }}</em></strong><small>{{ categorySummary }} · {{ sniperPoolCount }} Sounds</small>
+      </button>
+      <button v-else type="button" :aria-label="`Modus: ${difficultyLabel}. Klicken zum Ändern`" @click="cycleDifficulty">
+        <span>Modus</span><strong class="game-setup-strip-word">{{ difficultyLabel }}</strong><small>{{ remainingQuestionCount }} / {{ totalQuestionCount }} im Pool</small>
+      </button>
+    </div>
     </div>
   </form>
 </template>

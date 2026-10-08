@@ -2,6 +2,8 @@
 defineProps<{
   tone?: 'dark' | 'light'
   split?: boolean
+  /** Nav arrows in ink while a light surface sits behind them (Sound Sniper buzz half). */
+  navInk?: boolean
   canBack?: boolean
   canForward?: boolean
 }>()
@@ -14,7 +16,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <header class="app-header" :class="{ 'app-header--light': tone === 'light', 'app-header--split': split }">
+  <header class="app-header" :class="{ 'app-header--light': tone === 'light', 'app-header--split': split, 'app-header--nav-ink': navInk }">
     <div class="app-header-inner">
       <JungleLogo :tone="tone === 'light' ? 'ink' : 'cream'" interactive @activate="emit('home')" />
       <nav class="app-header-nav" aria-label="Spielnavigation">

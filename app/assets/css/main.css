@@ -1478,16 +1478,112 @@ button:disabled {
   text-wrap: balance;
 }
 
-/* K1 / Versus centered: names on one centre axis, the VS carries the composition. */
+/* K1 + S2 / Spielbrett-Leiste: names on one centre axis with the VS, the start right under
+   them, and the rules as a ruled scoreboard strip across the foot of the panel. */
 .game-setup-form {
+  --setup-pad-x: clamp(2rem, 6vw, 9rem);
+  position: relative;
   display: flex;
   min-width: 0;
+  height: 100svh;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(6rem, 9vh, 8rem) var(--setup-pad-x) 0;
+  color: var(--setup-cream);
+  text-align: center;
+}
+
+.game-setup-match {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(6rem, 9vh, 8rem) clamp(2rem, 6vw, 9rem) clamp(2rem, 5vh, 4rem);
+  padding-bottom: clamp(1.5rem, 4vh, 3rem);
+}
+
+.game-setup-rules {
+  position: relative;
+  width: calc(100% + 2 * var(--setup-pad-x));
+  flex: 0 0 auto;
+}
+
+.game-setup-strip {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--setup-line);
+}
+
+.game-setup-strip button {
+  display: grid;
+  min-width: 0;
+  justify-items: start;
+  align-content: start;
+  gap: 0.55rem;
+  border: 0;
+  border-right: 1px solid var(--setup-line);
+  background: transparent;
   color: var(--setup-cream);
-  text-align: center;
+  cursor: pointer;
+  padding: clamp(1.1rem, 2.8vh, 1.8rem) clamp(1rem, 2vw, 2rem) clamp(1.3rem, 3.2vh, 2.1rem);
+  text-align: left;
+  transition: background 160ms ease;
+}
+
+.game-setup-strip button:last-child {
+  border-right: 0;
+}
+
+.game-setup-strip button:hover,
+.game-setup-strip button.is-open {
+  background: rgb(8 24 17 / 35%);
+}
+
+.game-setup-strip button:focus-visible {
+  outline: 2px solid var(--setup-accent);
+  outline-offset: -4px;
+}
+
+.game-setup-strip span {
+  color: var(--setup-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.game-setup-strip strong {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, min(3.6vw, 7vh), 4rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+}
+
+.game-setup-strip strong.game-setup-strip-word {
+  font-size: clamp(1.6rem, min(2.4vw, 4.8vh), 2.6rem);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.game-setup-strip strong em {
+  color: var(--setup-muted);
+  font-size: 0.5em;
+  font-style: normal;
+  letter-spacing: 0;
+}
+
+.game-setup-strip small {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--setup-muted);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .game-setup-team {
@@ -1565,40 +1661,12 @@ button:disabled {
   line-height: 0.8;
 }
 
-.game-setup-sentence {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: center;
-  gap: 0.2rem 0.55rem;
-  margin: clamp(2.2rem, 5vh, 4rem) 0 0;
-  color: var(--setup-muted);
-}
-
-.game-setup-sentence button {
-  border: 0;
-  border-bottom: 2px dotted color-mix(in srgb, var(--setup-accent) 60%, transparent);
-  background: transparent;
-  color: var(--setup-cream);
-  cursor: pointer;
-  padding: 0 0 0.1rem;
-  font-family: var(--font-display);
-  font-size: clamp(1.25rem, 1.8vw, 2.2rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  transition: color 160ms ease, border-color 160ms ease;
-}
-
-.game-setup-sentence button:hover {
-  border-bottom-style: solid;
-  color: var(--setup-accent);
-}
-
 /* Mode switch: a two-way pill above the names; the active mode takes the accent. */
 .game-setup-mode {
   display: inline-flex;
+  flex: 0 0 auto;
   gap: 0.25rem;
-  margin-bottom: clamp(1.8rem, 4.5vh, 3.4rem);
+  margin-bottom: clamp(0.5rem, 2vh, 1.5rem);
   border: 1px solid var(--setup-line);
   border-radius: 999px;
   padding: 0.25rem;
@@ -1634,14 +1702,32 @@ button:disabled {
   outline-offset: 3px;
 }
 
-/* Sound Sniper categories: everything on by default, tap to leave a category out. */
+/* Sound Sniper categories: a drawer that opens over the panel, right above the strip, so
+   nothing else moves. Everything is on by default. */
 .game-setup-categories {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 100%;
+  left: 0;
   display: flex;
-  max-width: 34rem;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.4rem;
-  margin-top: 1.1rem;
+  gap: 0.45rem;
+  border-top: 1px solid var(--setup-line);
+  background: var(--setup-jungle);
+  padding: clamp(1.1rem, 2.6vh, 1.6rem) var(--setup-pad-x);
+}
+
+.game-setup-drawer-enter-active,
+.game-setup-drawer-leave-active {
+  transition: opacity 220ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.game-setup-drawer-enter-from,
+.game-setup-drawer-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
 .game-setup-categories button {
@@ -1665,7 +1751,7 @@ button:disabled {
   text-decoration: none;
 }
 
-.game-setup-form-foot code {
+.game-setup-links code {
   font-size: 0.95em;
 }
 
@@ -1682,10 +1768,10 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 0.8rem;
-  min-height: 3.75rem;
-  margin-top: clamp(1.8rem, 3.6vh, 2.8rem);
+  min-height: clamp(3.75rem, 8.6vh, 4.75rem);
+  margin-top: clamp(1.8rem, 4.2vh, 3rem);
   border: 0;
-  border-radius: 14px;
+  border-radius: 999px;
   background: var(--setup-accent);
   color: var(--setup-ink);
   cursor: pointer;
@@ -1705,23 +1791,18 @@ button:disabled {
   transform: translateY(0) scale(0.99);
 }
 
-.game-setup-form-foot {
+.game-setup-links {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 0.4rem 1.4rem;
-  margin-top: 1.1rem;
+  margin-top: 1rem;
   color: var(--setup-muted);
   font-size: 0.72rem;
 }
 
-.game-setup-form-foot div {
-  display: flex;
-  gap: 1rem;
-}
-
-.game-setup-form-foot button {
+.game-setup-links > button {
   border: 0;
   background: transparent;
   color: var(--setup-muted);
@@ -1733,13 +1814,12 @@ button:disabled {
   text-transform: uppercase;
 }
 
-.game-setup-form-foot button:hover,
-.game-setup-form-foot button:focus-visible {
+.game-setup-links > button:hover,
+.game-setup-links > button:focus-visible {
   color: var(--setup-cream);
 }
 
-.game-setup-form-foot button:focus-visible,
-.game-setup-sentence button:focus-visible,
+.game-setup-links button:focus-visible,
 .game-setup-action:focus-visible,
 .game-setup-team input:focus-visible {
   outline: 2px solid var(--setup-accent);
@@ -1780,7 +1860,9 @@ button:disabled {
   }
 
   .game-setup-form {
-    padding: 2.5rem 1.5rem 3rem;
+    --setup-pad-x: 1.5rem;
+    min-height: 0;
+    padding: 2.5rem var(--setup-pad-x) 0;
   }
 
   .game-setup-team input {
@@ -1789,6 +1871,10 @@ button:disabled {
 
   .game-setup-versus b {
     font-size: 3.6rem;
+  }
+
+  .game-setup-strip button {
+    padding-inline: 0.9rem;
   }
 }
 
@@ -1912,6 +1998,7 @@ button:disabled {
 .app-header--light .brand-logo { color: var(--color-ink); }
 .app-header--light .brand-logo > i { color: #a87919; }
 .app-header--split .app-header-nav { color: var(--color-cream); }
+.app-header--nav-ink .app-header-nav { color: var(--color-ink); }
 
 .game-setup-brand-spacer { min-height: clamp(1.25rem, 2.15vw, 2.15rem); }
 
@@ -2184,8 +2271,7 @@ button:disabled {
   background: var(--color-ink);
 }
 
-.game-screen-shell[data-screen='question'] .question-live-stage,
-.game-screen-shell[data-screen='sniper'] .question-live-stage {
+.game-screen-shell[data-screen='question'] .question-live-stage {
   min-height: 100svh;
 }
 

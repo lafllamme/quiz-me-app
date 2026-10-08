@@ -419,6 +419,8 @@ function isSelectedSetupOption(value: number | string) {
         <span class="lab-live-dot" aria-hidden="true" />
         <span>Design lab</span>
         <span class="lab-header-rule" aria-hidden="true" />
+        <NuxtLink to="/sniper-lab" class="lab-back">Sound Sniper Lab</NuxtLink>
+        <span class="lab-header-rule" aria-hidden="true" />
         <NuxtLink to="/" class="lab-back">Zurück zum Spiel <Icon name="lucide:arrow-up-right" size="15" aria-hidden="true" /></NuxtLink>
       </div>
     </header>
