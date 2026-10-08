@@ -28,6 +28,8 @@ export interface SniperState {
   suddenDeath: boolean
   current: SniperSound | null
   buzzer: Team | null
+  /** The host uncovered the solution after the team answered, before judging it. */
+  revealed: boolean
   winner: Team | null
   outcome: SniperOutcome | null
   /** Sound ids drawn in this game, including skipped ones. */
@@ -35,12 +37,8 @@ export interface SniperState {
   history: SniperRecord[]
 }
 
-/** Short sounds may be heard twice, longer ones once. Unknown length counts as long. */
-export const SHORT_SOUND_SECONDS = 3
-
-export function maxPlaysFor(duration: number | null | undefined) {
-  return duration && Number.isFinite(duration) && duration <= SHORT_SOUND_SECONDS ? 2 : 1
-}
+/** Every sound may be heard up to three times while the round is open, whatever its length. */
+export const MAX_PLAYS = 3
 
 export function emptySniperState(total = 0): SniperState {
   return {
@@ -51,6 +49,7 @@ export function emptySniperState(total = 0): SniperState {
     suddenDeath: false,
     current: null,
     buzzer: null,
+    revealed: false,
     winner: null,
     outcome: null,
     played: [],
@@ -82,6 +81,7 @@ export function loadSound(state: SniperState, sound: SniperSound) {
   state.current = sound
   state.phase = 'ready'
   state.buzzer = null
+  state.revealed = false
   state.winner = null
   state.outcome = null
   if (!state.played.includes(sound.id))
@@ -111,9 +111,20 @@ export function buzz(state: SniperState, team: Team) {
   return true
 }
 
-/** The host pressed the wrong team key: reopen the round. */
+/**
+ * The team has said its answer; show the solution so the host can judge it without
+ * knowing every sound. Judging stays open afterwards.
+ */
+export function revealAnswer(state: SniperState) {
+  if (state.phase !== 'buzzed' || state.revealed)
+    return false
+  state.revealed = true
+  return true
+}
+
+/** The host pressed the wrong team key: reopen the round. Not once everyone has seen the solution. */
 export function undoBuzz(state: SniperState) {
-  if (state.phase !== 'buzzed')
+  if (state.phase !== 'buzzed' || state.revealed)
     return false
   state.buzzer = null
   state.phase = 'listening'

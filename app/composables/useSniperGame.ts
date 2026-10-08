@@ -11,8 +11,10 @@ import {
   loadSound,
   openListening,
   pickSound,
+  revealAnswer,
   startCountdown,
   undoBuzz,
+  type SniperRecord,
   type SniperState,
   type Team,
 } from '~/lib/sniper-machine'
@@ -28,7 +30,11 @@ export interface SniperConfig {
 export const SNIPER_SOUNDS_PER_ROUND = 2
 export const SNIPER_ROUND_OPTIONS = [3, 5, 7]
 export const SNIPER_SECOND_OPTIONS = [10, 15, 20]
-const COUNTDOWN_STEP_MS = 800
+// The countdown cue has an accented beat every 0.8 s and goes quiet at 3.2 s. The digits
+// 3 · 2 · 1 · Los follow those beats and the sound starts as the cue ends.
+const COUNTDOWN_CUE = '/audio/countdown_start.mp3'
+const COUNTDOWN_BEATS_MS = [800, 1600, 2400]
+const COUNTDOWN_END_MS = 3250
 
 const SETTINGS_KEY = 'jungle-sniper-settings'
 const GAME_KEY = 'jungle-sniper-game'
@@ -57,8 +63,13 @@ export function useSniperGame() {
   const paused = ref(false)
   const hasSavedGame = ref(false)
   let archive: string[] = []
+  // Drawn one sound ahead so its file is already buffered when the host moves on.
+  let upcoming: NonNullable<SniperState['current']> | null = null
   let timer: number | undefined
-  let countdownTimer: number | undefined
+  let countdownTimers: number[] = []
+  let countdownCue: HTMLAudioElement | null = null
+  // Bumped whenever timers are cleared, so a cue that starts late cannot schedule a stale countdown.
+  let countdownRun = 0
 
   const pool = computed(() => sniperSounds.filter(item => config.categories.includes(item.category)))
   const roundNumber = computed(() => Math.min(Math.floor(state.index / SNIPER_SOUNDS_PER_ROUND) + 1, config.rounds))
@@ -91,15 +102,26 @@ export function useSniperGame() {
     }
   }
 
+  function cue() {
+    if (import.meta.server)
+      return null
+    if (!countdownCue) {
+      countdownCue = new Audio(COUNTDOWN_CUE)
+      countdownCue.preload = 'auto'
+    }
+    return countdownCue
+  }
+
   function clearTimers() {
     if (timer)
       window.clearInterval(timer)
-    if (countdownTimer)
-      window.clearInterval(countdownTimer)
+    countdownTimers.forEach(id => window.clearTimeout(id))
     timer = undefined
-    countdownTimer = undefined
+    countdownTimers = []
+    countdownRun++
     timerRunning.value = false
     countdown.value = 0
+    countdownCue?.pause()
   }
 
   function remember(id: string) {
@@ -109,23 +131,40 @@ export function useSniperGame() {
 
   function present(next: NonNullable<SniperState['current']>) {
     loadSound(state, next)
-    player.load(next.src, next.durationSeconds)
+    player.load(next.src)
     timeRemaining.value = config.seconds
     paused.value = false
     sound.playMusic('categorySelection')
   }
 
-  /** Draws the next sound; when the selected pool is used up the archive starts over. */
-  function drawNext() {
+  function draw(extra: SniperRecord[] = []) {
     const inGame = new Set(state.played)
-    let next = pickSound(pool.value, new Set([...archive, ...inGame]), state.history)
+    const history = [...state.history, ...extra]
+    let next = pickSound(pool.value, new Set([...archive, ...inGame]), history)
     if (!next) {
       archive = archive.filter(id => inGame.has(id))
-      next = pickSound(pool.value, inGame, state.history)
+      next = pickSound(pool.value, inGame, history)
     }
+    return next
+  }
+
+  /** Picks the sound after the current one and buffers its file in the background. */
+  function planUpcoming() {
+    const current = state.current
+    upcoming = current ? draw([{ soundId: current.id, category: current.category, buzzer: null, winner: null, outcome: 'timeout' }]) : null
+    if (upcoming)
+      player.preload(upcoming.src)
+  }
+
+  /** Draws the next sound; when the selected pool is used up the archive starts over. */
+  function drawNext() {
+    const planned = upcoming
+    const usable = planned && !state.played.includes(planned.id) && config.categories.includes(planned.category)
+    const next = usable ? planned : draw()
     if (!next)
       return false
     present(next)
+    planUpcoming()
     persist()
     return true
   }
@@ -147,6 +186,8 @@ export function useSniperGame() {
     player.stop()
     Object.assign(state, emptySniperState(config.rounds * SNIPER_SOUNDS_PER_ROUND))
     hasSavedGame.value = false
+    upcoming = null
+    cue()?.load()
     if (!drawNext()) {
       finish()
       return false
@@ -162,8 +203,10 @@ export function useSniperGame() {
       next()
       return
     }
-    if (state.current)
+    if (state.current) {
       present(state.current)
+      planUpcoming()
+    }
   }
 
   function startTimer() {
@@ -189,26 +232,38 @@ export function useSniperGame() {
     timerRunning.value = false
   }
 
-  /** Enter on the ready screen: 3 · 2 · 1, then the sound and the clock start together. */
+  /** Enter on the ready screen: the cue plays 3 · 2 · 1 · Los, then the sound and the clock start together. */
   function begin() {
     if (!startCountdown(state))
       return
     sound.stopMusic()
     countdown.value = 3
-    sound.play('tick')
-    countdownTimer = window.setInterval(() => {
-      countdown.value--
-      if (countdown.value > 0) {
-        sound.play('tick')
+    const run = ++countdownRun
+
+    // The digits are scheduled once the cue really plays, so a slow start cannot put them off beat.
+    const schedule = () => {
+      if (run !== countdownRun || state.phase !== 'countdown' || countdownTimers.length)
         return
-      }
-      window.clearInterval(countdownTimer)
-      countdownTimer = undefined
-      if (openListening(state)) {
-        player.play()
-        startTimer()
-      }
-    }, COUNTDOWN_STEP_MS)
+      COUNTDOWN_BEATS_MS.forEach((at, index) => {
+        countdownTimers.push(window.setTimeout(() => { countdown.value = 2 - index }, at))
+      })
+      countdownTimers.push(window.setTimeout(() => {
+        countdownTimers = []
+        if (openListening(state)) {
+          player.play()
+          startTimer()
+        }
+      }, COUNTDOWN_END_MS))
+    }
+
+    const audio = sound.enabled.value ? cue() : null
+    if (!audio) {
+      schedule()
+      return
+    }
+    audio.currentTime = 0
+    audio.volume = 1
+    void audio.play().then(schedule, schedule)
   }
 
   function togglePause() {
@@ -225,18 +280,31 @@ export function useSniperGame() {
     }
   }
 
-  /** While listening this spends a listen and leaves the clock alone; after the reveal it is free. */
+  /** While listening this spends a listen and leaves the clock alone; once the solution is out it is free. */
   function replay() {
     if (state.phase === 'listening') {
       if (player.play() && paused.value)
         startTimer()
     }
-    else if (state.phase === 'resolved') {
+    else if (state.phase === 'resolved' || (state.phase === 'buzzed' && state.revealed)) {
       player.play(false)
     }
   }
 
+  /** Uncovers the solution once the buzzing team has answered out loud. */
+  function reveal() {
+    if (revealAnswer(state)) {
+      sound.play('drum')
+      persist()
+    }
+  }
+
+  /** A team key opens the answer; the same key again uncovers the solution. */
   function buzzIn(team: Team) {
+    if (state.phase === 'buzzed' && state.buzzer === team) {
+      reveal()
+      return
+    }
     if (!buzz(state, team))
       return
     player.pause()
@@ -304,6 +372,8 @@ export function useSniperGame() {
   onBeforeUnmount(() => {
     clearTimers()
     player.dispose()
+    countdownCue?.removeAttribute('src')
+    countdownCue = null
   })
 
   return {
@@ -323,6 +393,7 @@ export function useSniperGame() {
     togglePause,
     replay,
     buzzIn,
+    reveal,
     undo,
     markRight: () => settle(true),
     markWrong: () => settle(false),

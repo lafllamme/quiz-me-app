@@ -34,6 +34,11 @@ test.describe('Sound Sniper flow', () => {
     await page.keyboard.press('1')
     await expect(stage).toHaveClass(/sniper-stage--buzzed/)
     await expect(page.locator('.sniper-buzz strong')).toHaveText('TEAM TWO')
+    await expect(page.locator('.sniper-buzz-answer')).toHaveCount(0)
+
+    // The same team key again uncovers the solution before the host judges.
+    await page.keyboard.press('2')
+    await expect(page.locator('.sniper-buzz-answer')).toBeVisible()
 
     // Wrong: the point goes straight to the other team, the buzzing team drinks.
     await page.keyboard.press('f')

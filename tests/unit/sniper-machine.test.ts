@@ -8,9 +8,9 @@ import {
   expire,
   judge,
   loadSound,
-  maxPlaysFor,
   openListening,
   pickSound,
+  revealAnswer,
   startCountdown,
   undoBuzz,
   type SniperState,
@@ -31,21 +31,6 @@ function listening(total = 4): SniperState {
   openListening(state)
   return state
 }
-
-describe('maxPlaysFor', () => {
-  it('allows two listens up to three seconds and one above', () => {
-    expect(maxPlaysFor(1.2)).toBe(2)
-    expect(maxPlaysFor(3)).toBe(2)
-    expect(maxPlaysFor(3.01)).toBe(1)
-    expect(maxPlaysFor(9)).toBe(1)
-  })
-
-  it('treats an unknown length as long', () => {
-    expect(maxPlaysFor(null)).toBe(1)
-    expect(maxPlaysFor(Number.NaN)).toBe(1)
-    expect(maxPlaysFor(Number.POSITIVE_INFINITY)).toBe(1)
-  })
-})
 
 describe('buzzing', () => {
   it('ignores buzzes before the sound round opens', () => {
@@ -71,6 +56,34 @@ describe('buzzing', () => {
     expect(undoBuzz(state)).toBe(true)
     expect(state.phase).toBe('listening')
     expect(buzz(state, 1)).toBe(true)
+  })
+})
+
+describe('reveal', () => {
+  it('uncovers the solution only after a buzz, once', () => {
+    const state = listening()
+    expect(revealAnswer(state)).toBe(false)
+    buzz(state, 1)
+    expect(revealAnswer(state)).toBe(true)
+    expect(revealAnswer(state)).toBe(false)
+    expect(state.revealed).toBe(true)
+  })
+
+  it('keeps the buzz once the solution is out, and judging still works', () => {
+    const state = listening()
+    buzz(state, 1)
+    revealAnswer(state)
+    expect(undoBuzz(state)).toBe(false)
+    expect(judge(state, true)).toBe(true)
+    expect(state.scores).toEqual([0, 1])
+  })
+
+  it('starts every new sound hidden', () => {
+    const state = listening()
+    buzz(state, 0)
+    revealAnswer(state)
+    loadSound(state, sound('cat'))
+    expect(state.revealed).toBe(false)
   })
 })
 

@@ -1,60 +1,74 @@
 import { computed, ref } from 'vue'
-import { maxPlaysFor } from '~/lib/sniper-machine'
+import { MAX_PLAYS } from '~/lib/sniper-machine'
 
 /**
- * The one audio element Sound Sniper plays through. It knows nothing about teams or points:
- * it loads a file, reads its real length from the metadata, and counts how often it was heard.
- * One element means one sound at a time; a replay always restarts the same element.
+ * The audio element Sound Sniper plays through, plus a spare one that buffers the next sound.
+ * It knows nothing about teams or points: it loads a file and counts how often it was heard. Only the element on stage ever plays, so two
+ * sounds can never overlap; a replay always restarts that element.
  */
 export function useSniperPlayer() {
   let audio: HTMLAudioElement | null = null
   let prefetch: HTMLAudioElement | null = null
 
   const playing = ref(false)
-  const duration = ref<number | null>(null)
   const plays = ref(0)
   const failed = ref(false)
-  const maxPlays = computed(() => maxPlaysFor(duration.value))
-  const canPlay = computed(() => !playing.value && plays.value < maxPlays.value)
+  const maxPlays = MAX_PLAYS
+  const canPlay = computed(() => !playing.value && plays.value < maxPlays)
 
-  const onPlaying = () => { playing.value = true }
-  const onStopped = () => { playing.value = false }
-  const onMetadata = () => {
-    if (audio && Number.isFinite(audio.duration) && audio.duration > 0)
-      duration.value = audio.duration
+  // Both elements share the listeners; only events from the element on stage count.
+  const onStage = (event: Event) => event.target === audio
+  const onPlaying = (event: Event) => {
+    if (onStage(event))
+      playing.value = true
   }
-  const onError = () => {
+  const onStopped = (event: Event) => {
+    if (onStage(event))
+      playing.value = false
+  }
+  const onError = (event: Event) => {
+    if (!onStage(event))
+      return
     playing.value = false
     failed.value = true
+  }
+  const events: [string, (event: Event) => void][] = [['playing', onPlaying], ['pause', onStopped], ['ended', onStopped], ['error', onError]]
+
+  function create() {
+    const created = new Audio()
+    created.preload = 'auto'
+    events.forEach(([name, handler]) => created.addEventListener(name, handler))
+    return created
   }
 
   function element() {
     if (import.meta.server)
       return null
-    if (!audio) {
-      audio = new Audio()
-      audio.preload = 'auto'
-      audio.addEventListener('playing', onPlaying)
-      audio.addEventListener('pause', onStopped)
-      audio.addEventListener('ended', onStopped)
-      audio.addEventListener('loadedmetadata', onMetadata)
-      audio.addEventListener('error', onError)
-    }
+    audio ??= create()
     return audio
   }
 
-  /** Swaps in a new sound. The stored duration only bridges the gap until the metadata arrives. */
-  function load(src: string, knownDuration?: number) {
-    const target = element()
-    if (!target)
+  const sameSource = (target: HTMLAudioElement | null, src: string) => !!target?.src && new URL(src, location.href).href === target.src
+
+  /** Puts a sound on stage with a fresh set of listens. */
+  function load(src: string) {
+    const current = element()
+    if (!current)
       return
-    target.pause()
+    current.pause()
     playing.value = false
     plays.value = 0
     failed.value = false
-    duration.value = knownDuration ?? null
-    target.src = src
-    target.load()
+
+    // The spare already buffered this file: swap it on stage instead of downloading again.
+    if (prefetch && sameSource(prefetch, src)) {
+      audio = prefetch
+      prefetch = current
+      failed.value = !!audio.error
+      return
+    }
+    current.src = src
+    current.load()
   }
 
   /**
@@ -65,7 +79,7 @@ export function useSniperPlayer() {
     const target = element()
     if (!target || !target.src || playing.value)
       return false
-    if (counted && plays.value >= maxPlays.value)
+    if (counted && plays.value >= maxPlays)
       return false
     if (counted)
       plays.value++
@@ -94,36 +108,31 @@ export function useSniperPlayer() {
     audio.currentTime = 0
   }
 
-  /** Warms the browser cache for the next sound so it starts without a gap. */
+  /** Buffers the next sound on the spare element so it starts without a gap. */
   function preload(src: string) {
     if (import.meta.server)
       return
-    prefetch ??= new Audio()
-    prefetch.preload = 'auto'
+    prefetch ??= create()
+    if (sameSource(prefetch, src))
+      return
     prefetch.src = src
     prefetch.load()
   }
 
   function dispose() {
-    if (audio) {
-      audio.pause()
-      audio.removeEventListener('playing', onPlaying)
-      audio.removeEventListener('pause', onStopped)
-      audio.removeEventListener('ended', onStopped)
-      audio.removeEventListener('loadedmetadata', onMetadata)
-      audio.removeEventListener('error', onError)
-      audio.removeAttribute('src')
-      audio.load()
-      audio = null
+    for (const target of [audio, prefetch]) {
+      if (!target)
+        continue
+      target.pause()
+      events.forEach(([name, handler]) => target.removeEventListener(name, handler))
+      target.removeAttribute('src')
+      target.load()
     }
-    if (prefetch) {
-      prefetch.removeAttribute('src')
-      prefetch.load()
-      prefetch = null
-    }
+    audio = null
+    prefetch = null
     playing.value = false
     plays.value = 0
   }
 
-  return { playing, duration, plays, maxPlays, canPlay, failed, load, play, pause, resume, stop, preload, dispose }
+  return { playing, plays, maxPlays, canPlay, failed, load, play, pause, resume, stop, preload, dispose }
 }

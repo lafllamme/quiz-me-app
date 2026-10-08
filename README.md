@@ -33,9 +33,10 @@ Enthalten:
 
 Zweiter Spielmodus, auf der Startseite umschaltbar. Ein Geräusch läuft, wer es
 erkennt, haut auf den (physischen) Buzzer, der Host drückt `1`/`A` oder
-`2`/`B`. Danach `R` richtig (Punkt für das Team) oder `F` falsch (Punkt sofort
-fürs andere Team). Kurze Sounds (≤ 3 s) laufen bis zu zweimal, längere einmal;
-die Länge kommt aus den Metadaten der Datei.
+`2`/`B`. Das Team sagt die Antwort, dieselbe Taste (oder `Z`) deckt die Lösung
+auf, dann `R` richtig (Punkt für das Team) oder `F` falsch (Punkt sofort fürs
+andere Team). Jeder Sound läuft bis zu dreimal (`W`). Der nächste Sound wird
+schon während der aktuellen Runde im Hintergrund geladen.
 
 Neuen Sound hinzufügen:
 

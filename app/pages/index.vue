@@ -104,6 +104,8 @@ function onSniperKey(key: string, repeat: boolean) {
     sniper.skip()
   else if (key === 'backspace')
     sniper.undo()
+  else if (key === 'z' || (key === 'enter' && sniper.state.phase === 'buzzed'))
+    sniper.reveal()
   else if (key === 'enter' && sniper.state.phase === 'ready')
     sniper.begin()
   else if (key === 'enter' && sniper.state.phase === 'resolved')
@@ -223,10 +225,11 @@ function goForward() {
               :paused="sniper.paused.value"
               :playing="sniper.player.playing.value"
               :plays="sniper.player.plays.value"
-              :max-plays="sniper.player.maxPlays.value"
+              :max-plays="sniper.player.maxPlays"
               :failed="sniper.player.failed.value"
               @begin="sniper.begin"
               @buzz="sniper.buzzIn"
+              @reveal="sniper.reveal"
               @undo="sniper.undo"
               @right="sniper.markRight"
               @wrong="sniper.markWrong"
@@ -252,9 +255,9 @@ function goForward() {
     </main>
 
     <AppModal v-if="modal === 'rules' && mode === 'sniper'" title="Sound Sniper" @close="modal = null">
-      <p>Ein Geräusch läuft, beide Teams hören zu. Wer es erkennt, haut auf den Buzzer, der Host drückt die Taste des Teams und das Team sagt die Antwort laut.</p>
-      <p class="mt-4">Richtig: +1 Punkt, das andere Team trinkt. Falsch: Der Punkt geht sofort ans andere Team, das buzzernde Team trinkt. Niemand buzzert: keine Punkte. Kurze Sounds laufen bis zu zweimal, lange einmal. Bei Gleichstand entscheidet ein Extra-Sound.</p>
-      <p class="mt-4 text-cream">Tastatur: Enter Sound starten / weiter · 1 oder A Team eins · 2 oder B Team zwei · R richtig · F falsch · W erneut abspielen · Leertaste Pause · S überspringen · Rückschritt Buzz zurücknehmen · Esc Menü</p>
+      <p>Ein Geräusch läuft, beide Teams hören zu. Wer es erkennt, haut auf den Buzzer, der Host drückt die Taste des Teams und das Team sagt die Antwort laut. Ein zweiter Druck auf dieselbe Taste deckt die Lösung auf, dann bewertet der Host.</p>
+      <p class="mt-4">Richtig: +1 Punkt, das andere Team trinkt. Falsch: Der Punkt geht sofort ans andere Team, das buzzernde Team trinkt. Niemand buzzert: keine Punkte. Jeder Sound läuft bis zu dreimal. Bei Gleichstand entscheidet ein Extra-Sound.</p>
+      <p class="mt-4 text-cream">Tastatur: Enter Sound starten / weiter · 1 oder A Team eins · 2 oder B Team zwei · gleiche Taste nochmal oder Z Lösung zeigen · R richtig · F falsch · W erneut abspielen · Leertaste Pause · S überspringen · Rückschritt Buzz zurücknehmen · Esc Menü</p>
     </AppModal>
 
     <AppModal v-else-if="modal === 'rules'" title="So wird gespielt" @close="modal = null">

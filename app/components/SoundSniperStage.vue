@@ -21,6 +21,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   begin: []
   buzz: [team: Team]
+  reveal: []
   undo: []
   right: []
   wrong: []
@@ -68,6 +69,9 @@ const verdict = computed(() => {
     return { title: 'Daneben!', line: `${props.names[buzzer]} lag falsch · +1 für ${props.names[winner]}` }
   return { title: 'Keiner wusste es', line: 'Keine Punkte' }
 })
+// Only one phase block is on stage at a time; the key drives the swap transition.
+const solutionOut = computed(() => phase.value === 'resolved' || (phase.value === 'buzzed' && props.state.revealed))
+const listensLeft = computed(() => props.maxPlays - props.plays)
 const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${props.names[loser.value]} trinkt!`)
 </script>
 
@@ -100,21 +104,22 @@ const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${pro
 
     <div class="question-live-main">
       <div class="sniper-stage-copy" aria-live="polite">
+        <Transition name="sniper-swap" mode="out-in">
         <!-- Ready: big invitation, nothing about the sound itself. -->
-        <template v-if="phase === 'ready'">
+        <div v-if="phase === 'ready'" key="ready" class="sniper-phase">
           <span class="question-live-category">{{ state.suddenDeath ? 'Entscheidung' : `Sound ${soundNumber} von ${state.total}` }}</span>
           <h2 class="sniper-headline">Ohren<br><em>auf.</em></h2>
           <p class="sniper-sub">Seid ihr bereit? Wer zuerst buzzert, muss liefern. Falsch geraten heißt: Punkt für die anderen.</p>
           <button type="button" class="button-primary sniper-start" data-uisfx-press="press" @click="emit('begin')">
             Sound starten <kbd>Enter</kbd>
           </button>
-        </template>
-
-        <div v-else-if="phase === 'countdown'" class="sniper-countdown" role="timer" :aria-label="`Noch ${countdown}`">
-          <strong :key="countdown">{{ countdown }}</strong>
         </div>
 
-        <template v-else-if="phase === 'listening'">
+        <div v-else-if="phase === 'countdown'" key="countdown" class="sniper-countdown" role="timer" :aria-label="countdown > 0 ? `Noch ${countdown}` : 'Los'">
+          <strong :key="countdown" :class="{ 'is-go': countdown === 0 }">{{ countdown > 0 ? countdown : 'Los!' }}</strong>
+        </div>
+
+        <div v-else-if="phase === 'listening'" key="listening" class="sniper-phase">
           <div class="sniper-wave" :class="{ 'is-playing': playing }" aria-hidden="true">
             <i v-for="(bar, index) in bars" :key="index" :style="{ '--bar': bar.height, animationDelay: `${bar.delay}ms` }" />
           </div>
@@ -124,32 +129,48 @@ const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${pro
               <i v-for="slot in maxPlays" :key="slot" :class="{ 'is-used': slot <= plays }" />
             </span>
             <span>Wiedergabe {{ plays }} / {{ maxPlays }}</span>
-            <button v-if="plays < maxPlays" type="button" class="question-live-action" :disabled="playing" @click="emit('replay')">
-              <Icon name="lucide:rotate-ccw" size="15" aria-hidden="true" /> Erneut abspielen <kbd>W</kbd>
+            <button type="button" class="sniper-replay" :disabled="playing || listensLeft <= 0" @click="emit('replay')">
+              <Icon name="lucide:rotate-ccw" size="16" aria-hidden="true" />
+              {{ listensLeft > 0 ? `Nochmal hören · ${listensLeft}× übrig` : 'Keine Wiederholung mehr' }}
+              <kbd>W</kbd>
             </button>
           </div>
           <p v-if="failed" class="sniper-error" role="alert">Die Datei lässt sich nicht abspielen. Mit S überspringen.</p>
-        </template>
+        </div>
 
         <!-- Buzzed: the team that hit first takes the whole stage. -->
-        <div v-else-if="phase === 'buzzed' && state.buzzer !== null" class="sniper-buzz" :class="`sniper-buzz--${state.buzzer === 0 ? 'one' : 'two'}`">
+        <!-- Step one: the team answers out loud. Step two: the same key uncovers the solution, then the host judges. -->
+        <div v-else-if="phase === 'buzzed' && state.buzzer !== null" key="buzzed" class="sniper-buzz" :class="[`sniper-buzz--${state.buzzer === 0 ? 'one' : 'two'}`, { 'sniper-buzz--revealed': state.revealed }]">
           <span>Zuerst gebuzzert</span>
           <strong>{{ names[state.buzzer] }}</strong>
-          <p>Antwort laut sagen. Falsch = Punkt für {{ names[other(state.buzzer)] }}.</p>
-          <div class="sniper-judge">
-            <button type="button" class="sniper-judge-right" @click="emit('right')"><Icon name="lucide:check" size="20" aria-hidden="true" /> Richtig <kbd>R</kbd></button>
-            <button type="button" class="sniper-judge-wrong" @click="emit('wrong')"><Icon name="lucide:x" size="20" aria-hidden="true" /> Falsch <kbd>F</kbd></button>
-          </div>
+          <template v-if="!state.revealed">
+            <p>Antwort laut sagen. Falsch = Punkt für {{ names[other(state.buzzer)] }}.</p>
+            <div class="sniper-judge">
+              <button type="button" class="sniper-judge-right" @click="emit('reveal')">
+                <Icon name="lucide:eye" size="20" aria-hidden="true" /> Lösung zeigen <kbd>{{ state.buzzer === 0 ? 'A' : 'B' }}</kbd>
+              </button>
+            </div>
+          </template>
+          <template v-else-if="state.current">
+            <p class="sniper-buzz-label">Lösung</p>
+            <em class="sniper-buzz-answer">{{ state.current.answer }}</em>
+            <p>Hatte {{ names[state.buzzer] }} recht?</p>
+            <div class="sniper-judge">
+              <button type="button" class="sniper-judge-right" @click="emit('right')"><Icon name="lucide:check" size="20" aria-hidden="true" /> Richtig <kbd>R</kbd></button>
+              <button type="button" class="sniper-judge-wrong" @click="emit('wrong')"><Icon name="lucide:x" size="20" aria-hidden="true" /> Falsch <kbd>F</kbd></button>
+            </div>
+          </template>
         </div>
 
         <!-- Resolved: the only place the solution is ever rendered. -->
-        <div v-else-if="phase === 'resolved' && state.current" class="sniper-reveal" :class="`sniper-reveal--${state.outcome}`">
+        <div v-else-if="phase === 'resolved' && state.current" key="resolved" class="sniper-reveal sniper-phase" :class="`sniper-reveal--${state.outcome}`">
           <span class="question-live-category">{{ sniperCategoryLabel(state.current.category) }}</span>
           <p class="sniper-reveal-label">Lösung</p>
           <h2 class="sniper-reveal-answer">{{ state.current.answer }}</h2>
           <p class="sniper-reveal-verdict"><b>{{ verdict.title }}</b> {{ verdict.line }}</p>
           <p class="sniper-reveal-drink" :class="{ 'is-quiet': loser === null }">{{ drinkLine }}</p>
         </div>
+        </Transition>
       </div>
 
       <aside class="question-live-timer" :class="{ 'question-live-timer--warning': warning, 'question-live-timer--done': timerDone, 'sniper-timer--alarm': warning && timerRunning }" aria-label="Hörzeit">
@@ -158,9 +179,9 @@ const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${pro
         <i aria-hidden="true"><b :style="{ transform: `scaleX(${timerProgress})` }" /></i>
         <div class="question-live-timer-actions">
           <button v-if="listeningOpen" type="button" @click="emit('togglePause')">{{ timerRunning ? 'Pause' : 'Weiter' }} <kbd>Leertaste</kbd></button>
-          <button v-if="phase === 'buzzed'" type="button" @click="emit('undo')">Falsches Team <kbd>⌫</kbd></button>
+          <button v-if="phase === 'buzzed' && !state.revealed" type="button" @click="emit('undo')">Falsches Team <kbd>⌫</kbd></button>
+          <button v-if="solutionOut" type="button" :disabled="playing" @click="emit('replay')">So klang es <kbd>W</kbd></button>
           <button v-if="phase !== 'resolved'" type="button" @click="emit('skip')">Überspringen <kbd>S</kbd></button>
-          <button v-else type="button" :disabled="playing" @click="emit('replay')">So klang es <kbd>W</kbd></button>
         </div>
       </aside>
     </div>
@@ -172,13 +193,40 @@ const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${pro
         </p>
         <button type="button" class="button-primary question-live-next" @click="emit('next')">Weiter <kbd>Enter</kbd></button>
       </template>
-      <p v-else-if="phase === 'buzzed'" class="question-live-hint">Bewerten mit <kbd>R</kbd> richtig oder <kbd>F</kbd> falsch</p>
+      <p v-else-if="phase === 'buzzed' && state.revealed" class="question-live-hint">Bewerten mit <kbd>R</kbd> richtig oder <kbd>F</kbd> falsch</p>
+      <p v-else-if="phase === 'buzzed' && state.buzzer !== null" class="question-live-hint">Antwort gehört? Nochmal <kbd>{{ state.buzzer === 0 ? '1 / A' : '2 / B' }}</kbd> oder <kbd>Z</kbd> deckt die Lösung auf</p>
       <p v-else class="question-live-hint">Buzzer: <kbd>1</kbd> / <kbd>A</kbd> {{ names[0] }} · <kbd>2</kbd> / <kbd>B</kbd> {{ names[1] }}</p>
     </div>
   </section>
 </template>
 
 <style scoped>
+.sniper-phase {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Phase swap: the old block lifts away quickly, the new one settles in. */
+.sniper-swap-enter-active {
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1), transform 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sniper-swap-leave-active {
+  transition: opacity 160ms ease-in, transform 160ms ease-in;
+}
+
+.sniper-swap-enter-from {
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.sniper-swap-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
 .sniper-stage-copy {
   display: flex;
   min-width: 0;
@@ -227,6 +275,10 @@ const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${pro
   display: grid;
   width: 100%;
   place-items: center;
+}
+
+.sniper-countdown strong.is-go {
+  font-size: clamp(7rem, min(17vw, 32vh), 17rem);
 }
 
 .sniper-countdown strong {
@@ -313,7 +365,30 @@ const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${pro
   background: var(--question-accent);
 }
 
-.sniper-plays .question-live-action:disabled {
+.sniper-replay {
+  display: inline-flex;
+  min-height: 2.6rem;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--question-accent) 55%, transparent);
+  border-radius: 999px;
+  background: rgb(202 255 74 / 8%);
+  color: var(--question-accent);
+  cursor: pointer;
+  padding: 0 1rem;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  transition: background 160ms ease, color 160ms ease, opacity 160ms ease;
+}
+
+.sniper-replay:hover:not(:disabled),
+.sniper-replay:focus-visible {
+  background: var(--question-accent);
+  color: var(--question-ink);
+}
+
+.sniper-replay:disabled {
   cursor: default;
   opacity: 0.4;
 }
@@ -369,6 +444,37 @@ const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${pro
   margin-top: clamp(0.8rem, 2vh, 1.2rem);
   font-size: clamp(1rem, 1.4vw, 1.35rem);
   font-weight: 500;
+}
+
+/* After the reveal the team name steps back and the solution leads. */
+.sniper-buzz--revealed > strong {
+  font-size: clamp(1.8rem, min(3.4vw, 6vh), 3.6rem);
+}
+
+.sniper-buzz-label {
+  margin-top: clamp(1rem, 2.4vh, 1.6rem);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.sniper-buzz > p.sniper-buzz-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.sniper-buzz-answer {
+  display: block;
+  margin-top: 0.4rem;
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, min(6vw, 11vh), 7rem);
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.9;
+  text-wrap: balance;
+  animation: sniper-reveal-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .sniper-judge {
@@ -515,6 +621,16 @@ const drinkLine = computed(() => loser.value === null ? 'Keiner trinkt' : `${pro
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sniper-swap-enter-active,
+  .sniper-swap-leave-active {
+    transition: opacity 120ms linear;
+  }
+
+  .sniper-swap-enter-from,
+  .sniper-swap-leave-to {
+    transform: none;
+  }
+
   .sniper-wave.is-playing i {
     animation: none;
     transform: scaleY(var(--bar));
