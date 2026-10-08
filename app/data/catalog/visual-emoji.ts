@@ -47,4 +47,71 @@ export const emojiQuestions: readonly QuestionSeed[] = [
   v('emoji-brands-01', 'brands', 1, 'Welche Marke ist das?', 'Red Bull', ['Red Bull', 'Monster Energy', 'Rockstar', 'Burn'], { kind: 'emoji', symbols: '🔴🐂' }, ['classic']),
   v('emoji-brands-02', 'brands', 2, 'Welche Marke ist das?', 'Jägermeister', ['Jägermeister', 'Kleiner Feigling', 'Ramazzotti', 'Berentzen'], { kind: 'emoji', symbols: '🏹🦌🥇' }, ['classic']),
   v('emoji-brands-03', 'brands', 3, 'Welche Marke ist das?', 'Schwarzkopf', ['Schwarzkopf', 'Wella', 'Garnier', 'L’Oréal'], { kind: 'emoji', symbols: '⚫👤💇‍♀️' }, ['odd']),
+
+  // screen (batch 2)
+  v('emoji-screen-07', 'screen', 1, 'Welcher Film ist das?', 'Der König der Löwen', ['Der König der Löwen', 'Madagascar', 'Das Dschungelbuch', 'Bambi'], { kind: 'emoji', symbols: '🦁👑🌅🐗' }, ['classic']),
+  v('emoji-screen-08', 'screen', 2, 'Welcher Film ist das?', 'Jurassic Park', ['Jurassic Park', 'Ice Age', 'King Kong', 'Godzilla'], { kind: 'emoji', symbols: '🦖🏝️🚙🦟' }, ['classic']),
+  v('emoji-screen-09', 'screen', 3, 'Welcher Film ist das?', 'Die Truman Show', ['Die Truman Show', 'Und täglich grüßt das Murmeltier', 'Matrix', 'Pleasantville'], { kind: 'emoji', symbols: '📺🧍🌊🚪' }, ['classic']),
+  v('emoji-screen-10', 'screen', 2, 'Welcher Film ist das?', 'Zurück in die Zukunft', ['Zurück in die Zukunft', 'Terminator', 'Interstellar', 'Looper'], { kind: 'emoji', symbols: '🚗⚡🕰️🔙' }, ['classic']),
+  v('emoji-screen-11', 'screen', 1, 'Welche Serie ist das?', 'Haus des Geldes', ['Haus des Geldes', 'Narcos', 'Prison Break', 'Breaking Bad'], { kind: 'emoji', symbols: '🎭💰🏦🔴' }, ['current']),
+  v('emoji-screen-12', 'screen', 3, 'Welcher Film ist das?', 'Das Schweigen der Lämmer', ['Das Schweigen der Lämmer', 'Sieben', 'Hannibal Rising', 'Psycho'], { kind: 'emoji', symbols: '🤫🐑🐑🍷' }, ['classic']),
+  v('emoji-screen-13', 'screen', 2, 'Welche Serie ist das?', 'Squid Game', ['Squid Game', 'Alice in Borderland', 'The Walking Dead', 'Dark'], { kind: 'emoji', symbols: '🦑🎮⭕🔺🟥' }, ['current']),
+
+  // music (batch 2)
+  v('emoji-music-06', 'music', 2, 'Welcher Song ist das?', 'Purple Rain', ['Purple Rain', 'November Rain', 'Singin’ in the Rain', 'Here Comes the Rain Again'], { kind: 'emoji', symbols: '🟣🌧️' }, ['classic']),
+  v('emoji-music-07', 'music', 1, 'Welcher Song ist das?', 'Highway to Hell', ['Highway to Hell', 'Stairway to Heaven', 'Hells Bells', 'Born to Be Wild'], { kind: 'emoji', symbols: '🛣️➡️🔥😈' }, ['classic']),
+  v('emoji-music-08', 'music', 1, 'Welcher Song ist das?', '99 Luftballons', ['99 Luftballons', 'Major Tom', 'Da Da Da', 'Sternenhimmel'], { kind: 'emoji', symbols: '9️⃣9️⃣🎈' }, ['classic']),
+  v('emoji-music-09', 'music', 3, 'Welcher Song ist das?', 'Smells Like Teen Spirit', ['Smells Like Teen Spirit', 'Come as You Are', 'Teenage Dirtbag', 'Basket Case'], { kind: 'emoji', symbols: '👃🧒👻' }, ['classic']),
+  v('emoji-music-10', 'music', 2, 'Welche Band ist das?', 'Coldplay', ['Coldplay', 'Snow Patrol', 'Keane', 'Imagine Dragons'], { kind: 'emoji', symbols: '🥶▶️' }, ['current']),
+  v('emoji-music-11', 'music', 3, 'Welcher Song ist das?', 'Total Eclipse of the Heart', ['Total Eclipse of the Heart', 'Heart of Glass', 'Moonlight Shadow', 'Heartbreaker'], { kind: 'emoji', symbols: '🌑☀️❤️' }, ['classic']),
+
+  // knowledge: German idioms (batch 2)
+  v('emoji-knowledge-05', 'knowledge', 2, 'Welche Redewendung ist das?', 'Tomaten auf den Augen haben', ['Tomaten auf den Augen haben', 'Rot sehen', 'Ein Auge zudrücken', 'Ins Auge gehen'], { kind: 'emoji', symbols: '🍅🍅👀' }, ['classic']),
+  v('emoji-knowledge-06', 'knowledge', 3, 'Welche Redewendung ist das?', 'Den Nagel auf den Kopf treffen', ['Den Nagel auf den Kopf treffen', 'Nägel mit Köpfen machen', 'Den Kopf in den Sand stecken', 'Auf dem Holzweg sein'], { kind: 'emoji', symbols: '🔨📌🧠🎯' }, ['classic']),
+  v('emoji-knowledge-07', 'knowledge', 3, 'Welche Redewendung ist das?', 'Jemandem einen Bären aufbinden', ['Jemandem einen Bären aufbinden', 'Jemandem einen Bärendienst erweisen', 'Jemandem auf den Leim gehen', 'Jemandem die Leviten lesen'], { kind: 'emoji', symbols: '🐻🎀🧍🤥' }, ['odd']),
+  v('emoji-knowledge-08', 'knowledge', 2, 'Welche Redewendung ist das?', 'Tote Hose', ['Tote Hose', 'Die Hosen anhaben', 'In die Hose gehen', 'Das Herz rutscht in die Hose'], { kind: 'emoji', symbols: '💀👖' }, ['chat']),
+  v('emoji-knowledge-09', 'knowledge', 1, 'Welche Redewendung ist das?', 'Das ist nicht mein Bier', ['Das ist nicht mein Bier', 'Bier auf Wein, das lass sein', 'Ein Fass aufmachen', 'Hopfen und Malz verloren'], { kind: 'emoji', symbols: '🚫🙋🍺' }, ['chat']),
+
+  // animals: German idioms with animals (batch 2)
+  v('emoji-animals-05', 'animals', 1, 'Welche Redewendung ist das?', 'Einen Frosch im Hals haben', ['Einen Frosch im Hals haben', 'Sei kein Frosch', 'Die Kröte schlucken', 'Einen Kloß im Hals haben'], { kind: 'emoji', symbols: '🐸🗣️😮‍💨' }, ['classic']),
+  v('emoji-animals-06', 'animals', 2, 'Welche Redewendung ist das?', 'Da steppt der Bär', ['Da steppt der Bär', 'Der Bär ist los', 'Einen Bärenhunger haben', 'Bärenstark sein'], { kind: 'emoji', symbols: '🐻🕺🎉' }, ['chat']),
+  v('emoji-animals-07', 'animals', 2, 'Welche Redewendung ist das?', 'Aus einer Mücke einen Elefanten machen', ['Aus einer Mücke einen Elefanten machen', 'Wie ein Elefant im Porzellanladen', 'Die Fliege machen', 'Zwei Fliegen mit einer Klappe schlagen'], { kind: 'emoji', symbols: '🦟➡️🐘' }, ['classic']),
+  v('emoji-animals-08', 'animals', 3, 'Welche Redewendung ist das?', 'Hahn im Korb', ['Hahn im Korb', 'Danach kräht kein Hahn', 'Ein blindes Huhn findet auch mal ein Korn', 'Mit den Hühnern aufstehen'], { kind: 'emoji', symbols: '🐓🧺👩👩👩' }, ['odd']),
+
+  // world (batch 2)
+  v('emoji-world-04', 'world', 1, 'Welche Stadt ist das?', 'Paris', ['Paris', 'Lyon', 'Brüssel', 'Rom'], { kind: 'emoji', symbols: '🗼🥖🍷' }, ['classic']),
+  v('emoji-world-05', 'world', 2, 'Welche Stadt ist das?', 'Hamburg', ['Hamburg', 'Bremen', 'Kiel', 'Rostock'], { kind: 'emoji', symbols: '⚓🐟🍔' }, ['classic']),
+  v('emoji-world-06', 'world', 3, 'Welche Stadt ist das?', 'Kopenhagen', ['Kopenhagen', 'Oslo', 'Stockholm', 'Amsterdam'], { kind: 'emoji', symbols: '🧜‍♀️🚲🎡🇩🇰' }, ['classic']),
+  v('emoji-world-07', 'world', 2, 'Welches Land ist das?', 'Island', ['Island', 'Norwegen', 'Grönland', 'Finnland'], { kind: 'emoji', symbols: '🧊🌋🐴♨️' }, ['classic']),
+
+  // food (batch 2)
+  v('emoji-food-05', 'food', 3, 'Welches Gericht ist das?', 'Strammer Max', ['Strammer Max', 'Bauernfrühstück', 'Hoppel-Poppel', 'Arme Ritter'], { kind: 'emoji', symbols: '💪👨🍞🍳' }, ['classic']),
+  v('emoji-food-06', 'food', 2, 'Welches Gericht ist das?', 'Falscher Hase', ['Falscher Hase', 'Hasenpfeffer', 'Königsberger Klopse', 'Leberkäse'], { kind: 'emoji', symbols: '🤥🐇🍖' }, ['classic']),
+  v('emoji-food-07', 'food', 1, 'Welcher Cocktail ist das?', 'Sex on the Beach', ['Sex on the Beach', 'Tequila Sunrise', 'Piña Colada', 'Swimming Pool'], { kind: 'emoji', symbols: '🔞🏖️🍹' }, ['chat']),
+  v('emoji-food-08', 'food', 2, 'Welcher Cocktail ist das?', 'Tequila Sunrise', ['Tequila Sunrise', 'Mai Tai', 'Bloody Mary', 'Planter’s Punch'], { kind: 'emoji', symbols: '🌵🥃🌅' }, ['classic']),
+
+  // brands (batch 2)
+  v('emoji-brands-04', 'brands', 1, 'Welche Marke ist das?', 'Puma', ['Puma', 'Lacoste', 'Fila', 'Jaguar'], { kind: 'emoji', symbols: '🐆👟' }, ['classic']),
+  v('emoji-brands-05', 'brands', 2, 'Welche Marke ist das?', 'Lacoste', ['Lacoste', 'Fred Perry', 'Ralph Lauren', 'Tommy Hilfiger'], { kind: 'emoji', symbols: '🐊👕🎾' }, ['classic']),
+  v('emoji-brands-06', 'brands', 2, 'Welche Marke ist das?', 'Shell', ['Shell', 'BP', 'Aral', 'Total'], { kind: 'emoji', symbols: '🐚⛽' }, ['classic']),
+  v('emoji-brands-07', 'brands', 3, 'Welche Marke ist das?', 'Rotkäppchen', ['Rotkäppchen', 'Mumm', 'Freixenet', 'Henkell'], { kind: 'emoji', symbols: '🔴🧢👧🥂' }, ['odd']),
+
+  // cologne (batch 2)
+  v('emoji-cologne-03', 'cologne', 1, 'Welcher Kölner Ort ist das?', 'Schokoladenmuseum', ['Schokoladenmuseum', 'Duftmuseum', 'Museum Ludwig', 'Römisch-Germanisches Museum'], { kind: 'emoji', symbols: '🍫🏛️🌊' }, ['local']),
+  v('emoji-cologne-04', 'cologne', 2, 'Welche Kölner Sage ist das?', 'Heinzelmännchen', ['Heinzelmännchen', 'Tünnes und Schäl', 'Kallendresser', 'Jan von Werth'], { kind: 'emoji', symbols: '🧝🧝🌙🧹' }, ['local']),
+  v('emoji-cologne-05', 'cologne', 3, 'Welcher Karnevalsbegriff ist das?', 'Strüßjer', ['Strüßjer', 'Bützje', 'Kamelle', 'Fastelovend'], { kind: 'emoji', symbols: '💐💐🎉🚃' }, ['local']),
+
+  // gaming
+  v('emoji-gaming-01', 'gaming', 1, 'Welches Spiel ist das?', 'Angry Birds', ['Angry Birds', 'Flappy Bird', 'Cut the Rope', 'Fruit Ninja'], { kind: 'emoji', symbols: '😡🐦🐷🏗️' }, ['classic']),
+  v('emoji-gaming-02', 'gaming', 1, 'Welches Spiel ist das?', 'Minecraft', ['Minecraft', 'Roblox', 'Terraria', 'Fortnite'], { kind: 'emoji', symbols: '⛏️🧱🟩💥' }, ['classic']),
+  v('emoji-gaming-03', 'gaming', 2, 'Welches Spiel ist das?', 'Fruit Ninja', ['Fruit Ninja', 'Candy Crush', 'Temple Run', 'Subway Surfers'], { kind: 'emoji', symbols: '🍉🔪🥷' }, ['nostalgia']),
+  v('emoji-gaming-04', 'gaming', 2, 'Welches Spiel ist das?', 'Among Us', ['Among Us', 'Fall Guys', 'Phasmophobia', 'Lethal Company'], { kind: 'emoji', symbols: '🧑‍🚀🔪🚨🗳️' }, ['current']),
+  v('emoji-gaming-05', 'gaming', 3, 'Welches Spiel ist das?', 'Untitled Goose Game', ['Untitled Goose Game', 'Goat Simulator', 'Stray', 'Duck Game'], { kind: 'emoji', symbols: '🪿😈🏡🔔' }, ['odd']),
+  v('emoji-gaming-06', 'gaming', 3, 'Welches Spiel ist das?', 'Portal', ['Portal', 'Half-Life', 'The Talos Principle', 'Antichamber'], { kind: 'emoji', symbols: '🔵🟠🍰🤖' }, ['classic']),
+
+  // nostalgia
+  v('emoji-nostalgia-01', 'nostalgia', 1, 'Welches Spielzeug ist das?', 'Tamagotchi', ['Tamagotchi', 'Furby', 'Game Boy', 'Pokémon-Karten'], { kind: 'emoji', symbols: '🥚📟🐣' }, ['nostalgia']),
+  v('emoji-nostalgia-02', 'nostalgia', 1, 'Welche Sendung ist das?', 'Wer wird Millionär?', ['Wer wird Millionär?', 'Glücksrad', 'Der Preis ist heiß', 'Schlag den Raab'], { kind: 'emoji', symbols: '❓💶💶💶🎙️' }, ['nostalgia']),
+  v('emoji-nostalgia-03', 'nostalgia', 2, 'Welcher Internet-Trend ist das?', 'Ice Bucket Challenge', ['Ice Bucket Challenge', 'Harlem Shake', 'Mannequin Challenge', 'Planking'], { kind: 'emoji', symbols: '🧊🪣🥶📹' }, ['nostalgia']),
+  v('emoji-nostalgia-04', 'nostalgia', 3, 'Welcher Internet-Trend ist das?', 'Mannequin Challenge', ['Mannequin Challenge', 'Harlem Shake', 'Planking', 'Ice Bucket Challenge'], { kind: 'emoji', symbols: '🧍🧍‍♀️⏸️📹🎶' }, ['nostalgia']),
 ]

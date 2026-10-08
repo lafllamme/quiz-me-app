@@ -3,23 +3,54 @@ import { QUESTIONS, type DifficultyLevel, type QuizQuestion, type VisualKind } f
 import type { DifficultyMode } from '~/types/setup'
 
 export const QUESTION_HISTORY_KEY = 'jungle-question-history-v1'
+export const CATEGORY_EXPOSURE_KEY = 'jungle-category-exposure-v1'
 
 export const DIFFICULTY_WEIGHTS: Record<DifficultyMode, Record<DifficultyLevel, number>> = {
   easy: { 1: 70, 2: 25, 3: 5 },
-  mixed: { 1: 33, 2: 34, 3: 33 },
+  mixed: { 1: 25, 2: 35, 3: 40 },
   hard: { 1: 10, 2: 30, 3: 60 },
 }
 
 /** The board always aims for this many tiles. */
 export const BOARD_SIZE = 6
 
-/** Upper bound of tiles that carry a visual question in one turn. */
+/** Range of tiles that carry a visual question in one turn, when the catalog has enough formats left. */
+export const MIN_VISUAL_TILES = 2
 export const MAX_VISUAL_TILES = 4
+
+/**
+ * Category exposure: every board adds 1 per offered category and a pick adds PICK_EXPOSURE.
+ * Old exposure decays each board, so the balance follows the recent game nights.
+ */
+const EXPOSURE_DECAY = 0.85
+const PICK_EXPOSURE = 2
 
 /** One pick on the category board: a category, optionally bound to a visual format. */
 export interface CategoryTile {
   category: string
   visual: VisualKind | null
+}
+
+/**
+ * Orders categories by weighted random draw: the less a category was offered or picked
+ * recently, the more likely it lands early. Unseen categories therefore surface soon,
+ * while the board still never feels fixed.
+ */
+export function orderByExposure(categories: readonly string[], exposure: Readonly<Record<string, number>>): string[] {
+  const remaining = [...categories]
+  const ordered: string[] = []
+  while (remaining.length) {
+    const weights = remaining.map(category => 1 / (1 + (exposure[category] ?? 0)) ** 2)
+    let cursor = Math.random() * weights.reduce((sum, weight) => sum + weight, 0)
+    let index = weights.findIndex((weight) => {
+      cursor -= weight
+      return cursor < 0
+    })
+    if (index < 0)
+      index = remaining.length - 1
+    ordered.push(remaining.splice(index, 1)[0]!)
+  }
+  return ordered
 }
 
 /** How many recent correct-answer slots are remembered when placing the next one. */
@@ -92,6 +123,7 @@ function chooseDifficulty(candidates: readonly QuizQuestion[], mode: DifficultyM
 
 export function useQuestionDeck() {
   const answeredIds = ref<string[]>([])
+  const categoryExposure = ref<Record<string, number>>({})
   const hydrated = ref(false)
   const recentCorrectPositions: number[] = []
 
@@ -114,6 +146,16 @@ export function useQuestionDeck() {
       answeredIds.value = []
     }
 
+    try {
+      const saved = JSON.parse(localStorage.getItem(CATEGORY_EXPOSURE_KEY) || '{}')
+      categoryExposure.value = saved && typeof saved === 'object'
+        ? Object.fromEntries(Object.entries(saved).filter((entry): entry is [string, number] => typeof entry[1] === 'number' && Number.isFinite(entry[1])))
+        : {}
+    }
+    catch {
+      categoryExposure.value = {}
+    }
+
     hydrated.value = true
   }
 
@@ -121,6 +163,30 @@ export function useQuestionDeck() {
     if (import.meta.server)
       return
     localStorage.setItem(QUESTION_HISTORY_KEY, JSON.stringify(answeredIds.value))
+  }
+
+  function persistExposure() {
+    if (import.meta.server)
+      return
+    localStorage.setItem(CATEGORY_EXPOSURE_KEY, JSON.stringify(categoryExposure.value))
+  }
+
+  function recordBoard(categories: readonly string[]) {
+    const next: Record<string, number> = {}
+    for (const [category, value] of Object.entries(categoryExposure.value)) {
+      const decayed = value * EXPOSURE_DECAY
+      if (decayed > 0.01)
+        next[category] = decayed
+    }
+    for (const category of new Set(categories))
+      next[category] = (next[category] ?? 0) + 1
+    categoryExposure.value = next
+    persistExposure()
+  }
+
+  function recordPick(category: string) {
+    categoryExposure.value = { ...categoryExposure.value, [category]: (categoryExposure.value[category] ?? 0) + PICK_EXPOSURE }
+    persistExposure()
   }
 
   function isAnswered(id: string) {
@@ -165,7 +231,7 @@ export function useQuestionDeck() {
   function planBoard(excludedIds: readonly string[] = [], restingCategory: string | null = null, restingKind: VisualKind | null = null): CategoryTile[] {
     const available = getAvailableCategories(excludedIds)
     const rested = available.filter(category => category !== restingCategory)
-    const pool = shuffle(rested.length ? rested : available)
+    const pool = orderByExposure(rested.length ? rested : available, categoryExposure.value)
     const tiles: CategoryTile[] = pool.slice(0, BOARD_SIZE).map(category => ({ category, visual: null }))
 
     const usedKinds = new Set<VisualKind>(restingKind ? [restingKind] : [])
@@ -175,7 +241,7 @@ export function useQuestionDeck() {
     const gaps = BOARD_SIZE - tiles.length
     const freeKinds = new Set(pool.flatMap(category => getVisualKinds(category, excludedIds)).filter(kind => !usedKinds.has(kind)))
     const overlayBudget = Math.max(0, Math.min(MAX_VISUAL_TILES, freeKinds.size) - gaps)
-    const overlayTarget = Math.min(Math.floor(Math.random() * (MAX_VISUAL_TILES + 1)), overlayBudget)
+    const overlayTarget = Math.min(MIN_VISUAL_TILES + Math.floor(Math.random() * (MAX_VISUAL_TILES - MIN_VISUAL_TILES + 1)), overlayBudget)
     let overlays = 0
     for (const tile of shuffle(tiles)) {
       if (overlays >= overlayTarget)
@@ -200,6 +266,7 @@ export function useQuestionDeck() {
       usedKinds.add(kind)
     }
 
+    recordBoard(tiles.map(tile => tile.category))
     return tiles
   }
 
@@ -211,6 +278,7 @@ export function useQuestionDeck() {
     if (!candidates.length)
       return undefined
 
+    recordPick(category)
     const selectedDifficulty = chooseDifficulty(candidates, mode)
     const difficultyPool = selectedDifficulty
       ? candidates.filter(question => question.difficulty === selectedDifficulty)
@@ -229,6 +297,7 @@ export function useQuestionDeck() {
 
   return {
     answeredIds,
+    categoryExposure,
     hydrated,
     totalCount,
     answeredCount,

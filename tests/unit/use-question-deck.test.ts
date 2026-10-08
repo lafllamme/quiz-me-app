@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { BOARD_SIZE, DIFFICULTY_WEIGHTS, MAX_VISUAL_TILES, QUESTION_HISTORY_KEY, arrangeOptions, chooseCorrectPosition, useQuestionDeck } from '~/composables/useQuestionDeck'
+import { BOARD_SIZE, CATEGORY_EXPOSURE_KEY, DIFFICULTY_WEIGHTS, MAX_VISUAL_TILES, MIN_VISUAL_TILES, QUESTION_HISTORY_KEY, arrangeOptions, chooseCorrectPosition, orderByExposure, useQuestionDeck } from '~/composables/useQuestionDeck'
 import { QUESTIONS, QUIZ_CATEGORIES } from '~/data/quiz-catalog'
 
 describe('useQuestionDeck', () => {
@@ -49,7 +49,7 @@ describe('useQuestionDeck', () => {
 
   it('uses the configured difficulty weighting at the selection boundaries', () => {
     expect(DIFFICULTY_WEIGHTS.easy).toEqual({ 1: 70, 2: 25, 3: 5 })
-    expect(DIFFICULTY_WEIGHTS.mixed).toEqual({ 1: 33, 2: 34, 3: 33 })
+    expect(DIFFICULTY_WEIGHTS.mixed).toEqual({ 1: 25, 2: 35, 3: 40 })
     expect(DIFFICULTY_WEIGHTS.hard).toEqual({ 1: 10, 2: 30, 3: 60 })
 
     const deck = useQuestionDeck()
@@ -144,7 +144,7 @@ describe('useQuestionDeck', () => {
     }
   })
 
-  it('shows six plain categories when nothing rests and no visual tile is rolled', () => {
+  it('puts at least the minimum number of visual tiles on a fresh board', () => {
     const deck = useQuestionDeck()
     deck.hydrate()
 
@@ -152,9 +152,34 @@ describe('useQuestionDeck', () => {
     const tiles = deck.planBoard()
 
     expect(tiles).toHaveLength(BOARD_SIZE)
-    expect(tiles.every(tile => tile.visual === null)).toBe(true)
+    expect(tiles.filter(tile => tile.visual).length).toBeGreaterThanOrEqual(MIN_VISUAL_TILES)
     const labels = QUIZ_CATEGORIES.map(category => category.label)
     expect(new Set(tiles.map(tile => tile.category)).size).toBe(BOARD_SIZE)
     expect(tiles.every(tile => labels.includes(tile.category))).toBe(true)
+  })
+
+  it('orders rarely shown categories first', () => {
+    const firsts = { A: 0, B: 0, C: 0 }
+    for (let draw = 0; draw < 2000; draw++)
+      firsts[orderByExposure(['A', 'B', 'C'], { A: 5, B: 0, C: 2 })[0] as keyof typeof firsts]++
+
+    expect(firsts.B).toBeGreaterThan(firsts.C)
+    expect(firsts.C).toBeGreaterThan(firsts.A)
+  })
+
+  it('spreads categories evenly across boards and remembers the balance', () => {
+    const deck = useQuestionDeck()
+    deck.hydrate()
+    const offered = new Map<string, number>()
+
+    for (let round = 0; round < 70; round++) {
+      for (const tile of deck.planBoard())
+        offered.set(tile.category, (offered.get(tile.category) ?? 0) + 1)
+    }
+
+    const counts = QUIZ_CATEGORIES.map(category => offered.get(category.label) ?? 0)
+    // 70 boards × 6 tiles over 14 categories is 30 each; uniform random would scatter far wider.
+    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(10)
+    expect(JSON.parse(localStorage.getItem(CATEGORY_EXPOSURE_KEY) || '{}')).not.toEqual({})
   })
 })
