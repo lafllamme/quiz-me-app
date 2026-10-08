@@ -74,7 +74,7 @@ watch(() => props.question.id, () => {
 })
 
 function submitEstimate() {
-  const values = estimateInputs.map(value => Number(String(value).replace(/\./g, '').replace(',', '.'))) as [number, number]
+  const values = estimateInputs.map(value => Number(String(value).replace(/[\s.]/g, '').replace(',', '.'))) as [number, number]
   if (estimateInputs.some(value => String(value).trim() === '') || values.some(value => !Number.isFinite(value))) {
     estimateError.value = 'Bitte für beide Teams eine Zahl eingeben.'
     return
