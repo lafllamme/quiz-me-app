@@ -4,7 +4,7 @@ import { useQuestionDeck, type CategoryTile } from '~/composables/useQuestionDec
 import type { MusicName } from '~/composables/useSound'
 import type { DifficultyMode } from '~/types/setup'
 
-export type GameScreen = 'menu' | 'toss' | 'category' | 'question' | 'tie' | 'final'
+export type GameScreen = 'menu' | 'toss' | 'category' | 'question' | 'tie' | 'final' | 'sniper'
 export type StealMode = 'remaining' | '15' | '20'
 
 /** One resolved question: who picked, what, and who took the point how. */

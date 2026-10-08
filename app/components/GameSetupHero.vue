@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { PaperGrainGradient } from '~/ui/paper-grain-gradient'
+import type { GameMode } from '~/types/setup'
+
+defineProps<{ mode: GameMode }>()
 
 // "Night jungle" grain gradient from the design lab (K2). It freezes on a still frame for
 // reduced motion and while the tab is hidden, so an idle lobby does not keep the GPU busy.
@@ -45,8 +48,10 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', syncVisib
     </ClientOnly>
     <div class="game-setup-brand-spacer" aria-hidden="true" />
     <div class="game-setup-copy-main">
-      <h1>Wer<br><em>spielt?</em></h1>
-      <p>Gib den Teams einen Namen. Den Rest regeln wir.</p>
+      <h1 v-if="mode === 'sniper'">Wer<br><em>hört's?</em></h1>
+      <h1 v-else>Wer<br><em>spielt?</em></h1>
+      <p v-if="mode === 'sniper'">Ein Geräusch, zwei Buzzer. Wer zuerst drückt, muss es wissen.</p>
+      <p v-else>Gib den Teams einen Namen. Den Rest regeln wir.</p>
     </div>
   </div>
 </template>
