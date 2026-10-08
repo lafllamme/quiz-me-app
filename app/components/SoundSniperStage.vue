@@ -92,13 +92,16 @@ const pointLine = computed(() => {
 
 <template>
   <section class="sniper-stage" :class="[`sniper-stage--${view}`, buzzer !== null ? `sniper-stage--team-${buzzer}` : '']">
+    <Transition name="sniper-head">
     <div v-if="showTicks" class="sniper-ticks" :aria-label="progressLabel">
       <div aria-hidden="true">
         <i v-for="tick in state.total" :key="tick" :class="{ 'is-done': tick < soundNumber, 'is-current': tick === soundNumber && !state.suddenDeath }" />
       </div>
       <span>{{ progressLabel }}</span>
     </div>
+    </Transition>
 
+    <Transition name="sniper-head">
     <div v-if="showDuel" class="sniper-duel" aria-label="Punktestand">
       <div v-for="team in ([0, 1] as const)" :key="team" class="sniper-duel-team" :class="[`sniper-duel-team--${team}`, { 'is-active': view === 'judge' && buzzer === team }]">
         <span>{{ names[team] }}</span>
@@ -106,6 +109,7 @@ const pointLine = computed(() => {
       </div>
       <i aria-hidden="true">:</i>
     </div>
+    </Transition>
 
     <Transition name="sniper-swap" mode="out-in">
       <!-- R1 / Volle Zeile: the headline across the full width, the action row at the foot. -->
@@ -472,6 +476,7 @@ const pointLine = computed(() => {
 
 .sniper-duel-team span {
   overflow: hidden;
+  line-height: 1.3;
   font-size: 0.42em;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -502,6 +507,21 @@ const pointLine = computed(() => {
   bottom: 6.4cqh;
   left: var(--sn-pad-x);
   min-height: 0;
+}
+
+/* Head pieces follow the swap: they leave with the old block and arrive with the new one,
+   so a score never sits on top of a block that is still on its way out. */
+.sniper-head-enter-active {
+  transition: opacity 320ms 160ms var(--sn-ease);
+}
+
+.sniper-head-leave-active {
+  transition: opacity 160ms ease-in;
+}
+
+.sniper-head-enter-from,
+.sniper-head-leave-to {
+  opacity: 0;
 }
 
 /* Phase swap: the old block lifts away quickly, the new one settles in. */
@@ -1027,6 +1047,8 @@ const pointLine = computed(() => {
 .sniper-choice-effect b {
   max-width: 100%;
   overflow: hidden;
+  padding-bottom: 0.1em;
+  line-height: 1.1;
   font-family: var(--font-display);
   font-size: min(2.2cqw, 4.4cqh);
   font-weight: 600;
@@ -1053,7 +1075,13 @@ const pointLine = computed(() => {
   color: var(--sn-coral);
 }
 
-/* E2 result */
+/* E2 result. The wrapper spans the stage: a transform during the swap makes it the containing
+   block of the strip and halves, which must not change their size mid-animation. */
+.sniper-result {
+  position: absolute;
+  inset: 0;
+}
+
 .sniper-result-strip {
   position: absolute;
   top: 13cqh;
@@ -1069,7 +1097,10 @@ const pointLine = computed(() => {
 .sniper-result-strip > strong {
   min-width: 0;
   overflow: hidden;
+  /* Room for descenders: the clip box must hold g, p and y. */
+  padding-block: 0.06em 0.14em;
   font-size: min(5.4cqw, 10.4cqh);
+  line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1134,6 +1165,8 @@ const pointLine = computed(() => {
 .sniper-result-half strong {
   margin-top: 2cqh;
   overflow: hidden;
+  padding-bottom: 0.12em;
+  line-height: 1.05;
   font-family: var(--font-display);
   font-size: min(3.8cqw, 7.4cqh);
   font-weight: 600;
