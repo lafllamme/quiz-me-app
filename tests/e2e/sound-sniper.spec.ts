@@ -10,7 +10,9 @@ test.describe('Sound Sniper flow', () => {
       }
     })
     await page.goto('/')
-    await page.waitForTimeout(750)
+    // An early click before hydration would submit the setup form natively.
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(500)
 
     await page.getByRole('radio', { name: 'Sound Sniper' }).click()
     await expect(page.getByRole('heading', { name: /hört's/ })).toBeVisible()

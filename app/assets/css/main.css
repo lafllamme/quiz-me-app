@@ -927,7 +927,7 @@ button:disabled {
   transition: background 180ms ease, color 180ms ease, opacity 180ms ease, transform 180ms ease;
 }
 
-.question-live-option:hover:not(:disabled),
+.question-live-answers--armed .question-live-option:hover:not(:disabled),
 .question-live-option:focus-visible {
   background: var(--question-accent);
   color: var(--question-ink);
@@ -972,12 +972,12 @@ button:disabled {
   color: var(--question-accent);
 }
 
-.question-live-option:hover:not(:disabled) .question-live-option-letter,
+.question-live-answers--armed .question-live-option:hover:not(:disabled) .question-live-option-letter,
 .question-live-option:focus-visible .question-live-option-letter {
   background: var(--question-ink);
 }
 
-.question-live-option:hover:not(:disabled) > .iconify,
+.question-live-answers--armed .question-live-option:hover:not(:disabled) > .iconify,
 .question-live-option:focus-visible > .iconify {
   color: var(--question-ink);
 }

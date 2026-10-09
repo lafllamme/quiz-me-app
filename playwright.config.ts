@@ -17,6 +17,12 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      // Safari-specific regressions only, tagged @safari.
+      name: 'webkit',
+      grep: /@safari/,
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
   webServer: {
     command: 'pnpm dev --host 127.0.0.1',

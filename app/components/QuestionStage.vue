@@ -67,10 +67,29 @@ const mediaProgress = computed(() => 1 - timerProgress.value)
 const estimate = computed(() => props.question.estimate)
 const estimateInputs = reactive<[string, string]>(['', ''])
 const estimateError = ref('')
+// Safari applies :hover to whatever appears under a resting cursor, so a fresh
+// question would greet the room with option A lit. Hover only counts after real
+// pointer movement.
+const pointerArmed = ref(false)
+let restingPoint: { x: number, y: number } | null = null
+function armPointer(event: PointerEvent) {
+  if (pointerArmed.value || event.pointerType !== 'mouse')
+    return
+  // The first event only marks where the cursor rests; layout shifts can replay it.
+  if (!restingPoint) {
+    restingPoint = { x: event.clientX, y: event.clientY }
+    return
+  }
+  if (Math.hypot(event.clientX - restingPoint.x, event.clientY - restingPoint.y) > 2)
+    pointerArmed.value = true
+}
+
 watch(() => props.question.id, () => {
   estimateInputs[0] = ''
   estimateInputs[1] = ''
   estimateError.value = ''
+  pointerArmed.value = false
+  restingPoint = null
 })
 
 function submitEstimate() {
@@ -165,13 +184,13 @@ function optionClass(index: number) {
       <p v-if="estimateError" class="question-estimate-error" role="alert">{{ estimateError }}</p>
     </form>
 
-    <div v-else class="question-live-answers" :class="{ 'question-live-answers--swatch': isSwatch || isFlagOptions }" aria-label="Antwortmöglichkeiten">
+    <div v-else class="question-live-answers" :class="{ 'question-live-answers--swatch': isSwatch || isFlagOptions, 'question-live-answers--armed': pointerArmed }" aria-label="Antwortmöglichkeiten" @pointermove="armPointer">
       <button
         v-for="(option, index) in question.options"
         :key="option"
         class="question-live-option"
         :class="optionClass(index)"
-        data-uisfx-hover="hover"
+        :data-uisfx-hover="pointerArmed ? 'hover' : undefined"
         :disabled="!isOpen || wrongOptions.includes(index)"
         :aria-keyshortcuts="`${index + 1} ${letters[index]}`"
         :aria-label="isSwatch ? `Antwort ${letters[index]}: Farbe ${letters[index]}` : isFlagOptions ? `Antwort ${letters[index]}: Flagge ${letters[index]}` : `Antwort ${letters[index]}: ${option}`"

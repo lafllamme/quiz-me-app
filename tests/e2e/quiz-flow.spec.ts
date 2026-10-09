@@ -10,7 +10,9 @@ test.describe('Jungle Quiz flow', () => {
       }
     })
     await page.goto('/')
-    await page.waitForTimeout(750)
+    // An early click before hydration would submit the setup form natively.
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(500)
 
     const pool = page.getByText(/\d+ \/ \d+ im Pool/)
     await expect(pool).toBeVisible()
